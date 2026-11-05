@@ -58,3 +58,38 @@ it('uses the composer height plus a symmetric 8px surround', () => {
  expect(panelBounds(area,defaultAnchor(area),120+16).height).toBe(136);
  expect(panelBounds(area,defaultAnchor(area),0).height).toBe(90);
 });
+
+import { canvasBounds, canvasAnchor } from '../../src/main/window-geometry.js';
+it('reserves the same maximum canvas for every card state and keeps saved anchors', () => {
+ const anchor={x:900,y:900};
+ const bounds=canvasBounds(area,anchor);
+ expect(bounds).toEqual({x:356,y:196,width:828,height:728});
+ expect(canvasAnchor(bounds)).toEqual(anchor);
+ for(const _state of ['compact','expanded','history','selector']) expect(canvasBounds(area,anchor)).toEqual(bounds);
+});
+it('clamps the entire canvas on all edges and other displays', () => {
+ for(const anchor of [{x:0,y:0},{x:1440,y:1000}]) {
+  const b=canvasBounds(area,anchor);
+  expect(b.x).toBeGreaterThanOrEqual(0);expect(b.y).toBeGreaterThanOrEqual(0);
+  expect(b.x+b.width).toBeLessThanOrEqual(1440);expect(b.y+b.height).toBeLessThanOrEqual(1000);
+ }
+ expect(canvasBounds({x:-600,y:200,width:600,height:500},{x:-300,y:400})).toEqual({x:-600,y:200,width:600,height:500});
+});
+
+import { cardLayout } from '../../src/main/window-geometry.js';
+it('lets the compact card reach the top and left while keeping its anchor on expansion', () => {
+ const area={x:0,y:0,width:1440,height:900}, anchor={x:260,y:106};
+ const compact=cardLayout(area,anchor,106);
+ expect(compact.card).toEqual({x:0,y:0,width:520,height:106});
+ expect(compact.offset.y).toBeLessThan(0);
+ const expanded=cardLayout(area,anchor,680,true);
+ expect(expanded.card).toEqual({x:0,y:0,width:780,height:680});
+ expect(cardLayout(area,{x:800,y:800},680,true).card).toEqual({x:280,y:120,width:780,height:680});
+});
+it('fits a small display and supports a display with negative coordinates', () => {
+ const small=cardLayout({x:0,y:0,width:500,height:600},{x:260,y:90},680,true);
+ expect(small.card.width).toBe(452);
+ expect(small.card.height).toBe(552);
+ const other=cardLayout({x:-1440,y:-900,width:1440,height:900},{x:-800,y:-100},680,true);
+ expect(other.card).toEqual({x:-1320,y:-780,width:780,height:680});
+});

@@ -23,8 +23,22 @@ function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id:
     {remove && <button title={s.removeAttachment} aria-label={s.removeAttachment} onClick={() => remove(file.id!)}>×</button>}
   </div>)}</div>;
 }
+function useLeaving<T>(value: T, delay: number): T {
+  const [shown, setShown] = useState(value);
+  useEffect(() => {
+    if (value) { setShown(value); return; }
+    const timer = setTimeout(() => setShown(value), matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return value || shown;
+}
 function App() {
   const chat = useChat();
+  const [offset, setOffset] = useState({x:0,y:0});
+  const [prewarm, setPrewarm] = useState(false);
+  const [compactHeight, setCompactHeight] = useState(106);
+  const [hiding, setHiding] = useState(false);
+  const [appeared, setAppeared] = useState(0);
   const [attachmentMenu, setAttachmentMenu] = useState(false);
   const attachmentRegion = useRef<HTMLDivElement>(null);
   function closeAttachments() { setAttachmentMenu(false); input.current?.focus(); }
@@ -59,6 +73,9 @@ function App() {
     finally { attachmentLock.current = false; setLoadingAttachments(false); }
   }
   const [selector, setSelector] = useState<"model" | "other" | null>(null);
+  const shownSelector = useLeaving(selector, 150);
+  const shownAttachmentMenu = useLeaving(attachmentMenu, 150);
+  const shownMessages = useLeaving(chat.messages.length > 0, 220);
   const [editing, setEditing] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
@@ -86,6 +103,7 @@ function App() {
       pending = [];
     };
     const disposers = [
+      window.j7.onHiding(() => setHiding(true)),
       window.j7.onCapture(event => {
         setCapture(previous => ({...previous,busy:false,recoverable:false,...event.state}));
         voiceBusy.current = ['transcribing','recovering','listening','capturing','opening'].includes(event.state.phase);
@@ -96,16 +114,14 @@ function App() {
       window.j7.onSnapshot((snapshot) => { flush(); useChat.getState().setSnapshot(snapshot); }),
       window.j7.onChat((event) => { pending.push(event); timer ??= setTimeout(flush, 34); }),
       window.j7.onPanel((state) => {
+        const wasHistoryOpen = historyRef.current;
         setPinned(state.pinned);
+        if(state.offset) setOffset(state.offset);
         if(state.historyOpen!==undefined){historyRef.current=state.historyOpen;setHistoryOpen(state.historyOpen);}
-        if (state.appeared && content.current) {
-          content.current.classList.remove("appear");
-          void content.current.offsetWidth;
-          content.current.classList.add("appear");
-        }
+        if (state.appeared) { setHiding(false); setAppeared(n => n + 1); }
         document.documentElement.classList.toggle("dark", state.dark);
         if (!state.resume) { setDraft(""); setAttachments([]); }
-        if (state.appeared || !state.historyOpen) input.current?.focus();
+        if ((state.appeared && !state.historyOpen) || (wasHistoryOpen && !state.historyOpen)) input.current?.focus();
       }),
     ];
     void window.j7
@@ -115,6 +131,10 @@ function App() {
     void window.j7.captureAction("status");
     return () => { clearTimeout(timer); disposers.forEach((dispose) => dispose()); };
   }, []);
+  useEffect(() => {
+    if (!appeared || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    document.querySelector(".shell")?.animate([{ opacity: 0, transform: "scale(.98)" }, { opacity: 1, transform: "scale(1)" }], { duration: 150, easing: "cubic-bezier(.32,.72,0,1)" });
+  }, [appeared]);
   useLayoutEffect(() => {
     const el = input.current;
     if (el) {
@@ -124,17 +144,21 @@ function App() {
   }, [draft]);
   useEffect(() => {
     let frame = 0;
+    let composerHeight = 90;
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         if (content.current) {
           const root = content.current;
           if (following.current && conversation.current) conversation.current.scrollTop = conversation.current.scrollHeight;
-          window.j7.setContentHeight(chat.messages.length || selector || historyOpen ? 680 : 16 + (root.querySelector(".composer")?.getBoundingClientRect().height ?? 72));
+          setCompactHeight(16 + composerHeight);
         }
       });
     };
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(entries => {
+      for(const entry of entries) if(entry.target.matches(".composer")) composerHeight=entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
+      measure();
+    });
     if (content.current) {
       observer.observe(content.current);
       for (const el of content.current.querySelectorAll(
@@ -148,6 +172,33 @@ function App() {
       cancelAnimationFrame(frame);
     };
   }, [chat.messages.length, selector, historyOpen]);
+  const expanded = !!(chat.messages.length || selector || historyOpen);
+  useEffect(() => { window.j7.layout(expanded ? 680 : compactHeight, historyOpen); }, [expanded, compactHeight, historyOpen]);
+  useEffect(() => {
+    if (!appeared) return;
+    const timer = setTimeout(() => void window.j7.refreshModels(), 300);
+    const idle = requestIdleCallback(() => setPrewarm(true));
+    return () => { clearTimeout(timer); cancelIdleCallback(idle); };
+  }, [appeared]);
+  useEffect(() => {
+    let frame = 0;
+    if(hiding)return;
+    const update = () => {
+      const shell = document.querySelector(".shell");
+      if (shell) {
+        const rect = shell.getBoundingClientRect(), css = getComputedStyle(shell);
+        const regions = [{left:rect.left + parseFloat(css.getPropertyValue('--card-left')), top:rect.top + parseFloat(css.getPropertyValue('--card-top')), right:rect.right, bottom:rect.bottom}];
+        for (const el of document.querySelectorAll('.attachment-menu,.compact-tools')) {
+          if (el.matches('.attachment-menu') && !attachmentMenu) continue;
+          const r=el.getBoundingClientRect(); regions.push({left:r.left,top:r.top,right:r.right,bottom:r.bottom});
+        }
+        window.j7.setRegions(regions);
+      }
+      frame=requestAnimationFrame(update);
+    };
+    frame=requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [attachmentMenu, appeared, hiding]);
   useLayoutEffect(() => {
     const el = conversation.current;
     if (el && following.current) el.scrollTop = el.scrollHeight;
@@ -218,9 +269,19 @@ function App() {
     void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
   return (
-    <div className={`shell ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${chat.messages.length || selector || historyOpen ? "expanded" : "compact"}`}>
-      {!!(chat.messages.length || selector || historyOpen) && <header className="window-bar">
-        {!!(chat.messages.length || selector || historyOpen) && <button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
+    <div onPointerDown={event => {
+      if(event.button!==0 || (event.target as Element).closest('button,input,textarea,a,.conversation,.history,.model-selector'))return;
+      if(!(event.target as Element).closest('.window-bar,.composer'))return;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      let x=event.screenX,y=event.screenY;
+      const move=(e:PointerEvent)=>{window.j7.moveCard(e.screenX-x,e.screenY-y);x=e.screenX;y=e.screenY;};
+      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);};
+      window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});
+    }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${chat.messages.length || selector || historyOpen ? "expanded" : "compact"}`}>
+      <div className="card-surface" aria-hidden="true"/>
+      <div className="card-clip">
+      <header className="window-bar" inert={!expanded}>
+        {<button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
         <div>
           <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
           <button
@@ -244,8 +305,8 @@ function App() {
             <Pin size={16}/>
           </button>
         </div>
-      </header>}
-    {historyOpen &&<History current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/>}
+      </header>
+    <div className="history-reveal" inert={!historyOpen}><History open={historyOpen} current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/></div>
     <div className="panel"  ref={content}
       onDragOver={event => { event.preventDefault(); setDragging(true); }}
       onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
@@ -257,13 +318,13 @@ function App() {
         else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
       }}>
       {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
-      {selector && chat.catalog && <ModelSelector catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
+      {(shownSelector || prewarm) && chat.catalog && <div className="selector-host" inert={!selector} style={{visibility:shownSelector ? "visible" : "hidden"}}><ModelSelector open={!!selector} catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
         if (selector === "other") void window.j7.askOther(key, effort);
         else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
         setSelector(null); input.current?.focus();
-      }}/>}
+      }}/></div>}
 
-      {chat.messages.length > 0 && (
+      {shownMessages && (
         <div className="conversation" ref={conversation} onScroll={() => {
           const el = conversation.current!;
           following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
@@ -358,7 +419,7 @@ function App() {
         <div className="composer-tools">
           <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} >
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
-          {attachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
+          {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
             if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
           }}>
@@ -374,7 +435,7 @@ function App() {
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
       </div>
-    </div></div>
+    </div></div></div>
   );
 }
 createRoot(document.getElementById("root")!).render(location.hash === "#/settings" ? <SettingsView/> : <App />);

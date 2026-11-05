@@ -295,6 +295,54 @@ Lo pidió el usuario: las transiciones tienen que ser "smooooth". Hoy la ventana
 
 ---
 
+## Etapa 7c-ter · Colores de T3
+
+Lo pidió el usuario después de ver la app: "el color quiero que sea igual a T3". Reemplaza la tabla de colores de N2, que salía de la foto de referencia (`#1C1C1E`). **La fuente de verdad es `.reference/t3code/apps/web/src/index.css`:**
+- el bloque `:root`, para el claro (línea ~1113);
+- el bloque `@variant dark`, para el oscuro (línea ~1187).
+
+**N17 · Paleta de T3**
+- **Equivalencias.** Cada token de J7 toma el valor del token de T3 indicado, con la misma fórmula (`color-mix`, alfa) y no un hex aproximado. Si hace falta, copia las variables `--color-neutral-*` y `--color-zinc-*` de T3.
+
+| Token de J7 | Token de T3 | Valor oscuro en T3 |
+|---|---|---|
+| `--surface` (fondo de la ventana y del chat) | `--background` | `#000` |
+| `--surface-raised` (caja, popovers, selector, menú de 📎) | `--card` / `--popover` | `neutral-950` al 97 % con blanco |
+| `--surface-sidebar` (barra lateral del historial) | `--sidebar` | igual que `--card` |
+| `--surface-message` (burbuja del usuario, nuevo) | `--message-surface` | `neutral-950` al 92 % con blanco |
+| `--border` (borde de la ventana, líneas) | `--border` | blanco al 8 % |
+| `--border-raised` (borde de la caja y de los popovers) | `--input` | blanco al 11 % |
+| `--text` | `--foreground` | `neutral-100` |
+| `--text-muted` | `--muted-foreground` | `neutral-400` |
+| `--accent` (indicador del selector, línea del buscador) | `--primary` | `oklch(0.571 0.21 264)` |
+| `--row-hover` / `--row-active` | `--accent` | blanco al 4 % |
+| `--row-selected` | `--sidebar-row-selected` / `--muted` | blanco al 3 % |
+| `--error` | `--error-foreground` | `red-400` |
+
+- **Claro:** se usan los mismos tokens con los valores del `:root` de T3 (`--background` zinc-25, `--card` blanco, `--sidebar` zinc-50, `--border` zinc-200, `--input` zinc-300, `--foreground` zinc-900, `--muted-foreground` zinc-500, `--primary`, `--message-surface` y `--accent`).
+- **Sin colores sueltos.** Se eliminan todos los colores fijos que queden en `style.css` y en los componentes, como `#129caa`, `#5B7CFA` y los grises sueltos, en favor de los tokens.
+- **Se conservan:**
+  - el rojo del punto "Esconder" (`#FF5F57`);
+  - los colores de marca de los íconos (Claude `#D97757`).
+- La ventana de ajustes (7d) usa la misma paleta.
+- **Se comprueba:**
+  - Con CDP, en los dos temas, `getComputedStyle` de la ventana, la caja, la burbuja, la barra lateral, el selector, el texto, el texto tenue y los bordes coincide con los valores de T3, calculados con las mismas fórmulas en una página de prueba o a mano.
+  - Un `grep` no encuentra colores hex o `rgb` fijos en `src/renderer` fuera de `theme.css`, salvo las excepciones listadas.
+  - El usuario confirma que se ve igual a T3.
+
+**N18 · Reborde simétrico en compacta**
+El usuario revisó la compacta actual. El doble contorno (reborde exterior + borde de la caja) no le molesta, pero **tiene que ser simétrico**: en su captura, el reborde de arriba se ve de ~10 px y los de abajo y los lados de ~22 px.
+- En compacta, el reborde exterior de `--surface` alrededor de la caja mide **lo mismo arriba, abajo, a la izquierda y a la derecha** (8 px, como dice la corrección de la 7c), medido desde el borde visible exterior de la tarjeta, no desde el lienzo.
+- La sombra CSS no debe hacer que un lado parezca más grueso: si hace falta, que sea simétrica, sin desplazamiento vertical grande.
+- En grande, la caja queda con márgenes iguales a los lados y abajo, como en la referencia.
+- Durante la transición compacta ↔ grande no debe haber un estado intermedio asimétrico que se note al final: el reborde arranca y termina simétrico.
+- **Se comprueba:**
+  - Con CDP, en compacta, la diferencia entre el `getBoundingClientRect()` de la tarjeta visible (el recorte o pseudo-elemento que dibuja el borde exterior) y el de la caja es de 8 ± 0,5 px por los 4 lados, en los dos temas y con el aviso "Aprieta ⌥ J…" visible y oculto.
+  - Hay una captura de la compacta.
+  - El usuario confirma la simetría.
+
+---
+
 ## Etapa 7d · Ajustes
 
 **N13 · Ventana de ajustes**
@@ -333,3 +381,11 @@ Lo pidió el usuario: las transiciones tienen que ser "smooooth". Hoy la ventana
 
 - Actualizar `docs/especificacion.md` (secciones La barra, Modelos y Estética) y la sección L de `funcionalidades.md`, apuntando a este documento.
 - `npm run dist` y la prueba del usuario.
+
+### Revisión 7c-bis: captura y geometría
+
+La captura se decide en main con el cursor en coordenadas de pantalla y regiones locales informadas por el renderer. `show()` reconstruye la región de la tarjeta antes de mostrarla; cada cambio de geometría la recalcula. Un sondeo cada 50 ms, activo solo mientras la ventana está visible, cubre los arrastres del Finder, que no generan `mouseMoved`. El renderer informa el contorno animado en RAF, incluidos los popovers; al ocultarse cancela ese trabajo. No depende de que el cursor se mueva.
+
+La tarjeta se posiciona independientemente del lienzo con `cardLayout`; el arrastre de las zonas libres usa deltas de pantalla y guarda el ancla final acotada. Así se puede alcanzar el borde superior o izquierdo aunque el lienzo completo ya esté en ese borde. Al ampliar, el desplazamiento interior se anima y se conservan las anclas cuando caben. Un único `.card-clip` recorta todos los descendientes con las variables animadas `--card-top` y `--card-left`. Los controles de la derecha no se desplazan al abrir el historial.
+
+El catálogo se refresca 300 ms después de aparecer y solo notifica cambios efectivos. El selector se prepara oculto e inerte en idle, sin robar foco; las mediciones y el desplazamiento de selección se difieren a RAF. La altura del compositor proviene de ResizeObserver. El historial cerrado no consulta SQLite.

@@ -290,3 +290,47 @@ article [role=status],article details { color:var(--text-muted); }
 .history-row small mark { background:none; color:var(--text); font-weight:600; }
 .response-error p:first-child { margin-top:0; }
 .compact .attachment-menu { flex-direction:row; }
+/* The native window is a fixed transparent canvas. All state transitions live here. */
+.shell,.shell.expanded,.shell.compact,.shell.history-open {
+  position:absolute; inset:24px; width:auto; height:auto; min-height:0;
+  display:block; padding:0; border:0; border-radius:0; background:transparent;
+  overflow:visible; box-shadow:none;
+  --motion:280ms; --ease:cubic-bezier(.32,.72,0,1);
+  animation:canvas-appear 150ms var(--ease);
+  transform-origin:bottom right;
+}
+.shell.compact { --motion:220ms; }
+
+@property --card-top { syntax:'<length>'; inherits:true; initial-value:0px; }
+@property --card-left { syntax:'<length>'; inherits:true; initial-value:260px; }
+.shell { --card-top:0px; --card-left:260px; translate:var(--offset-x,0px) var(--offset-y,0px); transition:translate var(--motion) var(--ease),--card-top var(--motion) var(--ease),--card-left var(--motion) var(--ease); }
+.shell.compact { --card-top:calc(100vh - 48px - var(--compact-height)); }
+.shell.history-open { --card-left:0px; }
+.card-clip {position:absolute;inset:0;clip-path:inset(var(--card-top) 0 0 var(--card-left) round 12px);}
+.card-surface {position:absolute;top:var(--card-top);left:var(--card-left);right:0;bottom:0;background:var(--surface);border-radius:12px;box-shadow:0 6px 8px #0004;}
+.panel,.dark .panel,.compact .panel,.dark .compact .panel {position:absolute;right:0;bottom:0;width:min(520px,100%);height:100%;padding:36px 0 0;background:transparent;border:0;box-shadow:none;overflow:visible;}
+.composer,.compact .composer { margin:auto 11px 11px; }
+.compact .panel {display:flex;}
+.card-clip > .window-bar {position:absolute;top:0;left:260px;right:0;z-index:3;transition:opacity 150ms var(--ease) 80ms;}
+.history-open .hide-dot {transform:translateX(-260px);}
+.window-bar .hide-dot {transition:transform var(--motion) var(--ease);}
+.compact .window-bar {opacity:0;pointer-events:none;transition-delay:0ms;}
+.history-reveal {position:absolute;inset:0;pointer-events:none;}
+.history-open .history-reveal {pointer-events:auto;}
+.history {position:absolute;inset:0 auto 0 0;animation:none;opacity:0;transition:opacity 150ms var(--ease);border-radius:12px 0 0 12px;}
+.history-open .history {opacity:1;}
+.conversation {transition:opacity 150ms var(--ease) 80ms;}
+.compact .conversation {opacity:0;pointer-events:none;transition-delay:0ms;}
+.panel.appear {animation:none;}
+.selector-host {display:contents;}
+.model-selector,.attachment-menu {transform-origin:bottom right;}
+.attachment-menu,.compact .attachment-menu {flex-direction:column;}
+.shell.hiding {animation:canvas-hide 150ms var(--ease) forwards;pointer-events:none;}
+@keyframes canvas-appear {from{opacity:0}to{opacity:1}}
+@keyframes canvas-hide {to{opacity:0}}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after {animation:none !important;transition:none !important;} }
+
+.window-bar,.panel,.composer { -webkit-app-region:no-drag; }
+.shell:active {transition-duration:0ms;}
+
+.compact .conversation {position:absolute;inset:36px 0 auto;}

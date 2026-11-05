@@ -10,7 +10,7 @@ export function selectorModels(catalog: CatalogSnapshot, group: string, query: s
  const favorites = catalog.favorites.filter(k=>catalog.models.some(m=>`${m.provider}:${m.id}`===k));
  return catalog.models.filter(m=>query.trim() ? `${m.label} ${m.provider}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()) : group==="favorites" ? !favorites.length || favorites.includes(`${m.provider}:${m.id}`) : m.provider===group).sort((a,b)=>query.trim()?a.provider.localeCompare(b.provider):0);
 }
-export function ModelSelector({ catalog, selected, effort, onSelect, onClose }: { catalog: CatalogSnapshot; selected?: string | undefined; effort?: string | undefined; onSelect: (key: string, effort?: string) => void; onClose: () => void }) {
+export function ModelSelector({ catalog, selected, effort, onSelect, onClose, open = true }: { open?: boolean; catalog: CatalogSnapshot; selected?: string | undefined; effort?: string | undefined; onSelect: (key: string, effort?: string) => void; onClose: () => void }) {
  const [query,setQuery]=useState(""); const [group,setGroup]=useState("favorites");
  const [index,setIndex]=useState(Math.max(0,catalog.models.findIndex(m=>`${m.provider}:${m.id}`===selected))); const [column,setColumn]=useState(false); const [levelIndex,setLevelIndex]=useState(0);
  const root=useRef<HTMLDivElement>(null);
@@ -19,12 +19,12 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose }: 
  const active=models[activeIndex]; const supported=active ? levels(active) : [];
  const key=active ? `${active.provider}:${active.id}` : "";
  const chosen=key===selected ? effort : active ? initialEffort(active,catalog.effortByModel) : "";
- useEffect(()=>{void window.j7.refreshModels(); root.current?.querySelector("input")?.focus();},[]);
+ useEffect(()=>{if(!open)return;const frame=requestAnimationFrame(()=>root.current?.querySelector("input")?.focus());return()=>cancelAnimationFrame(frame);},[open]);
  useEffect(()=>{setIndex(Math.max(0,models.findIndex(m=>`${m.provider}:${m.id}`===selected)));setColumn(false);},[query,group]);
  useEffect(()=>{setLevelIndex(Math.max(0,supported.indexOf(chosen ?? "")));},[key,chosen]);
  useEffect(()=>{if(column) root.current?.querySelectorAll<HTMLButtonElement>(".model-reasoning button")[levelIndex]?.focus();},[column,levelIndex,key]);
- useEffect(()=>{root.current?.querySelector('[data-focused="true"]')?.scrollIntoView({block:"nearest"});},[index]);
- useEffect(()=>{const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node) && !(e.target as Element).closest(".model-trigger"))onClose();};document.addEventListener("pointerdown",dismiss);return()=>document.removeEventListener("pointerdown",dismiss);},[onClose]);
+ useEffect(()=>{if(!open)return;const frame=requestAnimationFrame(()=>root.current?.querySelector('[data-focused="true"]')?.scrollIntoView({block:"nearest"}));return()=>cancelAnimationFrame(frame);},[index,open]);
+ useEffect(()=>{if(!open)return;const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node) && !(e.target as Element).closest(".model-trigger"))onClose();};document.addEventListener("pointerdown",dismiss);return()=>document.removeEventListener("pointerdown",dismiss);},[onClose,open]);
  return <div ref={root} className="model-selector with-effort" tabIndex={-1} onClick={e=>{if(!(e.target as Element).closest("button,input"))root.current?.querySelector("input")?.focus();}} role="dialog" aria-label={s.model} onKeyDown={e=>{
   if(e.metaKey && /^[1-9]$/.test(e.key)){e.preventDefault();e.stopPropagation();const m=models[Number(e.key)-1];if(m)onSelect(`${m.provider}:${m.id}`);return;}
   if(!["Escape","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.key))return;
@@ -39,7 +39,7 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose }: 
  <button aria-label={s.favorites} aria-pressed={group==="favorites"} onClick={()=>setGroup("favorites")}><Star size={21} fill="currentColor"/></button><hr/>
  {[...new Set(catalog.models.map(m=>m.provider))].map(p=><button key={p} aria-label={s.programLabels[p]} aria-pressed={group===p} onClick={()=>setGroup(p)}><ProviderIcon provider={p} size={21}/></button>)}
  </nav>
- <section className="model-main"><label className="model-search"><Search size={15}/><input autoFocus role="combobox" aria-haspopup="grid" aria-expanded="true" aria-controls="model-options" aria-activedescendant={active ? `model-option-${activeIndex}` : undefined} value={query} aria-label={s.searchModels} placeholder={s.searchModels} onChange={e=>setQuery(e.target.value)}/></label>
+ <section className="model-main"><label className="model-search"><Search size={15}/><input role="combobox" aria-haspopup="grid" aria-expanded="true" aria-controls="model-options" aria-activedescendant={active ? `model-option-${activeIndex}` : undefined} value={query} aria-label={s.searchModels} placeholder={s.searchModels} onChange={e=>setQuery(e.target.value)}/></label>
  <div id="model-options" className="model-list" role="grid" aria-label={s.model}>{models.map((m,i)=>{const k=`${m.provider}:${m.id}`;return <div className="model-row" role="row" id={`model-option-${i}`} aria-selected={k===selected} key={k} data-focused={!column && i===activeIndex} onMouseEnter={()=>{setIndex(i);setColumn(false);}}>
  {query.trim() && (i===0 || models[i-1]?.provider!==m.provider) && <span role="gridcell" className="search-provider">{s.programLabels[m.provider]}</span>}<span role="gridcell" className="model-name"><button title={m.label} onClick={()=>onSelect(k)}><ProviderIcon provider={m.provider}/><span>{m.label}</span>{k===selected&&<Check size={13}/ >}</button></span>
  <span role="gridcell"><button className="model-favorite" aria-label={`${s.favorite}: ${m.label}`} aria-pressed={catalog.favorites.includes(k)} onClick={()=>void window.j7.favorite(k)}><Star size={12} fill={catalog.favorites.includes(k)?"currentColor":"none"}/></button></span>

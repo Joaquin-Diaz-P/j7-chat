@@ -29,7 +29,7 @@ describe("panel geometry and clock", () => {
     expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(false);
     tracker.willMove();
     expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(true);
-    expect(tracker.isUserMove({ x: 5, y: 9 })).toBe(false);
+    expect(tracker.isUserMove({ x: 5, y: 9 })).toBe(true);
     tracker.programmatic({ x: 5, y: 20 });
     expect(tracker.isUserMove({ x: 5, y: 20 })).toBe(false);
   });

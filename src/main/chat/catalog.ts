@@ -52,6 +52,7 @@ export class ModelCatalog {
       if (this.pending.has(id)) return this.pending.get(id)!;
       if (!force && (this.expires.get(id) ?? 0) > this.now()) return Promise.resolve();
       const task = this.exclusive(id, async () => {
+        const before = JSON.stringify([this.statuses[id], this.models.get(id)]);
         try {
           const status = await bounded(provider.getStatus());
           if (this.disposed) return;
@@ -64,7 +65,7 @@ export class ModelCatalog {
           this.models.set(id, []);
         } finally {
           this.expires.set(id, this.now() + MODEL_CACHE_MS);
-          if (!this.disposed) this.changed();
+          if (!this.disposed && before !== JSON.stringify([this.statuses[id], this.models.get(id)])) this.changed();
         }
       });
       this.pending.set(id, task);

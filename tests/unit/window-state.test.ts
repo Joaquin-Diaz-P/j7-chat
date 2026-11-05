@@ -7,12 +7,13 @@ it('migrates legacy top-left positions once using the old width and fallback hei
  expect(settings.positionsVersion).toBe(2);
  expect(validateSettings(settings).positions).toEqual(settings.positions);
 });
-it('only accepts a real drag and resets after moved, including system and programmatic moves', () => {
+it('tracks every moved event until a programmatic move resets the drag', () => {
  const tracker = new UserMoveTracker();
  expect(tracker.isUserMove({x:1,y:2})).toBe(false);
  tracker.willMove();
  expect(tracker.isUserMove({x:3,y:4})).toBe(true);
- expect(tracker.isUserMove({x:5,y:6})).toBe(false);
+ expect(tracker.isUserMove({x:5,y:6})).toBe(true);
+ expect(tracker.isUserMove({x:384,y:6})).toBe(true);
  tracker.willMove(); tracker.programmatic({x:7,y:8});
  expect(tracker.isUserMove({x:7,y:8})).toBe(false);
  expect(tracker.isUserMove({x:9,y:10})).toBe(false);

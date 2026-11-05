@@ -57,7 +57,7 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   });
   ipcMain.handle("settings:open", (event) => { if (trusted(event)) return showSettingsNotice(panel); });
   ipcMain.handle("models:refresh", (event) => {
-    if (trusted(event)) { void chat.catalog.refresh(true).catch(() => {}); chat.notify(); }
+    if (trusted(event)) { void chat.catalog.refresh(true).catch(() => {}); }
   });
   ipcMain.handle("models:favorite", (event, key: unknown) => {
     if (trusted(event) && typeof key === "string") chat.catalog.favorite(key);
@@ -75,8 +75,12 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.on("window:ready", (event) => {
     if (trusted(event)) panel.rendererReady();
   });
-  ipcMain.on("window:setContentHeight", (event, height: unknown) => {
-    if (trusted(event) && typeof height === "number") panel.setHeight(height);
+  ipcMain.on("window:regions", (event, regions) => {
+    if (trusted(event) && Array.isArray(regions) && regions.length <= 20 && regions.every(r => r && ['left','top','right','bottom'].every(k => Number.isFinite(r[k])))) panel.setRegions(regions);
+  });
+  ipcMain.on("window:moveCard", (event, dx, dy) => { if(trusted(event) && Number.isFinite(dx) && Number.isFinite(dy)) panel.moveCard(dx,dy); });
+  ipcMain.on("window:layout", (event, height, history) => {
+    if (trusted(event) && Number.isFinite(height) && height >= 90 && height <= 680 && typeof history === 'boolean') panel.layout(height, history);
   });
   ipcMain.on("window:setPinned", (event, pinned: unknown) => {
     if (trusted(event) && typeof pinned === "boolean") panel.setPinned(pinned);

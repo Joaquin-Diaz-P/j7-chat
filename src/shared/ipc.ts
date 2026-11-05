@@ -33,7 +33,7 @@ export interface ChatSnapshot {
   catalog?: CatalogSnapshot;
 }
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
-export interface PanelState { historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
+export interface PanelState { offset?: {x:number;y:number}; historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
 export interface J7Api {
  settingsData(): Promise<SettingsData>;
  saveSettings(value: Partial<import("../main/settings.js").Settings>): Promise<void>;
@@ -58,8 +58,11 @@ export interface J7Api {
   retry(): Promise<void>;
   edit(text: string): Promise<void>;
   askOther(model: string, effort?: string): Promise<void>;
+  onHiding(callback: () => void): () => void;
+  setRegions(regions: import("./hit-test.js").HitRect[]): void;
+  moveCard(dx:number,dy:number):void;
+  layout(height: number, history: boolean): void;
   hide(): void;
-  setContentHeight(height: number): void;
   setPinned(pinned: boolean): void;
   ready(): void;
   onChat(callback: (event: ChatEnvelope) => void): () => void;

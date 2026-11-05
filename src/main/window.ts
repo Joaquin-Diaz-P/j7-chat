@@ -1,4 +1,5 @@
-import { defaultAnchor, panelBounds, validAnchor } from "./window-geometry.js";
+import { capturesScreenPoint, type HitRect } from "../shared/hit-test.js";
+import { defaultAnchor, canvasBounds, canvasAnchor, validAnchor, cardLayout } from "./window-geometry.js";
 import { app, BrowserWindow, screen, nativeTheme } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +18,12 @@ export class Panel {
   private displayId: string | undefined;
   private anchor: Position | undefined;
   private userMoving = new UserMoveTracker();
-  private compactHeight = 90;
+  private hideTimer: ReturnType<typeof setTimeout> | undefined;
+  private regions: HitRect[] = [];
+  private offset = { x: 0, y: 0 };
+  private cardHeight = 106;
+  private captureTimer: ReturnType<typeof setInterval> | undefined;
+  private captured: boolean | undefined;
   private ready = false;
   private pendingShow = false;
   constructor(
@@ -27,13 +33,13 @@ export class Panel {
   ) {
     this.clock = new VisibilityClock(now);
     this.window = new BrowserWindow({
-      width: 520,
-      height: 90,
+      width: 828,
+      height: 728,
       type: "panel",
       frame: false,
       transparent: true,
       roundedCorners: true,
-      hasShadow: true,
+      hasShadow: false,
       resizable: false,
       fullscreenable: false,
       skipTaskbar: true,
@@ -48,6 +54,7 @@ export class Panel {
         nodeIntegration: false,
       },
     });
+    this.window.setIgnoreMouseEvents(true, { forward: true });
     this.window.setAlwaysOnTop(true, "floating");
     this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     this.window.on("blur", () => {
@@ -56,7 +63,8 @@ export class Panel {
     this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
       const bounds = this.window.getBounds();
-      const x = bounds.x + (settings.value.historyOpen ? 260 : 0) + 260, y = bounds.y + bounds.height;
+      const base = canvasAnchor(bounds);
+      const x = base.x + this.offset.x, y = base.y + this.offset.y;
       if (!this.userMoving.isUserMove(bounds) || !this.displayId) return;
       this.anchor = { x, y };
       this.displayId = String(
@@ -66,6 +74,7 @@ export class Panel {
         positions: { ...settings.value.positions, [this.displayId]: { x, y } },
       });
     });
+    this.window.on("closed", () => clearInterval(this.captureTimer));
     nativeTheme.themeSource = settings.value.theme;
     nativeTheme.on("updated", () => this.notify(true));
     this.window.webContents.on("will-navigate", (event) =>
@@ -87,9 +96,7 @@ export class Panel {
   }
   setHistory(open: boolean) {
     if (this.settings.value.historyOpen === open) return;
-    const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
     this.settings.update({ historyOpen: open });
-    this.place(panelBounds(area, this.anchor ?? defaultAnchor(area), open || this.chat.snapshot().messages.length ? 680 : this.compactHeight, open));
     this.notify(true);
   }
 
@@ -111,6 +118,7 @@ export class Panel {
   notify(resume: boolean, appeared = false) {
     if (this.ready)
       this.window.webContents.send("window:state", {
+        offset: this.offset,
         resume,
         appeared,
         historyOpen: this.settings.value.historyOpen,
@@ -119,13 +127,17 @@ export class Panel {
       });
   }
   show() {
+    const interruptedHide = !!this.hideTimer;
+    clearTimeout(this.hideTimer);
+    this.hideTimer = undefined;
     if (!this.ready) {
       this.pendingShow = true;
       return;
     }
     if (this.window.isVisible()) {
+      this.updateCapture();
       this.window.focus();
-      this.notify(true);
+      this.notify(true, interruptedHide);
       return;
     }
     const display = screen.getDisplayNearestPoint(
@@ -142,35 +154,61 @@ export class Panel {
       delete positions[this.displayId];
       this.settings.update({ positions });
     }
-    this.place(
-      panelBounds(
-        display.workArea,
-        this.anchor,
-        this.settings.value.historyOpen || (resume && this.chat.snapshot().messages.length) ? 680 : this.compactHeight,
-        this.settings.value.historyOpen,
-      ),
-    );
+    this.layout(this.cardHeight, this.settings.value.historyOpen);
+    this.updateCapture();
     this.window.show();
+    this.updateCapture();
+    clearInterval(this.captureTimer);
+    this.captureTimer = setInterval(() => this.updateCapture(), 50);
     this.window.focus();
     this.notify(resume, true);
   }
   toggle() {
+    if (this.hideTimer) { this.show(); return; }
     if (this.window.isVisible() && this.window.isFocused()) this.hide();
     else this.show();
   }
   hide() {
     if (!this.window.isVisible()) return;
-    this.clock.hide();
-    this.window.hide();
-    app.hide();
+    if (this.hideTimer) return;
+    this.window.webContents.send("window:hiding");
+    this.hideTimer = setTimeout(() => {
+      this.hideTimer = undefined;
+      this.clock.hide();
+      clearInterval(this.captureTimer);
+      this.window.hide();
+      app.hide();
+    }, 150);
   }
-  setHeight(height: number) {
-    if (!Number.isFinite(height) || height < 0) return;
-    if (height < 680) this.compactHeight = height;
-    const display = screen.getDisplayMatching(this.window.getBounds());
-    this.place(
-      panelBounds(display.workArea, this.anchor ?? defaultAnchor(display.workArea), this.chat.snapshot().messages.length ? 680 : this.settings.value.historyOpen ? 680 : height, this.settings.value.historyOpen),
-    );
+  moveCard(dx: number, dy: number) {
+    const bounds = this.window.getBounds();
+    const base = canvasAnchor(bounds);
+    this.anchor = {x:base.x+this.offset.x+dx,y:base.y+this.offset.y+dy};
+    const area = screen.getDisplayMatching(bounds).workArea;
+    const {card} = cardLayout(area, this.anchor, this.cardHeight, this.settings.value.historyOpen);
+    this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
+    this.layout(this.cardHeight, this.settings.value.historyOpen);
+    if(this.displayId) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
+  }
+  layout(height: number, history: boolean) {
+    this.cardHeight = height;
+    if (!this.anchor) return;
+    const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
+    const layout = cardLayout(area, this.anchor, height, history);
+    this.offset = layout.offset;
+    this.place(layout.canvas);
+    const {card, canvas} = layout;
+    this.regions = [{left:card.x-canvas.x, top:card.y-canvas.y, right:card.x-canvas.x+card.width, bottom:card.y-canvas.y+card.height}];
+    this.updateCapture();
+    this.notify(true);
+  }
+  setRegions(regions: HitRect[]) { this.regions = regions; this.updateCapture(); }
+  private updateCapture() {
+    const capture = capturesScreenPoint(screen.getCursorScreenPoint(), this.window.getBounds(), this.regions);
+    if (capture !== this.captured) {
+      this.captured = capture;
+      this.window.setIgnoreMouseEvents(!capture, { forward: true });
+    }
   }
   private place(bounds: Area) {
 

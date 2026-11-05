@@ -11,7 +11,6 @@ export class UserMoveTracker {
   programmatic(position: Position) { this.moving = false; this.expected = { x: position.x, y: position.y }; }
   isUserMove(position: Position) {
     const userMove = this.moving && (position.x !== this.expected?.x || position.y !== this.expected?.y);
-    this.moving = false;
     this.expected = undefined;
     return userMove;
   }
