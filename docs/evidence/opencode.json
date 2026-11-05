@@ -1,0 +1,1985 @@
+{
+  "date": "2026-11-05T02:06:23.746Z",
+  "status": {
+    "state": "ready"
+  },
+  "missing": {
+    "state": "not_installed"
+  },
+  "catalog": [
+    {
+      "id": "big-pickle",
+      "label": "Big Pickle",
+      "provider": "opencode",
+      "supportsImages": false,
+      "supportsPdf": false,
+      "supportsEffort": false,
+      "free": true
+    },
+    {
+      "id": "deepseek-v4.1-flash-free",
+      "label": "DeepSeek V4.1 Flash Free",
+      "provider": "opencode",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true,
+      "free": true
+    },
+    {
+      "id": "glm-5.3-flash-free",
+      "label": "GLM-5.3-Flash Free",
+      "provider": "opencode",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true,
+      "free": true
+    },
+    {
+      "id": "flint-40b-free",
+      "label": "Flint 40B Free",
+      "provider": "opencode",
+      "supportsImages": false,
+      "supportsPdf": false,
+      "supportsEffort": true,
+      "free": true
+    },
+    {
+      "id": "nemotron-3.5-super-vl-free",
+      "label": "Nemotron 3.5 Super VL Free",
+      "provider": "opencode",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true,
+      "free": true
+    },
+    {
+      "id": "beam-free",
+      "label": "Beam Free",
+      "provider": "opencode",
+      "supportsImages": false,
+      "supportsPdf": false,
+      "supportsEffort": true,
+      "free": true
+    },
+    {
+      "id": "mimo-v2.6-flash-free",
+      "label": "MiMo-V2.6-Flash Free",
+      "provider": "opencode",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": false,
+      "free": true
+    },
+    {
+      "id": "nemotron-3.5-lightning-free",
+      "label": "Nemotron 3.5 Lightning Free",
+      "provider": "opencode",
+      "supportsImages": false,
+      "supportsPdf": false,
+      "supportsEffort": false,
+      "free": true
+    }
+  ],
+  "results": [
+    {
+      "name": "blocking",
+      "temperature": "cold",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "Ejecuta `ls ~/Desktop` y crea un archivo prueba.txt en tu carpeta.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 520.3733749999999,
+      "totalMs": 1139.216542,
+      "nativeSessionId": "ses_e568b023cffeMcvtMis4Qjc4D3",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568b023cffeMcvtMis4Qjc4D3"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "config-paths",
+          "paths": [
+            "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode",
+            null
+          ]
+        },
+        {
+          "type": "isolation",
+          "agents": [
+            {
+              "id": "j7",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            },
+            {
+              "id": "j7-web",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "websearch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "webfetch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            }
+          ],
+          "configSources": [
+            {
+              "type": "directory",
+              "path": "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode"
+            },
+            {
+              "type": "document"
+            }
+          ],
+          "mcpServers": [],
+          "plugins": [],
+          "toolInventory": "V2 publica permisos de agentes; no un inventario de herramientas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 520.3733749999999
+        },
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "instructions",
+      "temperature": "warm",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué eres y qué herramientas tienes? Responde en una frase.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 216.983792,
+      "nativeSessionId": "ses_e568b023cffeMcvtMis4Qjc4D3",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568b023cffeMcvtMis4Qjc4D3"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "memory-set",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "Mi número favorito es 47, responde solo ok",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 289.13650000000007,
+      "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "memory-resume",
+      "temperature": "cold",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es mi número favorito? Responde solo el número.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 534.660042,
+      "totalMs": 1238.93975,
+      "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "config-paths",
+          "paths": [
+            "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode",
+            null
+          ]
+        },
+        {
+          "type": "isolation",
+          "agents": [
+            {
+              "id": "j7",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            },
+            {
+              "id": "j7-web",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "websearch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "webfetch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            }
+          ],
+          "configSources": [
+            {
+              "type": "directory",
+              "path": "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode"
+            },
+            {
+              "type": "document"
+            }
+          ],
+          "mcpServers": [],
+          "plugins": [],
+          "toolInventory": "V2 publica permisos de agentes; no un inventario de herramientas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 534.660042
+        },
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "temperature": "warm",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué texto dice la imagen? Responde solo el texto.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 363.1715000000004,
+      "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568afef3ffeyA67fE0ls4sklU"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pdf",
+      "temperature": "cold",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es la frase secreta de prueba del PDF? Responde solo la frase.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 500.7931669999998,
+      "totalMs": 1080.333458,
+      "nativeSessionId": "ses_e568af521ffex37p3FCHcRxaZt",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568af521ffex37p3FCHcRxaZt"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "config-paths",
+          "paths": [
+            "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode",
+            null
+          ]
+        },
+        {
+          "type": "isolation",
+          "agents": [
+            {
+              "id": "j7",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            },
+            {
+              "id": "j7-web",
+              "permissions": [
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.*",
+                  "effect": "ask"
+                },
+                {
+                  "action": "read",
+                  "resource": "*.env.example",
+                  "effect": "allow"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "*",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "websearch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "webfetch",
+                  "resource": "*",
+                  "effect": "allow"
+                },
+                {
+                  "action": "browser",
+                  "resource": "*",
+                  "effect": "deny"
+                },
+                {
+                  "action": "skill",
+                  "resource": "browser",
+                  "effect": "deny"
+                }
+              ]
+            }
+          ],
+          "configSources": [
+            {
+              "type": "directory",
+              "path": "/Users/test/Library/Application Support/J7 Chat/providers/opencode/config/opencode"
+            },
+            {
+              "type": "document"
+            }
+          ],
+          "mcpServers": [],
+          "plugins": [],
+          "toolInventory": "V2 publica permisos de agentes; no un inventario de herramientas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 500.7931669999998
+        },
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "latency-warm",
+      "temperature": "warm",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "Responde solo ok.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 193.15499999999975,
+      "nativeSessionId": "ses_e568af521ffex37p3FCHcRxaZt",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568af521ffex37p3FCHcRxaZt"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-on",
+      "model": "deepseek-v4.1-flash-free",
+      "web": true,
+      "effort": "normal",
+      "text": "Busca en la web la fecha de la última versión estable de Node.js y da su URL oficial. Responde en una frase.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 182.55041700000038,
+      "nativeSessionId": "ses_e568af218ffeDf53exlyMolLBZ",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568af218ffeDf53exlyMolLBZ"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web-off",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "normal",
+      "text": "Busca en la web la última versión de Node.js. Si no puedes buscar, indícalo en una frase.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 178.99866699999984,
+      "nativeSessionId": "ses_e568af15fffeRaHsZvu4qt1Qa6",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568af15fffeRaHsZvu4qt1Qa6"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "effort-high",
+      "model": "deepseek-v4.1-flash-free",
+      "web": false,
+      "effort": "high",
+      "text": "¿Cuánto es 17 por 19? Responde solo el número.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 0,
+      "totalMs": 179.05020800000057,
+      "nativeSessionId": "ses_e568af0acffeiNT3O45Bf3exKu",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "ses_e568af0acffeiNT3O45Bf3exKu"
+        },
+        {
+          "type": "error",
+          "kind": "quota",
+          "message": "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "catalog",
+          "models": [
+            {
+              "id": "big-pickle",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "deepseek-v4.1-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "glm-5.3-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "flint-40b-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-super-vl-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "beam-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "mimo-v2.6-flash-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            },
+            {
+              "id": "nemotron-3.5-lightning-free",
+              "cost": [
+                {
+                  "input": 0,
+                  "output": 0,
+                  "cache": {
+                    "read": 0,
+                    "write": 0
+                  }
+                }
+              ],
+              "enabled": true,
+              "status": "active"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

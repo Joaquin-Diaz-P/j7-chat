@@ -1,0 +1,23 @@
+[
+  {
+    "pages": 30,
+    "durationMs": 123.36325000000033,
+    "characters": 2630,
+    "truncated": false,
+    "phraseFound": true
+  },
+  {
+    "pages": 30,
+    "durationMs": 11.712416000000303,
+    "characters": 2630,
+    "truncated": false,
+    "phraseFound": true
+  },
+  {
+    "pages": 30,
+    "durationMs": 9.797082999999475,
+    "characters": 2630,
+    "truncated": false,
+    "phraseFound": true
+  }
+]

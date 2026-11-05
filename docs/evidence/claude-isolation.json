@@ -1,0 +1,21 @@
+{
+  "inventory": {
+    "tools": [],
+    "mcpServers": [],
+    "skills": [],
+    "plugins": []
+  },
+  "events": [
+    {
+      "type": "text-delta",
+      "text": "No"
+    },
+    {
+      "type": "text-delta",
+      "text": " puedo."
+    },
+    {
+      "type": "done"
+    }
+  ]
+}

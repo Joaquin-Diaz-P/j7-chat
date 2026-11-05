@@ -11,7 +11,10 @@ Solo lo actualiza Claude, al revisar cada etapa.
 
 | Etapa | Códigos | Estado | Notas |
 |---|---|---|---|
-| 0 | Adaptadores de los cuatro programas | 🔨 | |
+| 0 | Adaptador de Claude | ✅ | Bloqueo, instrucciones, imagen, PDF nativo, retomar, esfuerzo y web comprobados |
+| 0 | Adaptador de Codex | ✅ | Igual que Claude, salvo PDF: va como texto extraído. Shell desactivado |
+| 0 | Adaptador de Gemini | ❌ | El servicio rechaza Gemini CLI con cuenta individual («usa Antigravity»). Falta decidir la vía |
+| 0 | Adaptador de OpenCode Zen | ⏸ | Código listo; el límite gratis diario está agotado (HTTP 429). Falta probarlo con inferencia real |
 | 1 | A1 A2 A3 A6 · B1 B2 B3 B4 B5 B6 B7 B9 B10 (`⌘ N`, `⌘ .`, `⌘ ⇧ C`) B11 B12 · C1 C2 C3 C4 · E1 E2 E3 E5 E6 E7 E11 · L1 L2 L3 L4 · M1 M2 M3 M5 · base de M4 | ⬜ | |
 | 2 | C5 C6 · D1 D2 D3 D4 D5 D6 D7 · E4 E8 E9 E10 · F1 F2 F3 F4 F5 F6 F7 | ⬜ | |
 | 3 | G1 G2 G3 G4 G5 G6 G7 G8 G9 · E12 | ⬜ | |

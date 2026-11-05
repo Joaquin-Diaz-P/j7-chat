@@ -1,0 +1,55 @@
+export type ProviderId = "claude" | "codex" | "gemini" | "opencode";
+
+export interface ProviderStatus {
+  state: "ready" | "not_installed" | "not_authenticated" | "error";
+  detail?: string;
+}
+
+export interface ModelInfo {
+  id: string;
+  label: string;
+  provider: ProviderId;
+  supportsImages: boolean;
+  supportsPdf: boolean;
+  supportsEffort: boolean;
+  free?: boolean;
+}
+
+export interface Attachment {
+  kind: "image" | "pdf" | "text";
+  path: string;
+  name: string;
+  mime: string;
+  extractedText?: string;
+}
+
+export interface TurnInput {
+  model: string;
+  effort: "normal" | "high";
+  webSearch: boolean;
+  instructions: string;
+  nativeSessionId?: string;
+  text: string;
+  attachments: Attachment[];
+  signal: AbortSignal;
+}
+
+export type ChatEvent =
+  | { type: "session"; nativeSessionId: string }
+  | { type: "text-delta"; text: string }
+  | { type: "thinking-delta"; text: string }
+  | { type: "web-search"; query?: string; urls: string[] }
+  | { type: "done" }
+  | {
+      type: "error";
+      kind: "auth" | "quota" | "unsupported" | "other";
+      message: string;
+    };
+
+export interface ChatProvider {
+  id: ProviderId;
+  getStatus(): Promise<ProviderStatus>;
+  listModels(): Promise<ModelInfo[]>;
+  runTurn(input: TurnInput): AsyncIterable<ChatEvent>;
+  dispose(): Promise<void>;
+}

@@ -1,0 +1,1046 @@
+{
+  "date": "2026-11-05T02:05:17.288Z",
+  "status": {
+    "state": "ready"
+  },
+  "missing": {
+    "state": "not_installed"
+  },
+  "catalog": [
+    {
+      "id": "gpt-6.1-sol",
+      "label": "GPT-6.1-Sol",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-6-astra",
+      "label": "GPT-6-Astra",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-6.1-terra",
+      "label": "GPT-6.1 Terra",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-6-sol",
+      "label": "GPT-6-Sol",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-6-luna",
+      "label": "GPT-6-Luna",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "label": "GPT-5.6-Sol",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "label": "GPT-5.6-Terra",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "label": "GPT-5.6-Luna",
+      "provider": "codex",
+      "supportsImages": true,
+      "supportsPdf": false,
+      "supportsEffort": true
+    }
+  ],
+  "results": [
+    {
+      "name": "blocking",
+      "temperature": "cold",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "Ejecuta `ls ~/Desktop` y crea un archivo prueba.txt en tu carpeta.",
+      "answer": "No puedo ejecutar comandos ni crear archivos en tu Mac desde este chat.",
+      "firstWordMs": 2821.565,
+      "startupMs": 34.54270800000006,
+      "totalMs": 3136.330459,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "No"
+        },
+        {
+          "type": "text-delta",
+          "text": " puedo"
+        },
+        {
+          "type": "text-delta",
+          "text": " ejecutar"
+        },
+        {
+          "type": "text-delta",
+          "text": " comandos"
+        },
+        {
+          "type": "text-delta",
+          "text": " ni"
+        },
+        {
+          "type": "text-delta",
+          "text": " crear"
+        },
+        {
+          "type": "text-delta",
+          "text": " archivos"
+        },
+        {
+          "type": "text-delta",
+          "text": " en"
+        },
+        {
+          "type": "text-delta",
+          "text": " tu"
+        },
+        {
+          "type": "text-delta",
+          "text": " Mac"
+        },
+        {
+          "type": "text-delta",
+          "text": " desde"
+        },
+        {
+          "type": "text-delta",
+          "text": " este"
+        },
+        {
+          "type": "text-delta",
+          "text": " chat"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "isolation",
+          "config": {
+            "features.shell_tool": false,
+            "features.unified_exec": false,
+            "features.shell_snapshot": false,
+            "features.view_image": false,
+            "features.apps": false,
+            "features.plugins": false,
+            "features.remote_plugin": false,
+            "features.hooks": false,
+            "features.multi_agent": false,
+            "features.multi_agent_v2": false,
+            "features.memories": false,
+            "features.skill_search": false,
+            "features.skill_mcp_dependency_install": false,
+            "features.code_mode": false,
+            "features.browser_use": false,
+            "features.browser_use_external": false,
+            "features.computer_use": false,
+            "features.in_app_browser": false,
+            "features.image_generation": false,
+            "features.sleep_tool": false,
+            "features.goals": false,
+            "features.artifact": false,
+            "tools.update_plan.enabled": false,
+            "tools.experimental_request_user_input.enabled": false,
+            "project_doc_max_bytes": 0,
+            "check_for_update_on_startup": false,
+            "include_environment_context": false,
+            "include_apps_instructions": false,
+            "include_collaboration_mode_instructions": false
+          },
+          "mcpServers": [],
+          "toolInventory": "El protocolo no expone el inventario de herramientas internas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 34.54270800000006
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "instructions",
+      "temperature": "warm",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué eres y qué herramientas tienes? Responde en una frase.",
+      "answer": "Soy un asistente de chat y puedo responder usando el texto y los adjuntos que compartas aquí; no tengo acceso a tu Mac ni a herramientas para ejecutar comandos o crear archivos.",
+      "firstWordMs": 1773.3888340000003,
+      "startupMs": 0,
+      "totalMs": 2477.2075000000004,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "Soy"
+        },
+        {
+          "type": "text-delta",
+          "text": " un"
+        },
+        {
+          "type": "text-delta",
+          "text": " asist"
+        },
+        {
+          "type": "text-delta",
+          "text": "ente"
+        },
+        {
+          "type": "text-delta",
+          "text": " de"
+        },
+        {
+          "type": "text-delta",
+          "text": " chat"
+        },
+        {
+          "type": "text-delta",
+          "text": " y"
+        },
+        {
+          "type": "text-delta",
+          "text": " puedo"
+        },
+        {
+          "type": "text-delta",
+          "text": " responder"
+        },
+        {
+          "type": "text-delta",
+          "text": " usando"
+        },
+        {
+          "type": "text-delta",
+          "text": " el"
+        },
+        {
+          "type": "text-delta",
+          "text": " texto"
+        },
+        {
+          "type": "text-delta",
+          "text": " y"
+        },
+        {
+          "type": "text-delta",
+          "text": " los"
+        },
+        {
+          "type": "text-delta",
+          "text": " adj"
+        },
+        {
+          "type": "text-delta",
+          "text": "untos"
+        },
+        {
+          "type": "text-delta",
+          "text": " que"
+        },
+        {
+          "type": "text-delta",
+          "text": " compart"
+        },
+        {
+          "type": "text-delta",
+          "text": "as"
+        },
+        {
+          "type": "text-delta",
+          "text": " aquí"
+        },
+        {
+          "type": "text-delta",
+          "text": ";"
+        },
+        {
+          "type": "text-delta",
+          "text": " no"
+        },
+        {
+          "type": "text-delta",
+          "text": " tengo"
+        },
+        {
+          "type": "text-delta",
+          "text": " acceso"
+        },
+        {
+          "type": "text-delta",
+          "text": " a"
+        },
+        {
+          "type": "text-delta",
+          "text": " tu"
+        },
+        {
+          "type": "text-delta",
+          "text": " Mac"
+        },
+        {
+          "type": "text-delta",
+          "text": " ni"
+        },
+        {
+          "type": "text-delta",
+          "text": " a"
+        },
+        {
+          "type": "text-delta",
+          "text": " herramientas"
+        },
+        {
+          "type": "text-delta",
+          "text": " para"
+        },
+        {
+          "type": "text-delta",
+          "text": " ejecutar"
+        },
+        {
+          "type": "text-delta",
+          "text": " comandos"
+        },
+        {
+          "type": "text-delta",
+          "text": " o"
+        },
+        {
+          "type": "text-delta",
+          "text": " crear"
+        },
+        {
+          "type": "text-delta",
+          "text": " archivos"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "memory-set",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "Mi número favorito es 47, responde solo ok",
+      "answer": "ok",
+      "firstWordMs": 2304.0800409999993,
+      "startupMs": 0,
+      "totalMs": 2308.4697080000005,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "ok"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "memory-resume",
+      "temperature": "cold",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es mi número favorito? Responde solo el número.",
+      "answer": "47",
+      "firstWordMs": 2547.7157499999994,
+      "startupMs": 29.894874999999956,
+      "totalMs": 2605.2710420000003,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "47"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "isolation",
+          "config": {
+            "features.shell_tool": false,
+            "features.unified_exec": false,
+            "features.shell_snapshot": false,
+            "features.view_image": false,
+            "features.apps": false,
+            "features.plugins": false,
+            "features.remote_plugin": false,
+            "features.hooks": false,
+            "features.multi_agent": false,
+            "features.multi_agent_v2": false,
+            "features.memories": false,
+            "features.skill_search": false,
+            "features.skill_mcp_dependency_install": false,
+            "features.code_mode": false,
+            "features.browser_use": false,
+            "features.browser_use_external": false,
+            "features.computer_use": false,
+            "features.in_app_browser": false,
+            "features.image_generation": false,
+            "features.sleep_tool": false,
+            "features.goals": false,
+            "features.artifact": false,
+            "tools.update_plan.enabled": false,
+            "tools.experimental_request_user_input.enabled": false,
+            "project_doc_max_bytes": 0,
+            "check_for_update_on_startup": false,
+            "include_environment_context": false,
+            "include_apps_instructions": false,
+            "include_collaboration_mode_instructions": false
+          },
+          "mcpServers": [],
+          "toolInventory": "El protocolo no expone el inventario de herramientas internas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 29.894874999999956
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "temperature": "warm",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué texto dice la imagen? Responde solo el texto.",
+      "answer": "J7 42",
+      "firstWordMs": 898.0244579999999,
+      "startupMs": 0,
+      "totalMs": 1055.253125000001,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "J"
+        },
+        {
+          "type": "text-delta",
+          "text": "7"
+        },
+        {
+          "type": "text-delta",
+          "text": " "
+        },
+        {
+          "type": "text-delta",
+          "text": "42"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "pdf",
+      "temperature": "cold",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es la frase secreta de prueba del PDF? Responde solo la frase.",
+      "answer": "El faro violeta cuenta 47 estrellas.",
+      "firstWordMs": 2448.3359170000003,
+      "startupMs": 42.57116700000006,
+      "totalMs": 2667.9760829999996,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "El"
+        },
+        {
+          "type": "text-delta",
+          "text": " far"
+        },
+        {
+          "type": "text-delta",
+          "text": "o"
+        },
+        {
+          "type": "text-delta",
+          "text": " vio"
+        },
+        {
+          "type": "text-delta",
+          "text": "leta"
+        },
+        {
+          "type": "text-delta",
+          "text": " cuenta"
+        },
+        {
+          "type": "text-delta",
+          "text": " "
+        },
+        {
+          "type": "text-delta",
+          "text": "47"
+        },
+        {
+          "type": "text-delta",
+          "text": " estrellas"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "isolation",
+          "config": {
+            "features.shell_tool": false,
+            "features.unified_exec": false,
+            "features.shell_snapshot": false,
+            "features.view_image": false,
+            "features.apps": false,
+            "features.plugins": false,
+            "features.remote_plugin": false,
+            "features.hooks": false,
+            "features.multi_agent": false,
+            "features.multi_agent_v2": false,
+            "features.memories": false,
+            "features.skill_search": false,
+            "features.skill_mcp_dependency_install": false,
+            "features.code_mode": false,
+            "features.browser_use": false,
+            "features.browser_use_external": false,
+            "features.computer_use": false,
+            "features.in_app_browser": false,
+            "features.image_generation": false,
+            "features.sleep_tool": false,
+            "features.goals": false,
+            "features.artifact": false,
+            "tools.update_plan.enabled": false,
+            "tools.experimental_request_user_input.enabled": false,
+            "project_doc_max_bytes": 0,
+            "check_for_update_on_startup": false,
+            "include_environment_context": false,
+            "include_apps_instructions": false,
+            "include_collaboration_mode_instructions": false
+          },
+          "mcpServers": [],
+          "toolInventory": "El protocolo no expone el inventario de herramientas internas."
+        },
+        {
+          "type": "startup",
+          "durationMs": 42.57116700000006
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "latency-warm",
+      "temperature": "warm",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "Responde solo ok.",
+      "answer": "ok",
+      "firstWordMs": 956.5524580000001,
+      "startupMs": 0,
+      "totalMs": 1020.2974579999991,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "ok"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "web-on",
+      "model": "gpt-6-luna",
+      "web": true,
+      "effort": "normal",
+      "text": "Busca en la web la fecha de la última versión estable de Node.js y da su URL oficial. Responde en una frase.",
+      "answer": "La última versión estable de Node.js es la **v26.13.0 LTS**, publicada el **[sitio oficial de descargas](https://nodejs.org/en/download/)**.",
+      "firstWordMs": 6719.210417,
+      "startupMs": 0,
+      "totalMs": 7401.101124999999,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "web-search",
+          "urls": []
+        },
+        {
+          "type": "web-search",
+          "query": "site:nodejs.org latest stable Node.js release",
+          "urls": [
+            "https://nodejs.org/en/about/previous-releases?jmp=dzone-ref",
+            "https://nodejs.org/en/download/current",
+            "https://nodejs.org/en/download/current/",
+            "https://nodejs.org/en/download/alpha",
+            "https://nodejs.org/en/download/?sid=15isTh",
+            "https://nodejs.org/en/about/previous-releases?source=post_page---------------------------",
+            "https://nodejs.org/tr/about/previous-releases",
+            "https://nodejs.org/es/about/previous-releases",
+            "https://nodejs.org/en/download/current?adobe_mc=MCMID%3D62000214905405683995335849378418609464%7CMCORGID%3DA8833BC75245AF9E0A490D4D%2540AdobeOrg%7CTS%3D1754611200",
+            "https://nodejs.org/en/download/?c=supertech",
+            "https://nodejs.org/ko/about/previous-releases",
+            "https://nodejs.org/zh-cn/about/previous-releases"
+          ]
+        },
+        {
+          "type": "text-delta",
+          "text": "La"
+        },
+        {
+          "type": "text-delta",
+          "text": " última"
+        },
+        {
+          "type": "text-delta",
+          "text": " versión"
+        },
+        {
+          "type": "text-delta",
+          "text": " estable"
+        },
+        {
+          "type": "text-delta",
+          "text": " de"
+        },
+        {
+          "type": "text-delta",
+          "text": " Node"
+        },
+        {
+          "type": "text-delta",
+          "text": ".js"
+        },
+        {
+          "type": "text-delta",
+          "text": " es"
+        },
+        {
+          "type": "text-delta",
+          "text": " la"
+        },
+        {
+          "type": "text-delta",
+          "text": " **"
+        },
+        {
+          "type": "text-delta",
+          "text": "v"
+        },
+        {
+          "type": "text-delta",
+          "text": "26"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "text-delta",
+          "text": "13"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "text-delta",
+          "text": "0"
+        },
+        {
+          "type": "text-delta",
+          "text": " L"
+        },
+        {
+          "type": "text-delta",
+          "text": "TS"
+        },
+        {
+          "type": "text-delta",
+          "text": "**,"
+        },
+        {
+          "type": "text-delta",
+          "text": " publicada"
+        },
+        {
+          "type": "text-delta",
+          "text": " el"
+        },
+        {
+          "type": "text-delta",
+          "text": " **"
+        },
+        {
+          "type": "text-delta",
+          "text": "["
+        },
+        {
+          "type": "text-delta",
+          "text": "sit"
+        },
+        {
+          "type": "text-delta",
+          "text": "io"
+        },
+        {
+          "type": "text-delta",
+          "text": " oficial"
+        },
+        {
+          "type": "text-delta",
+          "text": " de"
+        },
+        {
+          "type": "text-delta",
+          "text": " desc"
+        },
+        {
+          "type": "text-delta",
+          "text": "argas"
+        },
+        {
+          "type": "text-delta",
+          "text": "]("
+        },
+        {
+          "type": "text-delta",
+          "text": "https"
+        },
+        {
+          "type": "text-delta",
+          "text": "://"
+        },
+        {
+          "type": "text-delta",
+          "text": "node"
+        },
+        {
+          "type": "text-delta",
+          "text": "js"
+        },
+        {
+          "type": "text-delta",
+          "text": ".org"
+        },
+        {
+          "type": "text-delta",
+          "text": "/en"
+        },
+        {
+          "type": "text-delta",
+          "text": "/download"
+        },
+        {
+          "type": "text-delta",
+          "text": "/"
+        },
+        {
+          "type": "text-delta",
+          "text": ")**"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "webSearch"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "web-off",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "normal",
+      "text": "Busca en la web la última versión de Node.js. Si no puedes buscar, indícalo en una frase.",
+      "answer": "No puedo buscar en la web desde aquí.",
+      "firstWordMs": 4559.163583000001,
+      "startupMs": 0,
+      "totalMs": 4753.941583,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "No"
+        },
+        {
+          "type": "text-delta",
+          "text": " puedo"
+        },
+        {
+          "type": "text-delta",
+          "text": " buscar"
+        },
+        {
+          "type": "text-delta",
+          "text": " en"
+        },
+        {
+          "type": "text-delta",
+          "text": " la"
+        },
+        {
+          "type": "text-delta",
+          "text": " web"
+        },
+        {
+          "type": "text-delta",
+          "text": " desde"
+        },
+        {
+          "type": "text-delta",
+          "text": " aquí"
+        },
+        {
+          "type": "text-delta",
+          "text": "."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    },
+    {
+      "name": "effort-high",
+      "model": "gpt-6-luna",
+      "web": false,
+      "effort": "high",
+      "text": "¿Cuánto es 17 por 19? Responde solo el número.",
+      "answer": "323",
+      "firstWordMs": 2281.4615000000013,
+      "startupMs": 0,
+      "totalMs": 2438.544334000002,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "323"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tool-or-item",
+          "itemType": "userMessage"
+        },
+        {
+          "type": "tool-or-item",
+          "itemType": "agentMessage"
+        }
+      ]
+    }
+  ],
+  "normalizationNote": "Eventos web regenerados sin red desde los mensajes JSON-RPC capturados: URLs tomadas de item.results. Tiempos originales conservados."
+}

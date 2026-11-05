@@ -1,0 +1,1281 @@
+{
+  "date": "2026-11-05T02:05:33.268Z",
+  "status": {
+    "state": "ready"
+  },
+  "missing": {
+    "state": "not_installed"
+  },
+  "catalog": [
+    {
+      "id": "default",
+      "label": "Default (recommended)",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "opus",
+      "label": "Opus 5.5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "sonnet",
+      "label": "Sonnet 5.5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "fable",
+      "label": "Fable 5.1",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "haiku",
+      "label": "Haiku 5.5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-haiku-4-5-20251001",
+      "label": "Haiku 4.5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": false
+    },
+    {
+      "id": "claude-sonnet-5",
+      "label": "Sonnet 5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-opus-5",
+      "label": "Opus 5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-fable-5",
+      "label": "Fable 5",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-opus-4-8",
+      "label": "Opus 4.8",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-opus-4-7",
+      "label": "Opus 4.7",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-opus-4-6",
+      "label": "Opus 4.6",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "label": "Sonnet 4.6",
+      "provider": "claude",
+      "supportsImages": true,
+      "supportsPdf": true,
+      "supportsEffort": true
+    }
+  ],
+  "results": [
+    {
+      "name": "blocking",
+      "temperature": "cold",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "Ejecuta `ls ~/Desktop` y crea un archivo prueba.txt en tu carpeta.",
+      "answer": "Lo siento, no puedo hacerlo. En J7 Chat no tengo acceso a una terminal ni a archivos de tu Mac, así que no puedo ejecutar `ls ~/Desktop` ni crear `prueba.txt`.\n\nPuedo ayudarte de otras formas:\n\n- **Listar tu Escritorio:** ejecuta `ls ~/Desktop` en Terminal y pega aquí el resultado si quieres que lo analice.\n- **Crear el archivo:** en Terminal puedes usar `echo \"contenido\" > ~/Desktop/prueba.txt` o `touch ~/prueba.txt`.\n- **Generar el contenido:** si me dices qué quieres que tenga `prueba.txt`, te lo redacto para que lo copies.",
+      "firstWordMs": 1847.7936250000002,
+      "startupMs": 527.5622920000001,
+      "totalMs": 2944.15075,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "Lo si"
+        },
+        {
+          "type": "text-delta",
+          "text": "ento, no pu"
+        },
+        {
+          "type": "text-delta",
+          "text": "edo h"
+        },
+        {
+          "type": "text-delta",
+          "text": "acer"
+        },
+        {
+          "type": "text-delta",
+          "text": "lo. En J"
+        },
+        {
+          "type": "text-delta",
+          "text": "7 Chat no teng"
+        },
+        {
+          "type": "text-delta",
+          "text": "o acceso a una"
+        },
+        {
+          "type": "text-delta",
+          "text": " terminal "
+        },
+        {
+          "type": "text-delta",
+          "text": "ni a archivos de"
+        },
+        {
+          "type": "text-delta",
+          "text": " tu Mac, así que"
+        },
+        {
+          "type": "text-delta",
+          "text": " no puedo ejecut"
+        },
+        {
+          "type": "text-delta",
+          "text": "ar `ls ~/"
+        },
+        {
+          "type": "text-delta",
+          "text": "Desktop` ni crear"
+        },
+        {
+          "type": "text-delta",
+          "text": " `"
+        },
+        {
+          "type": "text-delta",
+          "text": "prueba.txt`."
+        },
+        {
+          "type": "text-delta",
+          "text": "\n\nPuedo"
+        },
+        {
+          "type": "text-delta",
+          "text": " "
+        },
+        {
+          "type": "text-delta",
+          "text": "ayudarte de"
+        },
+        {
+          "type": "text-delta",
+          "text": " otras"
+        },
+        {
+          "type": "text-delta",
+          "text": " form"
+        },
+        {
+          "type": "text-delta",
+          "text": "as:"
+        },
+        {
+          "type": "text-delta",
+          "text": "\n\n- **Listar"
+        },
+        {
+          "type": "text-delta",
+          "text": " t"
+        },
+        {
+          "type": "text-delta",
+          "text": "u"
+        },
+        {
+          "type": "text-delta",
+          "text": " Escritorio:** "
+        },
+        {
+          "type": "text-delta",
+          "text": "ejecuta `ls "
+        },
+        {
+          "type": "text-delta",
+          "text": "~/Desktop` en"
+        },
+        {
+          "type": "text-delta",
+          "text": " Terminal y"
+        },
+        {
+          "type": "text-delta",
+          "text": " pega a"
+        },
+        {
+          "type": "text-delta",
+          "text": "quí el resultado si"
+        },
+        {
+          "type": "text-delta",
+          "text": " qu"
+        },
+        {
+          "type": "text-delta",
+          "text": "ieres que"
+        },
+        {
+          "type": "text-delta",
+          "text": " l"
+        },
+        {
+          "type": "text-delta",
+          "text": "o analice.\n- **"
+        },
+        {
+          "type": "text-delta",
+          "text": "Crear el archivo:**"
+        },
+        {
+          "type": "text-delta",
+          "text": " en"
+        },
+        {
+          "type": "text-delta",
+          "text": " Terminal pu"
+        },
+        {
+          "type": "text-delta",
+          "text": "edes usar `echo \""
+        },
+        {
+          "type": "text-delta",
+          "text": "cont"
+        },
+        {
+          "type": "text-delta",
+          "text": "enido\" > "
+        },
+        {
+          "type": "text-delta",
+          "text": "~/Desktop/pr"
+        },
+        {
+          "type": "text-delta",
+          "text": "ueba.txt` o `"
+        },
+        {
+          "type": "text-delta",
+          "text": "touch ~/pr"
+        },
+        {
+          "type": "text-delta",
+          "text": "ueba.txt`."
+        },
+        {
+          "type": "text-delta",
+          "text": "\n- **Gener"
+        },
+        {
+          "type": "text-delta",
+          "text": "ar el contenido:** si"
+        },
+        {
+          "type": "text-delta",
+          "text": " me"
+        },
+        {
+          "type": "text-delta",
+          "text": " d"
+        },
+        {
+          "type": "text-delta",
+          "text": "ices qué quieres que t"
+        },
+        {
+          "type": "text-delta",
+          "text": "enga `"
+        },
+        {
+          "type": "text-delta",
+          "text": "prueba.txt`,"
+        },
+        {
+          "type": "text-delta",
+          "text": " te"
+        },
+        {
+          "type": "text-delta",
+          "text": " lo redacto para"
+        },
+        {
+          "type": "text-delta",
+          "text": " que l"
+        },
+        {
+          "type": "text-delta",
+          "text": "o copies."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 527.5622920000001
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "instructions",
+      "temperature": "warm",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué eres y qué herramientas tienes? Responde en una frase.",
+      "answer": "Soy un asistente de chat de J7 Chat, basado en Claude (modelo Haiku 5.5), que solo puede leer el texto y los adjuntos que me envías, y buscar en la web cuando esté habilitado, sin acceso a tu terminal ni a tus archivos.",
+      "firstWordMs": 3111.6885839999995,
+      "startupMs": 0,
+      "totalMs": 3713.603500000001,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "Soy un asistente de"
+        },
+        {
+          "type": "text-delta",
+          "text": " chat de"
+        },
+        {
+          "type": "text-delta",
+          "text": " J"
+        },
+        {
+          "type": "text-delta",
+          "text": "7 Chat, basado"
+        },
+        {
+          "type": "text-delta",
+          "text": " en Claude ("
+        },
+        {
+          "type": "text-delta",
+          "text": "mod"
+        },
+        {
+          "type": "text-delta",
+          "text": "elo Haiku 5"
+        },
+        {
+          "type": "text-delta",
+          "text": ".5), que"
+        },
+        {
+          "type": "text-delta",
+          "text": " sol"
+        },
+        {
+          "type": "text-delta",
+          "text": "o puede"
+        },
+        {
+          "type": "text-delta",
+          "text": " le"
+        },
+        {
+          "type": "text-delta",
+          "text": "er el"
+        },
+        {
+          "type": "text-delta",
+          "text": " texto y los adjunt"
+        },
+        {
+          "type": "text-delta",
+          "text": "os que me env"
+        },
+        {
+          "type": "text-delta",
+          "text": "ías, y bu"
+        },
+        {
+          "type": "text-delta",
+          "text": "scar en la web c"
+        },
+        {
+          "type": "text-delta",
+          "text": "uando esté hab"
+        },
+        {
+          "type": "text-delta",
+          "text": "ilitado"
+        },
+        {
+          "type": "text-delta",
+          "text": ","
+        },
+        {
+          "type": "text-delta",
+          "text": " sin ac"
+        },
+        {
+          "type": "text-delta",
+          "text": "ceso a t"
+        },
+        {
+          "type": "text-delta",
+          "text": "u terminal "
+        },
+        {
+          "type": "text-delta",
+          "text": "ni a tus archivos."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "memory-set",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "Mi número favorito es 47, responde solo ok",
+      "answer": "ok",
+      "firstWordMs": 2534.2961250000008,
+      "startupMs": 651.2064999999984,
+      "totalMs": 2552.8097080000007,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "ok"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 651.2064999999984
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "memory-resume",
+      "temperature": "cold",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es mi número favorito? Responde solo el número.",
+      "answer": "47",
+      "firstWordMs": 3473.0989580000005,
+      "startupMs": 452.02637499999946,
+      "totalMs": 3482.066917,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "47"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 452.02637499999946
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "temperature": "warm",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Qué texto dice la imagen? Responde solo el texto.",
+      "answer": "J7 42",
+      "firstWordMs": 652.2029579999999,
+      "startupMs": 0,
+      "totalMs": 656.6502080000009,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "J7 42"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "pdf",
+      "temperature": "cold",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "¿Cuál es la frase secreta de prueba del PDF? Responde solo la frase.",
+      "answer": "El faro violeta cuenta 47 estrellas.",
+      "firstWordMs": 2081.4411249999976,
+      "startupMs": 459.48787500000253,
+      "totalMs": 2130.1397499999985,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "El fa"
+        },
+        {
+          "type": "text-delta",
+          "text": "ro violeta cuenta"
+        },
+        {
+          "type": "text-delta",
+          "text": " 47 estrellas."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 459.48787500000253
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "latency-warm",
+      "temperature": "warm",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "Responde solo ok.",
+      "answer": "ok",
+      "firstWordMs": 699.9200410000012,
+      "startupMs": 0,
+      "totalMs": 711.1488750000026,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "ok"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "web-on",
+      "model": "haiku",
+      "web": true,
+      "effort": "normal",
+      "text": "Busca en la web la fecha de la última versión estable de Node.js y da su URL oficial. Responde en una frase.",
+      "answer": "La última versión estable de Node.js es la v26.13.0 (LTS), pero no pude confirmar su fecha exacta de publicación: la línea v26 salió el 5 de mayo de 2026 y la página oficial de descargas es https://nodejs.org/en/download.\n\nFuentes:\n- [Descargas de Node.js](https://nodejs.org/en/download)\n- [Versiones anteriores de Node.js](https://nodejs.org/en/about/previous-releases)",
+      "firstWordMs": 20128.362625,
+      "startupMs": 463.99541699999827,
+      "totalMs": 20709.8485,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "web-search",
+          "query": "Node.js latest stable release version date",
+          "urls": []
+        },
+        {
+          "type": "web-search",
+          "urls": [
+            "https://releasealert.dev/npmjs/_/path",
+            "https://azure.microsoft.com/en-us/updates/new-versions-of-node-js-deployed",
+            "https://releasealert.dev/dockerhub/_/node?page=29",
+            "https://releasealert.dev/npmjs/_/util",
+            "https://nodejs-gnyh4xbgx-openjs.vercel.app/en/about/previous-releases",
+            "https://releasealert.dev/dockerhub/_/node?page=42",
+            "https://nodejs-hezu2jfmt-openjs.vercel.app/en/about/previous-releases"
+          ]
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "web-search",
+          "urls": [
+            "https://nodejs.org/en/download"
+          ]
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "web-search",
+          "urls": [
+            "https://nodejs.org/en/about/previous-releases"
+          ]
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "text-delta",
+          "text": "La"
+        },
+        {
+          "type": "text-delta",
+          "text": " última versión estable de Node"
+        },
+        {
+          "type": "text-delta",
+          "text": ".js es la"
+        },
+        {
+          "type": "text-delta",
+          "text": " v26.13.0 ("
+        },
+        {
+          "type": "text-delta",
+          "text": "LTS), pero no p"
+        },
+        {
+          "type": "text-delta",
+          "text": "ude confirmar su"
+        },
+        {
+          "type": "text-delta",
+          "text": " fecha ex"
+        },
+        {
+          "type": "text-delta",
+          "text": "acta de"
+        },
+        {
+          "type": "text-delta",
+          "text": " publ"
+        },
+        {
+          "type": "text-delta",
+          "text": "icación: la línea v"
+        },
+        {
+          "type": "text-delta",
+          "text": "26 sal"
+        },
+        {
+          "type": "text-delta",
+          "text": "ió el 5 de may"
+        },
+        {
+          "type": "text-delta",
+          "text": "o de 2026 y la"
+        },
+        {
+          "type": "text-delta",
+          "text": " página oficial de descarg"
+        },
+        {
+          "type": "text-delta",
+          "text": "as es https://nodejs"
+        },
+        {
+          "type": "text-delta",
+          "text": ".org/en/download."
+        },
+        {
+          "type": "text-delta",
+          "text": "\n\nFuentes:\n-"
+        },
+        {
+          "type": "text-delta",
+          "text": " ["
+        },
+        {
+          "type": "text-delta",
+          "text": "Desc"
+        },
+        {
+          "type": "text-delta",
+          "text": "argas de Node.js]("
+        },
+        {
+          "type": "text-delta",
+          "text": "https://nodejs.org"
+        },
+        {
+          "type": "text-delta",
+          "text": "/en/download)\n- ["
+        },
+        {
+          "type": "text-delta",
+          "text": "Versiones an"
+        },
+        {
+          "type": "text-delta",
+          "text": "teriores de Node.js"
+        },
+        {
+          "type": "text-delta",
+          "text": "](https://nodejs."
+        },
+        {
+          "type": "text-delta",
+          "text": "org/en/about/previous"
+        },
+        {
+          "type": "text-delta",
+          "text": "-releases)"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 463.99541699999827
+        },
+        {
+          "type": "tools",
+          "tools": [
+            "WebFetch",
+            "WebSearch"
+          ],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "web-off",
+      "model": "haiku",
+      "web": false,
+      "effort": "normal",
+      "text": "Busca en la web la última versión de Node.js. Si no puedes buscar, indícalo en una frase.",
+      "answer": "No puedo buscar en la web en esta sesión, así que no puedo confirmar la última versión de Node.js a la fecha de hoy.\n\nSegún mi conocimiento, con fecha de corte en junio de 2026, las líneas LTS más recientes eran Node.js 24 y Node.js 22. Para la versión exacta, consulta [nodejs.org](https://nodejs.org) o ejecuta `node -v` en tu terminal si ya tienes Node instalado.",
+      "firstWordMs": 3377.4505409999983,
+      "startupMs": 810.7276249999995,
+      "totalMs": 4083.965624999997,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "thinking-delta",
+          "text": ""
+        },
+        {
+          "type": "text-delta",
+          "text": "No"
+        },
+        {
+          "type": "text-delta",
+          "text": " puedo buscar en"
+        },
+        {
+          "type": "text-delta",
+          "text": " la web en es"
+        },
+        {
+          "type": "text-delta",
+          "text": "ta sesión, así que no"
+        },
+        {
+          "type": "text-delta",
+          "text": " pu"
+        },
+        {
+          "type": "text-delta",
+          "text": "edo conf"
+        },
+        {
+          "type": "text-delta",
+          "text": "irmar la última versión de"
+        },
+        {
+          "type": "text-delta",
+          "text": " Node.js a"
+        },
+        {
+          "type": "text-delta",
+          "text": " la"
+        },
+        {
+          "type": "text-delta",
+          "text": " fecha de hoy."
+        },
+        {
+          "type": "text-delta",
+          "text": "\n\nSegún mi conocim"
+        },
+        {
+          "type": "text-delta",
+          "text": "iento, con"
+        },
+        {
+          "type": "text-delta",
+          "text": " f"
+        },
+        {
+          "type": "text-delta",
+          "text": "echa de corte en"
+        },
+        {
+          "type": "text-delta",
+          "text": " junio de 2026, las"
+        },
+        {
+          "type": "text-delta",
+          "text": " lí"
+        },
+        {
+          "type": "text-delta",
+          "text": "neas L"
+        },
+        {
+          "type": "text-delta",
+          "text": "TS más"
+        },
+        {
+          "type": "text-delta",
+          "text": " recientes eran Node."
+        },
+        {
+          "type": "text-delta",
+          "text": "js 24 y"
+        },
+        {
+          "type": "text-delta",
+          "text": " Node.js 22."
+        },
+        {
+          "type": "text-delta",
+          "text": " Para la"
+        },
+        {
+          "type": "text-delta",
+          "text": " versión ex"
+        },
+        {
+          "type": "text-delta",
+          "text": "acta, consulta ["
+        },
+        {
+          "type": "text-delta",
+          "text": "nodejs.org]("
+        },
+        {
+          "type": "text-delta",
+          "text": "https://nodejs.org"
+        },
+        {
+          "type": "text-delta",
+          "text": ")"
+        },
+        {
+          "type": "text-delta",
+          "text": " o "
+        },
+        {
+          "type": "text-delta",
+          "text": "ejecuta `node"
+        },
+        {
+          "type": "text-delta",
+          "text": " -"
+        },
+        {
+          "type": "text-delta",
+          "text": "v` en tu terminal"
+        },
+        {
+          "type": "text-delta",
+          "text": " si ya tienes"
+        },
+        {
+          "type": "text-delta",
+          "text": " Node instalado."
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 810.7276249999995
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    },
+    {
+      "name": "effort-high",
+      "model": "haiku",
+      "web": false,
+      "effort": "high",
+      "text": "¿Cuánto es 17 por 19? Responde solo el número.",
+      "answer": "323",
+      "firstWordMs": 2432.903542,
+      "startupMs": 583.7412079999995,
+      "totalMs": 2683.894791999999,
+      "nativeSessionId": "session-redacted",
+      "newFiles": [],
+      "events": [
+        {
+          "type": "session",
+          "nativeSessionId": "session-redacted"
+        },
+        {
+          "type": "text-delta",
+          "text": "323"
+        },
+        {
+          "type": "done"
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "startup",
+          "durationMs": 583.7412079999995
+        },
+        {
+          "type": "tools",
+          "tools": [],
+          "mcpServers": [],
+          "plugins": [
+            {
+              "name": "cc-plugin-agents-md",
+              "path": "builtin",
+              "source": "cc-plugin-agents-md@builtin"
+            },
+            {
+              "name": "cc-plugin-telemetry",
+              "path": "builtin",
+              "source": "cc-plugin-telemetry@builtin"
+            },
+            {
+              "name": "cc-plugin-plugin-authoring",
+              "path": "builtin",
+              "source": "cc-plugin-plugin-authoring@builtin"
+            }
+          ],
+          "skills": []
+        }
+      ]
+    }
+  ]
+}

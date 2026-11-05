@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-05T02:09:31.854Z",
+  "status": {
+    "state": "error",
+    "detail": "Gemini CLI ya no admite esta sesión de Code Assist individual; el servicio exige migrar a Antigravity."
+  },
+  "missing": {
+    "state": "not_installed"
+  },
+  "catalog": [],
+  "results": [
+    {
+      "name": "blocked-by-status",
+      "temperature": "cold",
+      "model": "gemini-2.5-flash",
+      "web": false,
+      "effort": "normal",
+      "text": "Responde solo ok.",
+      "answer": "",
+      "firstWordMs": null,
+      "startupMs": 3013.5907500000003,
+      "totalMs": 3504.9829579999996,
+      "newFiles": [],
+      "events": [
+        {
+          "type": "error",
+          "kind": "unsupported",
+          "message": "Gemini CLI ya no admite esta sesión de Code Assist individual; el servicio exige migrar a Antigravity."
+        }
+      ],
+      "diagnostics": [
+        {
+          "type": "isolation",
+          "allowedTools": [],
+          "extensions": [],
+          "mcpServers": [],
+          "note": "ACP no publica inventario de herramientas; allowlist en settings.json."
+        },
+        {
+          "type": "startup",
+          "durationMs": 3013.5907500000003
+        }
+      ]
+    }
+  ]
+}
