@@ -181,7 +181,13 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
 ## Etapa 7c · Conversación e historial
 
 **Correcciones de la prueba del usuario (primero):**
-- **Historial con la ventana compacta:** hoy, abrir el historial con la ventana compacta ensancha una ventana de 360 de alto. Junto a la caja quedan zonas transparentes donde se ve el escritorio. El usuario dijo que se ve "malísimo". La regla es que **nunca debe verse una zona transparente dentro de la ventana**: desde compacta, primero pasa a grande (N4) y después el historial sale de detrás (N12).
+- **Compacta = solo la caja (cambia N3 y N5):** el usuario rechazó la franja vacía que se reserva arriba de la caja para los íconos de hover. En compacta, la ventana es la caja con, como mucho, un reborde **simétrico** de `--surface` de 8 px por los cuatro lados. No hay ninguna franja extra arriba. Ese reborde ayuda a la transición hacia la ventana grande.
+  - Los íconos ☰ y 📌 de la compacta se mueven a la fila de herramientas de la caja, a la derecha de 📎, y solo se ven al pasar el mouse por la ventana o con foco de teclado. En compacta no hay "+", porque el chat está vacío.
+  - **Se comprueba:**
+    - Con CDP, en compacta la distancia del borde de la ventana a la caja es igual por los cuatro lados (8 px ± 1).
+    - No existe la franja `.compact-controls` arriba.
+    - Con `windows.swift`, la altura compacta es la de la caja + 16.
+- **Historial con la ventana compacta:** hoy, abrir el historial con la ventana compacta ensancha una ventana de 360 de alto. Junto a la caja quedan zonas transparentes donde se ve el escritorio. El usuario dijo que se ve "malísimo". La regla es que **nunca debe verse una zona transparente dentro de la ventana**: desde compacta, primero pasa a grande (N4) y después se abre el historial como barra lateral (N12).
 - **Contorno del textarea:** el textarea de la caja muestra un contorno de foco azul verdoso de 2 px. La caja ya es el campo, así que el textarea no lleva contorno. El foco se indica solo con el borde de la caja, que pasa a `--text-muted` al 40 %, como en la referencia.
 
 
@@ -201,34 +207,33 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
   - No existen los textos "Tú" ni "Asistente".
   - La fila de acciones de la última respuesta tiene los 3 botones con `aria-label`. Copiar deja el texto en el portapapeles.
 
-**N12 · Historial que sale de detrás del chat**
-Decidido por el usuario al ver el historial provisorio: no le gustó la unión recta entre la columna y la tarjeta curva del chat. Reemplaza la idea del panel encima.
-- **Dos piezas superpuestas en la misma ventana transparente:**
-  - **La tarjeta del chat queda adelante, intacta:** sus 4 esquinas redondeadas, su borde y su sombra, en la misma posición de pantalla.
-  - **El historial es otra tarjeta, detrás:** `z-index` menor, ancho de 260 px, el mismo fondo `--surface`, borde de 1 px `--border` y radio de 12 px. Es unos 16 px más baja que el chat (8 px de margen arriba y 8 abajo), y su borde derecho se mete ~16 px bajo la tarjeta del chat, de modo que nunca se ve una unión recta: se ve una tarjeta asomando por detrás de la otra. La sombra del chat cae sobre el historial.
-- **Para abrirlo:**
-  1. La ventana se ensancha hacia la izquierda en 260 − 16 px más un margen. El borde derecho y la tarjeta del chat no se mueven en pantalla. Reutiliza o rehace la lógica de ensanchar de `window.ts`, con la geometría en `window-geometry.ts` y sus tests.
-  2. Después, el historial se desliza de derecha a izquierda desde detrás del chat (`transform: translateX`, 150 ms; es la animación L3).
-- **Para cerrarlo:** al revés. Primero se desliza de vuelta y después la ventana vuelve a su ancho.
-- Si no cabe a la izquierda en la pantalla, la ventana completa se corre lo justo a la derecha, y la caja mantiene su borde inferior.
-- Si la ventana estaba compacta, pasa a grande (N4) para mostrarlo. Al cerrarlo sin elegir un chat, vuelve a compacta si el chat sigue vacío.
-- **Contenido:**
-  - Arriba, el buscador con lupa, igual al del selector.
+**N12 · Historial como barra lateral de la misma ventana**
+Decidido por el usuario, y reemplaza tanto el panel encima como las dos tarjetas superpuestas: **con el historial abierto, J7 tiene que parecer una sola app, no dos cosas pegadas**. Es como una app de macOS con barra lateral (Notas, T3 Code).
+- **Una sola forma exterior:** al abrir el historial, la ventana muestra **una única tarjeta**, con un solo borde de 1 px `--border`, un solo radio de 12 px en sus 4 esquinas exteriores y una sola sombra. Adentro hay dos zonas:
+  - **Barra lateral izquierda:** 260 px, con fondo un poco distinto del chat (`--surface-sidebar`: en oscuro `#18181A`; en claro `#F2F2F0`). La separa del chat una línea vertical de 1 px `--border`, de arriba abajo. No lleva bordes propios, radios internos, huecos ni sombras entre las dos zonas.
+  - **El chat**, a la derecha, igual que siempre.
+- **El punto (esconder) se mueve a la esquina superior izquierda de la ventana completa,** es decir, arriba a la izquierda de la barra lateral, en la misma altura de la franja de 36 px. Mientras el historial está abierto, ese es el único punto: en el chat no hay otro. Al cerrar el historial, el punto vuelve a la esquina superior izquierda del chat.
+- La franja superior de 36 px recorre todo el ancho y sirve para arrastrar. A la izquierda va el punto, a la derecha del chat ☰, + y 📌.
+- **Para abrirlo:** la ventana se ensancha 260 px hacia la izquierda. El borde derecho y el chat no se mueven en pantalla. Si no cabe a la izquierda, la ventana completa se corre lo justo a la derecha, y la caja mantiene su borde inferior. La geometría va en `window-geometry.ts`, con tests. El contenido de la barra lateral aparece con un fundido o deslizamiento de 150 ms (L3); el cambio de tamaño de la ventana es instantáneo.
+- **Para cerrarlo:** al revés.
+- **Nunca debe verse una zona transparente.** Si la ventana estaba compacta, pasa a grande (N4) en el mismo paso, de modo que la ventana grande con barra lateral sea una sola forma de 780 × 680. Al cerrar el historial sin elegir un chat, vuelve a compacta si el chat sigue vacío.
+- **Contenido de la barra lateral**, debajo de la franja:
+  - El buscador con lupa, igual al del selector.
   - Los grupos Hoy, Ayer, Últimos 7 días y Anteriores, con un título tenue de 11 px.
   - Los fijados van arriba.
   - Cada fila es de una línea, sin ícono de proveedor encima del título, con el título cortado con "…". La fila activa tiene fondo `--surface-raised`.
-  - Fijar, renombrar y borrar aparecen en un menú "…" que solo se ve al pasar el mouse o con foco. La confirmación de borrado es en línea, con el estilo nuevo.
+  - Fijar, renombrar y borrar van en un menú "…" que solo se ve al pasar el mouse o con foco. La confirmación de borrado es en línea, con el estilo nuevo.
 - **Para cerrarlo:** ☰ o Esc. Elegir un chat lo carga y cierra el historial.
 - **Atajos:** `⌘ B` abre o cierra el historial, y `⌘ F` lo abre con foco en el buscador, como hoy.
 - **Se comprueba:**
-  - Con `windows.swift`, al abrir el historial en grande, el borde derecho de la ventana (`x + width`) y su `y`/`height` no cambian, y el ancho crece en lo calculado.
-  - Desde compacta, pasa a 680 de alto con el borde inferior igual.
+  - Con `windows.swift`, al abrir el historial en grande, `x + width` y `y`/`height` no cambian, y el ancho pasa de 520 a 780.
+  - Desde compacta, la ventana pasa directo a 780 × 680 con el borde inferior igual, sin un estado intermedio de 780 × 360.
   - Con CDP:
-    - la tarjeta del historial tiene un `z-index` menor que la del chat;
-    - su `getBoundingClientRect().right` es mayor que el `left` del chat (se mete debajo);
-    - su `top` es mayor y su `bottom` menor que los del chat;
-    - Esc la cierra, y elegir un chat lo carga.
-  - El usuario confirma que no se ve ningún corte.
+    - hay un solo elemento con borde exterior y radio, que contiene la barra lateral y el chat;
+    - la barra lateral y el chat no tienen `border-radius`, `box-shadow` ni separación entre sí, solo la línea de 1 px;
+    - con el historial abierto hay exactamente un botón "Esconder" y su `getBoundingClientRect().left` es menor de 30.
+  - Esc cierra el historial, y elegir un chat lo carga.
+  - El usuario confirma que se ve como una sola app.
 
 ---
 

@@ -1,4 +1,4 @@
-import { defaultAnchor, panelBounds } from "./window-geometry.js";
+import { defaultAnchor, panelBounds, validAnchor } from "./window-geometry.js";
 import { app, BrowserWindow, screen, nativeTheme } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +17,7 @@ export class Panel {
   private displayId: string | undefined;
   private anchor: Position | undefined;
   private userMoving = new UserMoveTracker();
-  private compactHeight = 124;
+  private compactHeight = 90;
   private ready = false;
   private pendingShow = false;
   constructor(
@@ -28,7 +28,7 @@ export class Panel {
     this.clock = new VisibilityClock(now);
     this.window = new BrowserWindow({
       width: 520,
-      height: 124,
+      height: 90,
       type: "panel",
       frame: false,
       transparent: true,
@@ -87,11 +87,12 @@ export class Panel {
   }
   setHistory(open: boolean) {
     if (this.settings.value.historyOpen === open) return;
-    const b=this.window.getBounds(), area=screen.getDisplayMatching(b).workArea;
-    this.settings.update({historyOpen:open});
-    this.place(panelBounds(area,this.anchor ?? defaultAnchor(area),open ? Math.max(360,b.height) : (this.chat.snapshot().messages.length ? 680 : this.compactHeight),open));
+    const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
+    this.settings.update({ historyOpen: open });
+    this.place(panelBounds(area, this.anchor ?? defaultAnchor(area), open || this.chat.snapshot().messages.length ? 680 : this.compactHeight, open));
     this.notify(true);
   }
+
   get voiceModifier() { return this.settings.value.voiceModifier; }
   private async openExternal(url: string) {
     if (/^https?:\/\//.test(url)) {
@@ -135,7 +136,7 @@ export class Panel {
     if (!resume) this.chat.newChat();
     const saved = this.settings.value.positions[this.displayId];
     const area = display.workArea;
-    this.anchor = saved && saved.x >= area.x && saved.x <= area.x + area.width && saved.y >= area.y && saved.y <= area.y + area.height ? saved : defaultAnchor(area);
+    this.anchor = validAnchor(area, saved) ?? defaultAnchor(area);
     if (saved && this.anchor !== saved) {
       const positions = { ...this.settings.value.positions };
       delete positions[this.displayId];
@@ -145,7 +146,7 @@ export class Panel {
       panelBounds(
         display.workArea,
         this.anchor,
-        resume && this.chat.snapshot().messages.length ? 680 : 124,
+        this.settings.value.historyOpen || (resume && this.chat.snapshot().messages.length) ? 680 : this.compactHeight,
         this.settings.value.historyOpen,
       ),
     );
@@ -165,10 +166,10 @@ export class Panel {
   }
   setHeight(height: number) {
     if (!Number.isFinite(height) || height < 0) return;
-    this.compactHeight = height;
+    if (height < 680) this.compactHeight = height;
     const display = screen.getDisplayMatching(this.window.getBounds());
     this.place(
-      panelBounds(display.workArea, this.anchor ?? defaultAnchor(display.workArea), this.chat.snapshot().messages.length ? 680 : this.settings.value.historyOpen ? Math.max(360,height) : height, this.settings.value.historyOpen),
+      panelBounds(display.workArea, this.anchor ?? defaultAnchor(display.workArea), this.chat.snapshot().messages.length ? 680 : this.settings.value.historyOpen ? 680 : height, this.settings.value.historyOpen),
     );
   }
   private place(bounds: Area) {

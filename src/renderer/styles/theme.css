@@ -24,3 +24,6 @@
 }
 :root { --surface:#FAFAF9; --surface-raised:#FFFFFF; --border:rgba(0,0,0,.10); --border-raised:rgba(0,0,0,.12); --text:#1C1C1E; --text-muted:#8E8E93; --background:var(--surface); --foreground:var(--text); --secondary-label:var(--text-muted); --radius-panel:12px; }
 :root.dark { --surface:#1C1C1E; --surface-raised:#2A2A2D; --border:rgba(255,255,255,.10); --border-raised:rgba(255,255,255,.12); --text:#ECECEC; --text-muted:#8E8E93; --background:var(--surface); --foreground:var(--text); --secondary-label:var(--text-muted); }
+
+:root { --surface-sidebar:#F2F2F0; }
+:root.dark { --surface-sidebar:#18181A; }

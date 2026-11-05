@@ -48,8 +48,8 @@ export class SqliteChatStore implements ChatStore {
   const words=query.match(/[\p{L}\p{N}_]+/gu)??[]; if(!words.length)return [];
   const term=words.map(w=>'"'+w+'"*').join(' AND ');
   const rows=this.db.prepare(`SELECT c.id, coalesce(
-    (SELECT snippet(title_search,0,'[',']','…',18) FROM title_search WHERE rowid=c.rowid AND title_search MATCH ?),
-    (SELECT snippet(message_search,0,'[',']','…',18) FROM message_search JOIN messages m ON m.rowid=message_search.rowid WHERE m.chat_id=c.id AND message_search MATCH ? LIMIT 1)
+    (SELECT snippet(title_search,0,'[',']','…',8) FROM title_search WHERE rowid=c.rowid AND title_search MATCH ?),
+    (SELECT snippet(message_search,0,'[',']','…',8) FROM message_search JOIN messages m ON m.rowid=message_search.rowid WHERE m.chat_id=c.id AND message_search MATCH ? LIMIT 1)
    ) fragment FROM chats c WHERE c.rowid IN (SELECT rowid FROM title_search WHERE title_search MATCH ?)
    OR c.id IN (SELECT m.chat_id FROM message_search JOIN messages m ON m.rowid=message_search.rowid WHERE message_search MATCH ?)
    ORDER BY c.pinned DESC,c.updated_at DESC LIMIT 200 OFFSET ?`).all(term,term,term,term,offset);

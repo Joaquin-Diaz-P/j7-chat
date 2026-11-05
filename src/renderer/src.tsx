@@ -4,7 +4,7 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Menu, Paperclip, X, Square, Plus, Pin, ArrowDown } from "lucide-react";
+import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -41,7 +41,7 @@ function App() {
   const [historyOpen,setHistoryOpen]=useState(false);
   const [searchFocus,setSearchFocus]=useState(0);
   const historyRef=useRef(false);
-  function toggleHistory(open=!historyRef.current) {historyRef.current=open;setHistoryOpen(open);void window.j7.historyAction('open','',open);}
+  function toggleHistory(open=!historyRef.current) {historyRef.current=open;void window.j7.historyAction('open','',open);}
   const [capture, setCapture] = useState<import('../shared/capture.js').CaptureState>({phase:'idle',seconds:0});
   const pendingVoice = useRef(false);
   const voiceBusy = useRef(false);
@@ -62,6 +62,7 @@ function App() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => { if (!copied) return; const timer = setTimeout(() => setCopied(null), 1500); return () => clearTimeout(timer); }, [copied]);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
 
   const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
@@ -104,7 +105,7 @@ function App() {
         }
         document.documentElement.classList.toggle("dark", state.dark);
         if (!state.resume) { setDraft(""); setAttachments([]); }
-        input.current?.focus();
+        if (state.appeared || !state.historyOpen) input.current?.focus();
       }),
     ];
     void window.j7
@@ -129,7 +130,7 @@ function App() {
         if (content.current) {
           const root = content.current;
           if (following.current && conversation.current) conversation.current.scrollTop = conversation.current.scrollHeight;
-          window.j7.setContentHeight(chat.messages.length || selector ? 680 : 41 + (root.querySelector(".composer")?.getBoundingClientRect().height ?? 72));
+          window.j7.setContentHeight(chat.messages.length || selector || historyOpen ? 680 : 16 + (root.querySelector(".composer")?.getBoundingClientRect().height ?? 72));
         }
       });
     };
@@ -171,6 +172,7 @@ function App() {
         event.preventDefault();
         if (selector) { setSelector(null); input.current?.focus(); return; }
         if (attachmentMenu) { closeAttachments(); return; }
+        if (historyRef.current) { toggleHistory(false); input.current?.focus(); return; }
         if (voiceBusy.current) { void window.j7.captureAction("cancel"); return; }
         window.j7.hide();
       }
@@ -216,27 +218,9 @@ function App() {
     void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
   return (
-    <div className={`shell ${historyOpen ? "history-open" : ""} ${chat.messages.length || selector ? "expanded" : "compact"}`}>
-    {historyOpen&&<History current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/>}
-    <div className="panel"  ref={content}
-      onDragOver={event => { event.preventDefault(); setDragging(true); }}
-      onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
-      onDrop={event => {
-        event.preventDefault(); setDragging(false);
-        const files = [...event.dataTransfer.files];
-        const paths = files.map(file => window.j7.filePath(file));
-        if (files.length) void Promise.all(files.map(async (file, index) => paths[index] || new Uint8Array(await file.arrayBuffer()))).then(entries => attach("files", entries));
-        else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
-      }}>
-      {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
-      {selector && chat.catalog && <ModelSelector catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
-        if (selector === "other") void window.j7.askOther(key, effort);
-        else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
-        setSelector(null); input.current?.focus();
-      }}/>}
-
-      <header className={chat.messages.length || selector ? "window-bar" : "compact-controls"}>
-        {!!(chat.messages.length || selector) && <button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
+    <div className={`shell ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${chat.messages.length || selector || historyOpen ? "expanded" : "compact"}`}>
+      {!!(chat.messages.length || selector || historyOpen) && <header className="window-bar">
+        {!!(chat.messages.length || selector || historyOpen) && <button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
         <div>
           <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
           <button
@@ -260,7 +244,24 @@ function App() {
             <Pin size={16}/>
           </button>
         </div>
-      </header>
+      </header>}
+    {historyOpen &&<History current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/>}
+    <div className="panel"  ref={content}
+      onDragOver={event => { event.preventDefault(); setDragging(true); }}
+      onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
+      onDrop={event => {
+        event.preventDefault(); setDragging(false);
+        const files = [...event.dataTransfer.files];
+        const paths = files.map(file => window.j7.filePath(file));
+        if (files.length) void Promise.all(files.map(async (file, index) => paths[index] || new Uint8Array(await file.arrayBuffer()))).then(entries => attach("files", entries));
+        else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
+      }}>
+      {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
+      {selector && chat.catalog && <ModelSelector catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
+        if (selector === "other") void window.j7.askOther(key, effort);
+        else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
+        setSelector(null); input.current?.focus();
+      }}/>}
 
       {chat.messages.length > 0 && (
         <div className="conversation" ref={conversation} onScroll={() => {
@@ -271,8 +272,9 @@ function App() {
           <div className="transcript">
             {chat.messages.map((message) => (
               message.role === "notice" ? <p className="model-notice" key={message.id}>{message.text}</p> :
-              <article key={message.id} className={message.status === "error" ? "response-error" : undefined}>
-                <small>{message.role === "user" ? s.user : s.assistant}</small>
+              <article key={message.id} className={`${message.role}-message ${message.id === lastAnswer ? "last-answer" : ""} ${message.status === "error" ? "response-error" : ""}`}>
+                {message.status === "error" && <AlertTriangle size={14} aria-label={s.error}/>}
+                {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.thinking && <details><summary>{s.reasoning}</summary><ResponseMarkdown text={message.thinking}/></details>}
                 {editing === message.id ? <div className="inline-edit" onKeyDown={e => {
                   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setEditing(null); }
@@ -283,23 +285,23 @@ function App() {
                   <button title={s.send} aria-label={s.send} disabled={!editDraft.trim()} onClick={() => { void window.j7.edit(editDraft); setEditing(null); }}>{s.send}</button>
                   <button title={s.cancel} aria-label={s.cancel} onClick={() => setEditing(null)}>{s.cancel}</button>
                 </div> : message.role === "assistant" ? <ResponseMarkdown text={message.text}/> : <div className="user-text">{message.text}</div>}
-                {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.status === "queued" && <p role="status">{s.queued}</p>}
                 {message.status === "streaming" && !message.text && <p role="status">{s.thinking}</p>}
                 {message.status === "interrupted" && <small>{s.interrupted}</small>}
                 {message.status === "stopped" && <small>{s.stopped}</small>}
                 {message.sources && message.sources.length > 0 && <details><summary>{s.sources(message.sources.length)}</summary><ul>{message.sources.map(url => <li key={url}><a href={url} target="_blank" rel="noreferrer">{new URL(url).hostname}</a></li>)}</ul></details>}
                 {message.role === "assistant" && <>
-                  <small className="model-label">{message.modelLabel ?? s.assistant}</small>
+
                   <div className="response-actions">
-                    <button title={s.copy} aria-label={s.copy} onClick={() => { void navigator.clipboard.writeText(message.text).then(() => setCopied(message.id)); }}>{copied === message.id ? s.copied : s.copy}</button>
+                    <button title={s.copy} aria-label={s.copy} onClick={() => { void navigator.clipboard.writeText(message.text).then(() => setCopied(message.id)); }}>{copied === message.id ? <Check size={14}/> : <Copy size={14}/>}</button>
                     {message.id === lastAnswer && !chat.active && <>
-                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={s.retry} aria-label={s.retry} onClick={() => void window.j7.retry()}>{s.retry}</button>}
-                      {(!message.errorKind || message.errorKind === "quota" || message.errorKind === "unsupported") && <button title={s.askOther} aria-label={s.askOther} onClick={() => setSelector("other")}>{s.askOther}</button>}
+                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={s.retry} aria-label={s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
+                      {(!message.errorKind || message.errorKind === "quota" || message.errorKind === "unsupported") && <button title={s.askOther} aria-label={s.askOther} onClick={() => setSelector("other")}><ArrowLeftRight size={14}/></button>}
                     </>}
+                    <small className="model-label">{message.modelLabel ?? message.model}{message.effort && chat.catalog?.models.some(m => `${m.provider}:${m.id}` === message.model && levels(m).length > 0) ? ` · ${effortLabel(message.effort)}` : ""}</small>
                   </div>
                 </>}
-                {message.role === "user" && message.id === lastQuestion && !chat.active && editing !== message.id && <button title={s.edit} aria-label={s.edit} onClick={() => { setEditing(message.id); setEditDraft(message.text); }}>✎</button>}
+                {message.role === "user" && message.id === lastQuestion && !chat.active && editing !== message.id && <button className="edit-question" title={s.edit} aria-label={s.edit} onClick={() => { setEditing(message.id); setEditDraft(message.text); }}><Pencil size={14}/></button>}
               </article>
             ))}
           </div>
@@ -364,6 +366,10 @@ function App() {
             <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
           </div>}
           </div>
+          {!(chat.messages.length || selector || historyOpen) && <div className="compact-tools">
+            <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
+            <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
+          </div>}
           <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort ? ` ${effortLabel(chat.effort)}` : ""}</button>
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
