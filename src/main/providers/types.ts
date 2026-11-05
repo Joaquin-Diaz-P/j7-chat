@@ -1,4 +1,4 @@
-export type ProviderId = "mock" | "claude" | "codex" | "gemini" | "opencode";
+export type ProviderId = "mock" | "mock-a" | "mock-b" | "claude" | "codex" | "gemini" | "opencode";
 
 export interface ProviderStatus {
   state: "ready" | "not_installed" | "not_authenticated" | "error";
@@ -44,6 +44,7 @@ export type ChatEvent =
       type: "error";
       kind: "auth" | "quota" | "unsupported" | "other";
       message: string;
+      recovery?: "session" | "process";
     };
 
 export interface ChatProvider {
@@ -52,4 +53,5 @@ export interface ChatProvider {
   listModels(): Promise<ModelInfo[]>;
   runTurn(input: TurnInput): AsyncIterable<ChatEvent>;
   dispose(): Promise<void>;
+  shutdown?(): Promise<void>;
 }

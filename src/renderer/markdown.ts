@@ -1,8 +1,8 @@
 // Protect fenced, indented and inline code before normalizing TeX delimiters.
 export function normalizeMath(text: string): string {
-  return text.replace(/(^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\2[^\n]*(?:\n|$)|(?![\s\S])))|(^ {4}[^\n]*(?:\n|$))|(`+)[\s\S]*?\4|\\\[([\s\S]*?)\\\]|\\\(([^\n]*?)\\\)/gm,
-    (match, fence, _marker, indent, inline, display, math) =>
-      fence || indent || inline ? match : display !== undefined ? `$$${display}$$` : `$${math}$`);
+  return text.replace(/(^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\2[^\n]*(?:\n|$)|(?![\s\S])))|(^ {4}[^\n]*(?:\n|$))|(`+)[\s\S]*?\4|\\\[([\s\S]*?)\\\]|\\\(([^\n]*?)\\\)|\$\$([\s\S]*?)\$\$/gm,
+    (match, fence, _marker, indent, inline, display, math, dollars) =>
+      fence || indent || inline ? match : display !== undefined || dollars !== undefined ? `\n$$\n${(display ?? dollars).trim()}\n$$\n` : `$${math}$`);
 }
 export interface MarkdownBlock { source: string; complete: boolean }
 export function splitBlocks(text: string): MarkdownBlock[] {

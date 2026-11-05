@@ -155,3 +155,10 @@ describe("Spanish errors", () => {
     ).not.toContain("private-token-value");
   });
 });
+it("marks opaque resume failures for full-context fallback without retrying auth/quota", async () => {
+  const { resumeError } = await import("../src/main/providers/runtime.js");
+  expect(resumeError(new Error("RPC -32603"))).toMatchObject({ kind: "other", recovery: "session" });
+  expect(resumeError(new Error("process exited"))).toMatchObject({ kind: "other", recovery: "process" });
+  expect(resumeError(new Error("401 unauthorized"))).not.toHaveProperty("recovery");
+  expect(resumeError(new Error("429 quota"))).not.toHaveProperty("recovery");
+});

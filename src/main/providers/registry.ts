@@ -11,7 +11,7 @@ export function createProvider(
   options: ProviderOptions = {},
 ): ChatProvider {
   switch (id) {
-    case "mock": return new MockProvider();
+    case "mock": case "mock-a": case "mock-b": return new MockProvider(id);
     case "claude":
       return new ClaudeProvider(options);
     case "codex":

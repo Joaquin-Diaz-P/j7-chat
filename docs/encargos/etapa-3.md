@@ -12,6 +12,12 @@ Adjuntar imágenes, capturas, PDF y archivos de texto, arrastrando, pegando, des
 
 G1, G2, G3, G4, G5, G6, G7, G8, G9 y E12.
 
+## Correcciones de la etapa 2 (primero)
+
+1. **E8:** hoy "Preguntar a otro modelo…" usa `send()` y repite la pregunta del usuario debajo de la línea "→ {modelo} responde la misma pregunta". No tiene que repetirla: solo aparece la línea y debajo la respuesta nueva, que se genera con la misma pregunta. Corrige también el test, que hoy acepta la repetición.
+2. **F7:** `getStatus` de los programas no tiene tiempo límite. Si un programa se cuelga ahí, su cola de turnos queda bloqueada hasta reiniciar J7. Ponle un tiempo límite (por ejemplo, 10 segundos). Al vencer, el programa queda como no disponible (D5), con estado `error`, y su cola se libera. Agrega un test con un programa falso que nunca responde.
+3. **E4:** en `fail()` de `src/main/chat/service.ts`, el comando de inicio de sesión de un error `auth` tiene que ser el del programa del turno, no el del `mock`. Zen no necesita sesión, así que para él no se muestra ningún comando.
+
 ## Enfoque técnico
 
 - **`src/main/attachments/`:**

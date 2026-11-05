@@ -1,24 +1,44 @@
 import { strings as s } from "../../renderer/strings.js";
 import type { ChatProvider, ChatEvent, TurnInput, ModelInfo } from "./types.js";
 export class MockProvider implements ChatProvider {
-  readonly id = "mock" as const;
+  constructor(readonly id: "mock" | "mock-a" | "mock-b" = "mock") {}
+  private sessions = new Map<string, string[]>();
+  private sequence = 0;
+  private crashed = false;
   async getStatus() {
+    if (process.env.J7_MOCK_UNAVAILABLE?.split(",").includes(this.id)) return { state: "not_installed" as const };
     return { state: "ready" as const };
   }
   async listModels(): Promise<ModelInfo[]> {
     return [
       {
-        id: "mock",
-        label: "Mock",
-        provider: "mock",
+        id: this.id === "mock" ? "mock-a" : this.id,
+        label: this.id === "mock-b" ? s.mockB : s.mockA,
+        provider: this.id,
         supportsImages: false,
         supportsPdf: false,
-        supportsEffort: true,
+        supportsEffort: this.id !== "mock-b",
       },
     ];
   }
   async *runTurn(input: TurnInput): AsyncIterable<ChatEvent> {
-    const error = input.text.match(/\/err (auth|quota|unsupported|other)/)?.[1];
+    const history = input.nativeSessionId ? this.sessions.get(input.nativeSessionId) : [];
+    if (!history) { yield { type: "error", kind: "other", message: s.responseFailed, recovery: "session" }; return; }
+    const session = input.nativeSessionId ?? `${this.id}-${++this.sequence}`;
+    this.sessions.set(session, history);
+    yield { type: "session", nativeSessionId: session };
+    const command = input.text.split(`${s.recapEnd}\n\n`).at(-1)!;
+    if (command.includes("/crash-always") || (command.includes("/crash") && !this.crashed)) {
+      this.crashed = true;
+      yield { type: "error", kind: "other", message: s.processFailed, recovery: "process" };
+      return;
+    }
+    if (command.includes("/lose-session") && input.nativeSessionId) {
+      this.sessions.delete(input.nativeSessionId);
+      yield { type: "error", kind: "other", message: s.responseFailed, recovery: "session" };
+      return;
+    }
+    const error = command.match(/\/err (auth|quota|unsupported|other)/)?.[1];
     if (error) {
       yield {
         type: "error",
@@ -27,23 +47,25 @@ export class MockProvider implements ChatProvider {
       };
       return;
     }
-    if (input.text.includes("/web"))
+    if (input.webSearch && command.includes("/web"))
       yield {
         type: "web-search",
         urls: ["https://example.com"],
         query: s.mockSearch,
       };
-    const thinking = input.text.includes("/think");
-    const text = input.text.includes("/md")
+    const thinking = !command.includes("/echo-context") && (command.includes("/think") || input.effort === "high");
+    const text = command.includes("/echo-context") ? input.text
+      : command.includes("/md")
       ? s.mockMarkdown
       : thinking
         ? s.mockReasoning
-        : input.text.includes("/slow")
+        : command.includes("/slow")
           ? s.mockSlow.repeat(80)
           : s.mockResponse;
+    history.push(input.text);
     try {
-      for (const chunk of text.match(/.{1,8}|\n/g) ?? []) {
-        await wait(input.text.includes("/slow") ? 140 : 20, input.signal);
+      for (const chunk of text.match(/[\s\S]{1,8}/g) ?? []) {
+        await wait(command.includes("/slow") ? 140 : 20, input.signal);
         yield { type: thinking ? "thinking-delta" : "text-delta", text: chunk };
       }
     } catch {

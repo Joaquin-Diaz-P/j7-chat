@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   mkdtemp,
   writeFile,
@@ -21,7 +21,7 @@ afterEach(async () => {
       .map((path) => rm(path, { recursive: true, force: true })),
   );
 });
-async function fakeCodex(account: "chatgpt" | "apiKey" | null = "chatgpt") {
+async function fakeCodex(account: "chatgpt" | "apiKey" | null = "chatgpt", holdStartup = false) {
   const directory = await mkdtemp(join(tmpdir(), "j7-rpc-"));
   temporary.push(directory);
   const binaryPath = join(directory, "codex");
@@ -30,7 +30,7 @@ async function fakeCodex(account: "chatgpt" | "apiKey" | null = "chatgpt") {
 const {createInterface}=require('node:readline');const {appendFileSync}=require('node:fs');const log=${JSON.stringify(join(directory, "methods.jsonl"))};
 function send(x){process.stdout.write(JSON.stringify(x)+'\\n')}
 let pendingTurn;createInterface({input:process.stdin}).on('line',line=>{const m=JSON.parse(line);appendFileSync(log,JSON.stringify({pid:process.pid,method:m.method})+'\\n');
-if(m.method==='initialize')return send({id:m.id,result:{}});
+if(m.method==='initialize'){if(${holdStartup})return;return send({id:m.id,result:{}});}
 if(m.method==='mcpServerStatus/list')return send({id:m.id,result:{data:[]}});
 if(m.method==='account/read')return send({id:m.id,result:{account:${JSON.stringify(account === null ? null : { type: account })}}});
 if(m.method==='thread/start'||m.method==='thread/resume')return send({id:m.id,result:{thread:{id:m.params.threadId||'session-1'}}});
@@ -81,6 +81,18 @@ function input(
   };
 }
 describe("process lifecycle without network", () => {
+  it("shuts down while initialization is pending and cannot spawn a late replacement", async () => {
+    const { provider, log } = await fakeCodex("chatgpt", true);
+    const starting = provider.getStatus();
+    let pid = 0;
+    await vi.waitFor(async () => { pid = (await log()).find(entry => entry.method === "initialize")?.pid ?? 0; expect(pid).toBeGreaterThan(0); });
+    await provider.shutdown();
+    expect(() => process.kill(pid, 0)).toThrow();
+    expect((await starting).state).toBe("error");
+    await expect(provider.listModels()).rejects.toThrow("Provider shut down");
+    expect(new Set((await log()).map(entry => entry.pid)).size).toBe(1);
+  });
+
   it("reuses one Codex process, rejects approval and disposes it", async () => {
     const { provider, log, dataDir } = await fakeCodex();
     const first: ChatEvent[] = [];

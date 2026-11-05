@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import {
   query,
   type Query,
@@ -15,6 +16,7 @@ import {
   ProviderError,
   urlsIn,
   classifyError,
+  resumeError,
 } from "./runtime.js";
 import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
 
@@ -117,10 +119,12 @@ export class ClaudeProvider extends BaseProvider {
     this.prompts = new AsyncQueue<SDKUserMessage>();
     this.key = key;
     const webTools = input?.webSearch ? ["WebSearch", "WebFetch"] : [];
+    const binary = await this.binary();
+    this.assertOpen();
     this.query = query({
       prompt: this.prompts,
       options: {
-        pathToClaudeCodeExecutable: await this.binary(),
+        pathToClaudeCodeExecutable: binary,
         cwd: paths.workspace,
         env: {
           ...cleanEnvironment(this.options.environment),
@@ -147,7 +151,7 @@ export class ClaudeProvider extends BaseProvider {
         permissionMode: "dontAsk",
         canUseTool: async () => ({
           behavior: "deny",
-          message: "J7 rechaza los pedidos de permiso.",
+          message: s.permissionDenied,
         }),
         includePartialMessages: true,
         persistSession: true,
@@ -191,7 +195,7 @@ export class ClaudeProvider extends BaseProvider {
                 type: "error",
                 kind: "unsupported",
                 message:
-                  "Claude inició con herramientas no permitidas. Se bloqueó el turno.",
+                  s.claudeUnsafeTools,
               });
               this.events?.end();
               active.close();
@@ -219,12 +223,12 @@ export class ClaudeProvider extends BaseProvider {
   protected async checkAuth() {
     const account = await (await this.connect()).accountInfo();
     if (!account.subscriptionType || account.apiProvider !== "firstParty")
-      throw new ProviderError("auth", "Inicia sesión con claude auth login.");
+      throw new ProviderError("auth", s.claudeLogin);
     // API-key accounts must never be used by this app.
     if (account.apiKeySource && account.apiKeySource !== "none")
       throw new ProviderError(
         "auth",
-        "J7 requiere una sesión de suscripción de Claude, sin API key.",
+        s.subscriptionRequired,
       );
   }
   async listModels(): Promise<ModelInfo[]> {
@@ -238,7 +242,9 @@ export class ClaudeProvider extends BaseProvider {
     }));
   }
   protected async *execute(input: TurnInput): AsyncIterable<ChatEvent> {
-    const connection = await this.connect(input);
+    let connection: Query;
+    try { connection = await this.connect(input); }
+    catch (error) { yield input.nativeSessionId ? resumeError(error) : classifyError(error); return; }
     const account = await connection.accountInfo();
     if (
       !account.subscriptionType ||
@@ -247,7 +253,7 @@ export class ClaudeProvider extends BaseProvider {
     )
       throw new ProviderError(
         "auth",
-        "J7 requiere una sesión de suscripción de Claude, sin API key.",
+        s.subscriptionRequired,
       );
     const events = new AsyncQueue<ChatEvent>();
     this.events = events;

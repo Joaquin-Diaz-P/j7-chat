@@ -22,7 +22,7 @@ body {
   border-radius: var(--radius-panel);
   background: var(--background);
   box-shadow: var(--shadow-composer);
-  animation: appear 150ms ease-out;
+
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -140,3 +140,19 @@ article div {
 summary { cursor: pointer; color: var(--secondary-label); }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
+
+.panel.appear { animation: appear 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .panel.appear { animation: none; } }
+.model-selector { margin: 8px 14px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); flex-shrink: 0; }
+.model-selector input { width: 100%; padding: 6px; background: transparent; border: 1px solid var(--border); border-radius: 6px; }
+.model-selector input:focus-visible { outline: 2px solid #129caa; }
+.model-list { max-height: 220px; overflow: auto; }
+.model-row { display: flex; align-items: center; }
+.model-row > button:first-child { flex: 1; text-align: left; }
+.model-row[data-focused="true"] { background: var(--muted); border-radius: 6px; }
+.model-group { display: flex; align-items: center; gap: 5px; margin: 8px 0 4px; }
+.unavailable, .response-actions { font-size: 11px; }
+.model-notice { border-top: 1px solid var(--border); padding: 8px 0; color: var(--secondary-label); font-size: 12px; }
+.model-label { display: block; margin-top: 6px; }
+.response-error { background: #c9891820; border-left: 2px solid #b57a15; padding: 10px; border-radius: 6px; }
+.inline-edit textarea { display: block; width: 100%; min-height: 70px; border: 1px solid var(--border); }

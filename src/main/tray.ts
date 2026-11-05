@@ -19,23 +19,18 @@ export function createTray(panel: Panel, settings: SettingsStore) {
       },
       {
         label: s.settings,
-        click: () => {
-          panel.suppressHide = true;
-          void dialog
-            .showMessageBox({
-              type: "info",
-              title: s.appName,
-              message: s.settingsLater,
-              buttons: [s.accept],
-            })
-            .finally(() => {
-              panel.suppressHide = false;
-            });
-        },
+        click: () => { void showSettingsNotice(panel); },
       },
       { type: "separator" },
       { label: s.quitApp, click: () => app.quit() },
     ]),
   );
   return tray;
+}
+
+export async function showSettingsNotice(panel: Panel) {
+  panel.suppressHide = true;
+  try {
+    await dialog.showMessageBox({ type: "info", title: s.appName, message: s.settingsLater, buttons: [s.accept] });
+  } finally { panel.suppressHide = false; }
 }

@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { mkdir, lstat, symlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -89,8 +90,12 @@ export function classifyError(
   if (error instanceof ProviderError)
     return { type: "error", kind: error.kind, message: error.message };
   const message = error instanceof Error ? error.message : String(error);
+  if (/session.*(?:not.found|missing|invalid|expired)|thread.*(?:not.found|missing|invalid)|resume.*(?:fail|not|invalid)|no conversation found/i.test(message))
+    return { type: "error", kind: "other", message: s.responseFailed, recovery: "session" };
+  if (/process.*(?:exit|closed|died)|proceso.*(?:termin|cerr)|ECONNRESET|EPIPE|fetch failed|SSE|Claude Code.*exited/i.test(message))
+    return { type: "error", kind: "other", message: s.processFailed, recovery: "process" };
   if (
-    /quota|rate.?limit|429|usage.limit|capacity|RESOURCE_EXHAUSTED/i.test(
+    /quota|rate.?limit|429|usage.limit|free-limit|capacity|RESOURCE_EXHAUSTED/i.test(
       message,
     )
   )
@@ -98,7 +103,7 @@ export function classifyError(
       type: "error",
       kind: "quota",
       message:
-        "Se alcanzó la cuota o el límite temporal del programa. Intenta más tarde.",
+        s.usageLimit,
     };
   if (
     /auth|unauth|401|login|log.in|credentials|sign.in|oauth|token.expired/i.test(
@@ -109,14 +114,14 @@ export function classifyError(
       type: "error",
       kind: "auth",
       message:
-        "No hay una sesión válida. Inicia sesión en el programa desde la terminal.",
+        s.sessionRequired,
     };
   if (/no longer supported|Antigravity/i.test(message))
     return {
       type: "error",
       kind: "unsupported",
       message:
-        "Gemini CLI ya no admite esta sesión de Code Assist individual; el servicio exige migrar a Antigravity.",
+        s.geminiUnsupported,
     };
   if (
     /unsupported|not.support|not.available|invalid.model|model.not.found/i.test(
@@ -126,16 +131,31 @@ export function classifyError(
     return {
       type: "error",
       kind: "unsupported",
-      message: "El programa o el modelo no admite esta opción.",
+      message: `${s.optionUnsupported} ${summarizeProviderError(message)}`,
     };
   if (/abort|cancel/i.test(message))
-    return { type: "error", kind: "other", message: "El turno se canceló." };
+    return { type: "error", kind: "other", message: s.turnCancelled };
   return {
     type: "error",
     kind: "other",
     message:
-      "El programa no pudo completar la consulta. Revisa su estado e intenta otra vez.",
+      summarizeProviderError(message),
   };
+}
+export function resumeError(error: unknown): Extract<ChatEvent, { type: "error" }> {
+  const event = classifyError(error);
+  return event.kind === "other" && event.recovery !== "process" ? { ...event, recovery: "session" } : event;
+}
+export function summarizeProviderError(message: string): string {
+  let detail = message;
+  try {
+    const value = JSON.parse(message) as unknown;
+    const record = object(value);
+    const nested = object(record.error);
+    detail = typeof record.message === "string" ? record.message : typeof nested.message === "string" ? nested.message : typeof value === "string" ? value : s.programFailed;
+  } catch { /* Plain error messages need no JSON decoding. */ }
+  if (/secret|token|api[_-]?key|password|authorization/i.test(detail) || !/\s/.test(detail)) return s.programFailed;
+  return detail.replace(/(?:Bearer\s+)[^\s"']+|sk[-_][A-Za-z0-9_-]+|(?:token|api[_-]?key|password)\s*[:=]\s*[^\s"']+/gi, s.redacted).split("\n")[0]?.slice(0, 400) || s.programFailed;
 }
 export class AsyncQueue<T> implements AsyncIterable<T> {
   private items: T[] = [];
@@ -167,6 +187,7 @@ export class AsyncQueue<T> implements AsyncIterable<T> {
 export abstract class BaseProvider implements ChatProvider {
   abstract readonly id: ProviderId;
   private busy = false;
+  private closed = false;
   constructor(protected options: ProviderOptions = {}) {}
   protected async binary() {
     const found = await resolveBinary(
@@ -175,13 +196,15 @@ export abstract class BaseProvider implements ChatProvider {
         ? {}
         : { override: this.options.binaryPath },
     );
+    this.assertOpen();
     if (!found)
       throw new ProviderError(
         "other",
-        `No se encontró ${this.id}. Instálalo desde la terminal.`,
+        s.binaryMissing(this.id),
       );
     return found;
   }
+  protected assertOpen() { if (this.closed) throw new Error("Provider shut down"); }
   protected diagnostic(event: Diagnostic) {
     this.options.onDiagnostic?.(event);
   }
@@ -214,7 +237,7 @@ export abstract class BaseProvider implements ChatProvider {
       yield {
         type: "error",
         kind: "other",
-        message: "Ya hay una consulta en curso en este programa.",
+        message: s.programBusy,
       };
       return;
     }
@@ -234,6 +257,8 @@ export abstract class BaseProvider implements ChatProvider {
         if (event.type === "done" || event.type === "error") settled = true;
         yield event;
       }
+      if (!settled && !input.signal.aborted)
+        yield { type: "error", kind: "other", message: s.processFailed, recovery: "process" };
     } catch (error) {
       yield classifyError(error);
     } finally {
@@ -247,6 +272,10 @@ export abstract class BaseProvider implements ChatProvider {
   protected abstract execute(input: TurnInput): AsyncIterable<ChatEvent>;
   abstract listModels(): Promise<ModelInfo[]>;
   abstract dispose(): Promise<void>;
+  async shutdown() {
+    this.closed = true;
+    await this.dispose();
+  }
 }
 export class JsonRpc {
   private sequence = 0;
@@ -291,7 +320,7 @@ export class JsonRpc {
     });
     this.child.on("error", (error) => this.fail(error));
     this.child.on("exit", () => {
-      this.fail(new Error("El proceso terminó."));
+      this.fail(new Error(s.processExited));
       this.onExit();
     });
   }
@@ -317,7 +346,7 @@ export class JsonRpc {
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new Error(`Tiempo de espera agotado: ${method}`));
+        reject(new Error(s.requestTimeout(method)));
       }, timeout);
       this.pending.set(id, {
         resolve: (value) => resolve(value as T),
@@ -328,7 +357,7 @@ export class JsonRpc {
     });
   }
   async dispose() {
-    this.fail(new Error("El proceso se cerró."));
+    this.fail(new Error(s.processClosed));
     await stopChild(this.child);
   }
 }

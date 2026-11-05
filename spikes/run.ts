@@ -37,7 +37,7 @@ let startupMs: number | null = null;
 const start = performance.now();
 let firstWordMs: number | null = null,
   nativeSessionId: string | null = null;
-const provider = createProvider(id as Exclude<ProviderId, "mock">, {
+const provider = createProvider(id as Exclude<ProviderId, "mock" | "mock-a" | "mock-b">, {
   ...(values.binary ? { binaryPath: values.binary } : {}),
   onDiagnostic: (event) => {
     if (event.type === "startup") startupMs = Number(event.durationMs);
@@ -88,7 +88,7 @@ try {
       opencode: "big-pickle",
     };
     for await (const event of provider.runTurn({
-      model: values.model ?? defaults[id as Exclude<ProviderId, "mock">],
+      model: values.model ?? defaults[id as Exclude<ProviderId, "mock" | "mock-a" | "mock-b">],
       effort: values.effort === "high" ? "high" : "normal",
       webSearch: !values["no-web"],
       instructions: buildChatInstructions(),

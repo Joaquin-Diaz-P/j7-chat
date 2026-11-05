@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import { randomUUID } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { mkdir } from "node:fs/promises";
@@ -16,6 +17,7 @@ import {
   ProviderError,
   urlsIn,
   classifyError,
+  resumeError,
   stopChild,
 } from "./runtime.js";
 import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
@@ -167,7 +169,7 @@ async function freePort(): Promise<number> {
   });
   const address = server.address();
   if (!address || typeof address === "string")
-    throw new Error("No se pudo reservar un puerto.");
+    throw new Error(s.portFailed);
   await new Promise<void>((resolve, reject) =>
     server.close((error) => (error ? reject(error) : resolve())),
   );
@@ -255,8 +257,10 @@ export class OpenCodeProvider extends BaseProvider {
         mkdir(path, { recursive: true, mode: 0o700 }),
       ),
     );
+    const binary = await this.binary();
+    this.assertOpen();
     const child = spawn(
-      await this.binary(),
+      binary,
       ["serve", "--hostname", "127.0.0.1", "--port", String(port)],
       {
         cwd: paths.workspace,
@@ -290,7 +294,8 @@ export class OpenCodeProvider extends BaseProvider {
       this.events?.push({
         type: "error",
         kind: "other",
-        message: "El proceso de OpenCode terminó.",
+        message: s.openCodeExited,
+        recovery: "process",
       });
       this.events?.end();
     });
@@ -299,7 +304,7 @@ export class OpenCodeProvider extends BaseProvider {
       while (performance.now() - start < 20_000) {
         if (spawnError) throw spawnError;
         if (child.exitCode !== null)
-          throw new Error("OpenCode terminó durante el inicio.");
+          throw new Error(s.openCodeStartupExited);
         try {
           await this.api("/api/info");
           ready = true;
@@ -308,7 +313,7 @@ export class OpenCodeProvider extends BaseProvider {
           await delay(100);
         }
       }
-      if (!ready) throw new Error("OpenCode no respondió a tiempo.");
+      if (!ready) throw new Error(s.openCodeTimeout);
       const agents = await this.api<{
         data: { id: string; permissions: unknown; system?: string }[];
       }>("/api/agent");
@@ -319,7 +324,7 @@ export class OpenCodeProvider extends BaseProvider {
       )
         throw new ProviderError(
           "unsupported",
-          "OpenCode no cargó el agente aislado de J7.",
+          s.openCodeUnsafeAgent,
         );
       const sources =
         await this.api<
@@ -336,7 +341,7 @@ export class OpenCodeProvider extends BaseProvider {
       )
         throw new ProviderError(
           "unsupported",
-          "OpenCode cargó configuración externa a J7.",
+          s.openCodeUnsafeConfig,
         );
       this.diagnostic({
         type: "isolation",
@@ -387,7 +392,7 @@ export class OpenCodeProvider extends BaseProvider {
             }
           }
           if (!this.streamController?.signal.aborted)
-            throw new Error("Se cerró el flujo SSE.");
+            throw new Error(s.streamClosed);
         } catch (error) {
           if (!this.streamController?.signal.aborted) {
             this.events?.push(classifyError(error));
@@ -408,8 +413,8 @@ export class OpenCodeProvider extends BaseProvider {
     await this.connect();
     if (!(await this.listModels()).length)
       throw new ProviderError(
-        "auth",
-        "OpenCode no tiene modelos gratis de Zen disponibles.",
+        "unsupported",
+        s.zenNoModels,
       );
   }
   async listModels(): Promise<ModelInfo[]> {
@@ -436,12 +441,12 @@ export class OpenCodeProvider extends BaseProvider {
     if (!model)
       throw new ProviderError(
         "unsupported",
-        "J7 solo permite modelos gratis de OpenCode Zen.",
+        s.zenOnlyFree,
       );
     if (input.effort === "high" && !model.supportsEffort)
       throw new ProviderError(
         "unsupported",
-        "Este modelo gratis no permite cambiar el esfuerzo.",
+        s.effortUnsupported,
       );
     if (
       input.attachments.some((a) => a.kind === "image") &&
@@ -449,7 +454,7 @@ export class OpenCodeProvider extends BaseProvider {
     )
       throw new ProviderError(
         "unsupported",
-        "Este modelo gratis no admite imágenes.",
+        s.imageUnsupported,
       );
     const modelRef = {
       providerID: "opencode",
@@ -462,10 +467,12 @@ export class OpenCodeProvider extends BaseProvider {
     let id = input.nativeSessionId;
     if (id) {
       const sessionPath = `/api/session/${encodeURIComponent(id)}`;
+      try {
       await this.api(sessionPath);
       await this.api(sessionPath, "PATCH", { permissions });
       await this.api(`${sessionPath}/agent`, "POST", { agent });
       await this.api(`${sessionPath}/model`, "POST", { model: modelRef });
+      } catch (error) { yield resumeError(error); return; }
     } else {
       id = (
         await this.api<{ data: { id: string } }>("/api/session", "POST", {

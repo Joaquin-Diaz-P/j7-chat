@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import { join } from "node:path";
 import type { ThreadStartParams } from "./generated/codex/v2/ThreadStartParams.js";
 import type { ThreadResumeParams } from "./generated/codex/v2/ThreadResumeParams.js";
@@ -15,6 +16,7 @@ import {
   ProviderError,
   urlsIn,
   classifyError,
+  resumeError,
 } from "./runtime.js";
 import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
 
@@ -119,7 +121,9 @@ export class CodexProvider extends BaseProvider {
     const args = ["app-server", "--listen", "stdio://"];
     for (const [key, value] of Object.entries(CODEX_SAFE_CONFIG))
       args.push("-c", `${key}=${JSON.stringify(value)}`);
-    const rpc = new JsonRpc(await this.binary(), args, paths.workspace, {
+    const binary = await this.binary();
+    this.assertOpen();
+    const rpc = new JsonRpc(binary, args, paths.workspace, {
       ...cleanEnvironment(this.options.environment),
       CODEX_HOME: paths.root,
     });
@@ -171,7 +175,8 @@ export class CodexProvider extends BaseProvider {
       this.events?.push({
         type: "error",
         kind: "other",
-        message: "El proceso de Codex terminó.",
+        message: s.codexExited,
+        recovery: "process",
       });
       this.events?.end();
     };
@@ -188,7 +193,7 @@ export class CodexProvider extends BaseProvider {
       if (mcp.data.length)
         throw new ProviderError(
           "unsupported",
-          "Codex cargó servidores MCP. Se bloqueó el programa.",
+          s.codexUnsafeMcp,
         );
       this.diagnostic({
         type: "isolation",
@@ -216,7 +221,7 @@ export class CodexProvider extends BaseProvider {
     if (!result.account || result.account.type !== "chatgpt")
       throw new ProviderError(
         "auth",
-        "J7 requiere una sesión de ChatGPT en Codex. Ejecuta codex login.",
+        s.codexLogin,
       );
   }
   async listModels(): Promise<ModelInfo[]> {
@@ -268,9 +273,11 @@ export class CodexProvider extends BaseProvider {
         ...base,
         threadId: input.nativeSessionId,
       };
+      try {
       thread = (
         await rpc.request<{ thread: { id: string } }>("thread/resume", params)
       ).thread.id;
+      } catch (error) { yield resumeError(error); return; }
     } else {
       const params: ThreadStartParams = {
         ...base,

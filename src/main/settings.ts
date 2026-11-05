@@ -9,6 +9,9 @@ export interface Settings {
   pinned: boolean;
   theme: "system" | "light" | "dark";
   positions: Record<string, Position>;
+  favorites: string[];
+  defaultModel: string | null;
+  personalInstructions: string;
 }
 export function validateSettings(value: unknown): Settings {
   const v =
@@ -37,6 +40,9 @@ export function validateSettings(value: unknown): Settings {
     pinned: typeof v.pinned === "boolean" ? v.pinned : false,
     theme: v.theme === "light" || v.theme === "dark" ? v.theme : "system",
     positions,
+    favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
+    defaultModel: typeof v.defaultModel === "string" ? v.defaultModel : null,
+    personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions : "",
   };
 }
 export class SettingsStore {

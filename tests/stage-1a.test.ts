@@ -18,7 +18,7 @@ const input = (
 ): TurnInput => ({
   model: "mock",
   effort: "normal",
-  webSearch: false,
+  webSearch: true,
   instructions: "",
   text,
   attachments: [],
@@ -87,6 +87,9 @@ describe("settings", () => {
       pinned: false,
       theme: "system",
       positions: {},
+      favorites: [],
+      defaultModel: null,
+      personalInstructions: "",
     });
     expect(
       validateSettings({
@@ -108,6 +111,9 @@ describe("settings", () => {
       pinned: true,
       theme: "dark",
       positions: { a: { x: 2, y: 3 } },
+      favorites: [],
+      defaultModel: null,
+      personalInstructions: "",
     });
   });
   it("creates missing settings, survives corruption and persists updates", () => {
@@ -148,15 +154,15 @@ describe("mock and chat", () => {
         await vi.runAllTimersAsync();
         await task;
         if (command.startsWith("/err"))
-          expect(events[0]).toMatchObject({
+          expect(events.find(e => e.type === "error")).toMatchObject({
             type: "error",
             kind: command.slice(5),
           });
         else {
           expect(events.at(-1)?.type).toBe("done");
           if (command === "/think")
-            expect(events[0]?.type).toBe("thinking-delta");
-          if (command === "/web") expect(events[0]?.type).toBe("web-search");
+            expect(events.some(e => e.type === "thinking-delta")).toBe(true);
+          if (command === "/web") expect(events.some(e => e.type === "web-search")).toBe(true);
           if (command === "/md")
             expect(
               events
@@ -170,6 +176,7 @@ describe("mock and chat", () => {
       const iterator = mock
         .runTurn(input("/slow", controller.signal))
         [Symbol.asyncIterator]();
+      expect((await iterator.next()).value?.type).toBe("session");
       const first = iterator.next();
       await vi.advanceTimersByTimeAsync(140);
       expect((await first).done).toBe(false);
@@ -195,12 +202,13 @@ describe("mock and chat", () => {
       expect(service.snapshot().messages[1]?.text.length).toBeGreaterThan(0);
       service.stop();
       expect(service.snapshot().messages[1]?.status).toBe("stopped");
+      await service.waitForIdle();
       service.send("again");
       await vi.runAllTimersAsync();
       expect(service.snapshot().active).toBe(false);
       expect(service.snapshot().messages).toHaveLength(4);
       service.newChat();
-      expect(service.snapshot()).toEqual({
+      expect(service.snapshot()).toMatchObject({
         chatId: null,
         messages: [],
         active: false,

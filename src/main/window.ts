@@ -100,10 +100,11 @@ export class Panel {
       this.show();
     }
   }
-  notify(resume: boolean) {
+  notify(resume: boolean, appeared = false) {
     if (this.ready)
       this.window.webContents.send("window:state", {
         resume,
+        appeared,
         pinned: this.settings.value.pinned,
         dark: nativeTheme.shouldUseDarkColors,
       });
@@ -134,7 +135,7 @@ export class Panel {
     );
     this.window.show();
     this.window.focus();
-    this.notify(resume);
+    this.notify(resume, true);
   }
   toggle() {
     if (this.window.isVisible() && this.window.isFocused()) this.hide();
