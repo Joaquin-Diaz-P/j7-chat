@@ -1,6 +1,27 @@
-# J7 Chat
+<p align="center">
+  <img src="assets/icon.svg" width="96" alt="">
+</p>
 
-Una barra de consultas rápidas para macOS. Aprietas un atajo desde cualquier app, preguntas y sigues trabajando. Puedes adjuntar una captura de la pantalla o archivos, y dictar con la voz.
+<h1 align="center">J7 Chat</h1>
+
+<p align="center">
+  Una barra de consultas rápidas para macOS. Aprietas un atajo desde cualquier app, preguntas y sigues trabajando.<br>
+  Puedes adjuntar una captura de la pantalla o archivos, y dictar con la voz.
+</p>
+
+<p align="center">
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/Joaquin-Diaz-P/j7-chat?label=descargar&color=4f46e5" alt="Descargar"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B%20%C2%B7%20Apple%20Silicon-111" alt="macOS 14+ · Apple Silicon">
+  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/Joaquin-Diaz-P/j7-chat/actions/workflows/ci.yml/badge.svg" alt="Pruebas"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-green" alt="Licencia MIT"></a>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/j7-oscuro.png">
+    <img src="docs/images/j7-claro.png" width="460" alt="J7 Chat respondiendo una pregunta sobre CSS, con bloques de código resaltados">
+  </picture>
+</p>
 
 J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes instalados y con sesión iniciada en tu Mac (Claude Code, Codex u OpenCode), así que responde con tu suscripción y no pide claves de API.
 
