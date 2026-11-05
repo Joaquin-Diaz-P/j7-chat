@@ -237,6 +237,64 @@ Decidido por el usuario, y reemplaza tanto el panel encima como las dos tarjetas
 
 ---
 
+## Etapa 7c-bis · Transiciones suaves
+
+Lo pidió el usuario: las transiciones tienen que ser "smooooth". Hoy la ventana nativa salta de tamaño (compacta 520×106 → grande 520×680 → con historial 780×680), y animar el tamaño de una ventana de macOS desde Electron se ve a tirones. Se usa la técnica de Raycast y apps parecidas: **la ventana nativa no cambia de tamaño; todo se anima adentro con CSS acelerado por la GPU.** Esta etapa reemplaza a L3 ("solo dos animaciones de 150 ms").
+
+**N14 · Lienzo fijo y transparente**
+- **El `BrowserWindow` tiene siempre el mismo tamaño:** el del estado más grande (780×680) más un margen alrededor para la sombra CSS, de unos 24 px por lado. Es transparente, con `hasShadow: false`, y la sombra la dibuja el CSS.
+- **Anclas en pantalla**, que se mantienen como hoy:
+  - el borde inferior de la caja;
+  - el borde derecho del chat.
+
+  Dentro del lienzo, la tarjeta visible (caja compacta, ventana grande o ventana con historial) se dibuja anclada a esos dos bordes.
+- **Clics a través de las zonas transparentes:**
+  - Sobre una zona transparente, la ventana deja pasar el mouse a la app de abajo con `setIgnoreMouseEvents(true, { forward: true })`. Sobre la tarjeta lo captura (`setIgnoreMouseEvents(false)`).
+  - El renderer hace el hit-test en `mousemove` (con `elementFromPoint` o comparando con el rectángulo de la tarjeta) y avisa al proceso principal por IPC solo cuando cambia el estado.
+  - Mientras dura una animación, el rectángulo que cuenta es el final.
+  - Un clic en una zona transparente llega a la otra app; J7 pierde el foco y se esconde, como hoy, salvo que esté fijada.
+- **Posición recordada y arrastre:**
+  - Se guardan las mismas anclas de hoy (centro horizontal y borde inferior, más el borde derecho con el historial).
+  - Al arrastrar la franja o la caja, se mueve el lienzo entero.
+  - Mantén la migración de posiciones y los tests.
+- **Bordes de la pantalla:**
+  - El lienzo tiene que caber en el área de trabajo.
+  - Si el lugar recordado deja la tarjeta grande o el historial fuera de pantalla, el lienzo se corre lo justo, y la tarjeta se desliza a su nuevo lugar dentro del lienzo de forma animada, no a saltos.
+  - La geometría va en `window-geometry.ts`, con tests: lienzo, anclas, choques y otra pantalla.
+
+**N15 · Animaciones**
+- **Curva común:** `cubic-bezier(0.32, 0.72, 0, 1)`, el tipo de curva de las hojas de iOS y macOS. Duración de ~280 ms al abrir y ~220 ms al cerrar.
+- **Compacta → grande** (al enviar, abrir el selector o abrir el historial):
+  - la tarjeta crece hacia arriba desde la caja, con el borde inferior fijo;
+  - la franja superior y el área de conversación aparecen con un fundido de opacidad cuando ya hay espacio;
+  - la caja no se mueve.
+- **Grande → compacta** (`⌘N`, o cerrar el selector o el historial con el chat vacío): al revés.
+- **Abrir el historial:**
+  - la tarjeta se ensancha hacia la izquierda con el borde derecho fijo;
+  - la barra lateral se revela de derecha a izquierda, con el contenido en un leve deslizamiento y un fundido;
+  - el punto "Esconder" se desliza de la esquina del chat a la esquina de la ventana completa.
+- **Cerrar el historial:** al revés.
+- **Selector de modelos y menú de 📎:** escala de 0,97 a 1 y opacidad de 0 a 1, en 150 ms, con el origen en el botón que los abre.
+- **Aparecer y esconder J7:** fundido y escala de 0,98 a 1 en ~150 ms. Esconder espera a que termine el fundido.
+- **Mensajes nuevos:** un leve fundido de opacidad al entrar, en 150 ms. El texto que llega en vivo no se anima.
+- **Implementación:**
+  - Anima con `transform`, `opacity` y `clip-path: inset(...)` sobre elementos de tamaño fijo. No animes `width`, `height`, `top` ni `left` de elementos con mucho contenido, porque fuerzan un layout por cuadro.
+  - Una técnica posible: la tarjeta tiene siempre el tamaño máximo y se recorta con `clip-path: inset(top right bottom left round 12px)` animado, con el borde y la sombra en un pseudo-elemento que acompaña el recorte.
+- **`prefers-reduced-motion: reduce`:** sin animaciones, con cambios instantáneos.
+- **Se comprueba:**
+  - Con `windows.swift`, el tamaño y la posición del `BrowserWindow` no cambian al pasar entre compacta, grande, historial y selector.
+  - Con CDP:
+    - durante cada transición, los tiempos entre cuadros de `requestAnimationFrame` no superan los 20 ms en más del 5 % de los cuadros (dentro de lo que permita el modo desarrollo);
+    - las propiedades animadas son solo `transform`, `opacity` y `clip-path` (revísalo con `getAnimations()` o en el CSS);
+    - con `prefers-reduced-motion` emulado, no hay animaciones.
+  - El hit-test de clics: con CDP o un test unitario de la función, sobre la tarjeta se pide capturar y fuera se pide dejar pasar.
+  - El clic real a través de la zona transparente y la sensación de suavidad los confirma el usuario.
+
+**N16 · Detalles que resuelve el lienzo**
+- El menú de 📎 y el selector ya no se recortan en compacta, porque hay lienzo disponible arriba. El menú de 📎 vuelve a ser vertical y se abre hacia arriba, aunque sobresalga de la caja.
+
+---
+
 ## Etapa 7d · Ajustes
 
 **N13 · Ventana de ajustes**
