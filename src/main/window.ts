@@ -1,5 +1,5 @@
 import { capturesScreenPoint, type HitRect } from "../shared/hit-test.js";
-import { defaultAnchor, canvasBounds, canvasAnchor, validAnchor, cardLayout } from "./window-geometry.js";
+import { defaultAnchor, canvasAnchor, validAnchor, cardLayout } from "./window-geometry.js";
 import { app, BrowserWindow, screen, nativeTheme } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +22,10 @@ export class Panel {
   private regions: HitRect[] = [];
   private offset = { x: 0, y: 0 };
   private cardHeight = 106;
+  private compactHeight = 106;
   private captureTimer: ReturnType<typeof setInterval> | undefined;
   private captured: boolean | undefined;
+  private bounds: Area = { x: 0, y: 0, width: 828, height: 728 };
   private ready = false;
   private pendingShow = false;
   constructor(
@@ -63,6 +65,7 @@ export class Panel {
     this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
       const bounds = this.window.getBounds();
+      this.bounds = bounds;
       const base = canvasAnchor(bounds);
       const x = base.x + this.offset.x, y = base.y + this.offset.y;
       if (!this.userMoving.isUserMove(bounds) || !this.displayId) return;
@@ -154,7 +157,7 @@ export class Panel {
       delete positions[this.displayId];
       this.settings.update({ positions });
     }
-    this.layout(this.cardHeight, this.settings.value.historyOpen);
+    this.layout(this.settings.value.historyOpen || this.chat.snapshot().messages.length ? 680 : (resume ? this.compactHeight : 106), this.settings.value.historyOpen);
     this.updateCapture();
     this.window.show();
     this.updateCapture();
@@ -188,10 +191,13 @@ export class Panel {
     const {card} = cardLayout(area, this.anchor, this.cardHeight, this.settings.value.historyOpen);
     this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
     this.layout(this.cardHeight, this.settings.value.historyOpen);
-    if(this.displayId) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
+  }
+  endMoveCard() {
+    if(this.displayId && this.anchor) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
   }
   layout(height: number, history: boolean) {
     this.cardHeight = height;
+    if (height < 680 && !history) this.compactHeight = height;
     if (!this.anchor) return;
     const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
     const layout = cardLayout(area, this.anchor, height, history);
@@ -204,7 +210,7 @@ export class Panel {
   }
   setRegions(regions: HitRect[]) { this.regions = regions; this.updateCapture(); }
   private updateCapture() {
-    const capture = capturesScreenPoint(screen.getCursorScreenPoint(), this.window.getBounds(), this.regions);
+    const capture = capturesScreenPoint(screen.getCursorScreenPoint(), this.bounds, this.regions);
     if (capture !== this.captured) {
       this.captured = capture;
       this.window.setIgnoreMouseEvents(!capture, { forward: true });
@@ -212,6 +218,7 @@ export class Panel {
   }
   private place(bounds: Area) {
 
+    this.bounds = bounds;
     this.userMoving.programmatic(bounds);
     this.window.setBounds(bounds, false);
   }

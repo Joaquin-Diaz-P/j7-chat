@@ -45,7 +45,7 @@ function App() {
   useEffect(() => {
     if (!attachmentMenu) return;
     const outside = (event: PointerEvent) => {
-      if (attachmentRegion.current?.contains(event.target as Node)) return;
+      if (attachmentRegion.current?.contains(event.target as Node) || (event.target as Element).closest(".attachment-menu")) return;
       setAttachmentMenu(false);
       if (!(event.target as Element).closest?.("button,input,textarea,select,a,[tabindex]")) input.current?.focus();
     };
@@ -180,25 +180,43 @@ function App() {
     const idle = requestIdleCallback(() => setPrewarm(true));
     return () => { clearTimeout(timer); cancelIdleCallback(idle); };
   }, [appeared]);
+  const lastRegions = useRef("");
   useEffect(() => {
+    if (hiding) return;
     let frame = 0;
-    if(hiding)return;
+    let moving = 0;
     const update = () => {
-      const shell = document.querySelector(".shell");
-      if (shell) {
-        const rect = shell.getBoundingClientRect(), css = getComputedStyle(shell);
-        const regions = [{left:rect.left + parseFloat(css.getPropertyValue('--card-left')), top:rect.top + parseFloat(css.getPropertyValue('--card-top')), right:rect.right, bottom:rect.bottom}];
-        for (const el of document.querySelectorAll('.attachment-menu,.compact-tools')) {
-          if (el.matches('.attachment-menu') && !attachmentMenu) continue;
-          const r=el.getBoundingClientRect(); regions.push({left:r.left,top:r.top,right:r.right,bottom:r.bottom});
-        }
+      const surface = document.querySelector(".card-surface");
+      if (!surface) return;
+      const elements = [surface, ...(attachmentMenu ? document.querySelectorAll('.attachment-menu') : [])];
+      const regions = elements.map(el => {
+        const r = el.getBoundingClientRect();
+        return {left:r.left, top:r.top, right:r.right, bottom:r.bottom};
+      });
+      const serialized = JSON.stringify(regions);
+      if (serialized !== lastRegions.current) {
+        lastRegions.current = serialized;
         window.j7.setRegions(regions);
       }
-      frame=requestAnimationFrame(update);
+      if (moving) frame = requestAnimationFrame(update);
     };
-    frame=requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frame);
-  }, [attachmentMenu, appeared, hiding]);
+    const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
+    const start = () => { moving++; schedule(); };
+    const end = () => { moving = Math.max(0, moving - 1); schedule(); };
+    const shell = document.querySelector('.shell')!;
+    const observer = new ResizeObserver(schedule);
+    for (const el of shell.querySelectorAll('.card-surface,.attachment-menu,.model-selector')) observer.observe(el);
+    shell.addEventListener('transitionrun', start);
+    shell.addEventListener('transitionend', end);
+    shell.addEventListener('transitioncancel', end);
+    schedule();
+    return () => {
+      observer.disconnect(); cancelAnimationFrame(frame);
+      shell.removeEventListener('transitionrun', start);
+      shell.removeEventListener('transitionend', end);
+      shell.removeEventListener('transitioncancel', end);
+    };
+  }, [attachmentMenu, shownAttachmentMenu, expanded, compactHeight, historyOpen, offset, appeared, hiding]);
   useLayoutEffect(() => {
     const el = conversation.current;
     if (el && following.current) el.scrollTop = el.scrollHeight;
@@ -272,13 +290,21 @@ function App() {
     <div onPointerDown={event => {
       if(event.button!==0 || (event.target as Element).closest('button,input,textarea,a,.conversation,.history,.model-selector'))return;
       if(!(event.target as Element).closest('.window-bar,.composer'))return;
+      event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       let x=event.screenX,y=event.screenY;
       const move=(e:PointerEvent)=>{window.j7.moveCard(e.screenX-x,e.screenY-y);x=e.screenX;y=e.screenY;};
-      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);};
-      window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});
+      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);window.j7.endMoveCard();input.current?.focus();};
+      window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
     }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${chat.messages.length || selector || historyOpen ? "expanded" : "compact"}`}>
       <div className="card-surface" aria-hidden="true"/>
+          {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
+            if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
+          }}>
+            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}>{s.attachFile}</button>
+            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
+          </div>}
       <div className="card-clip">
       <header className="window-bar" inert={!expanded}>
         {<button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
@@ -419,13 +445,6 @@ function App() {
         <div className="composer-tools">
           <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} >
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
-          {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
-            if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
-          }}>
-            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}>{s.attachFile}</button>
-            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
-          </div>}
           </div>
           {!(chat.messages.length || selector || historyOpen) && <div className="compact-tools">
             <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>

@@ -61,6 +61,7 @@ export interface J7Api {
   onHiding(callback: () => void): () => void;
   setRegions(regions: import("./hit-test.js").HitRect[]): void;
   moveCard(dx:number,dy:number):void;
+  endMoveCard():void;
   layout(height: number, history: boolean): void;
   hide(): void;
   setPinned(pinned: boolean): void;
