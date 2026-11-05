@@ -26,7 +26,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Se comprueba:** después de cerrar sesión y volver a entrar, J7 está corriendo.
 
 **A5 · Primer arranque**
-- Crea la carpeta de datos y abre la barra con un aviso que se cierra solo: "Aprieta ⌥ J para abrir J7 desde cualquier app". Este aviso no vuelve a aparecer.
+- Crea la carpeta de datos y abre la barra con un aviso que se cierra solo: "Aprieta ⌥ Espacio para abrir J7 desde cualquier app" (con el atajo que esté configurado). Este aviso no vuelve a aparecer.
 - Si falta algún programa o permiso, la app no se bloquea: el aviso aparece recién cuando se usa lo que falta.
 - **Se comprueba:** borrando la carpeta de datos, el aviso aparece una sola vez.
 
