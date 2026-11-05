@@ -4,7 +4,7 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown } from "lucide-react";
+import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -15,13 +15,19 @@ import "./style.css";
 import type { Attachment } from "../main/providers/types.js";
 import { nativePdf } from "../main/attachments/policy.js";
 function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id: string) => void }) {
-  return <div className="attachment-chips">{files.map(file => <div className="attachment-chip" key={file.id ?? file.path}>
-    <button onClick={() => void window.j7.attachments("preview", file.id)} title={file.name} aria-label={file.name}>
-      {file.kind === "image" ? <img src={`j7-file://attachment/${file.id}`} alt={file.name}/> : <span>{file.kind === "pdf" ? "📄" : "📃"}</span>}
-      <span>{file.name}{file.pages !== undefined && <small>{s.pages(file.pages)}</small>}</span>
+  return <div className="attachment-chips">{files.map(file => <div className={`attachment-chip ${file.kind === "image" ? "image" : "file"}`} key={file.id ?? file.path}>
+    <button className="attachment-open" onClick={() => void window.j7.attachments("preview", file.id)} title={file.name} aria-label={file.name}>
+      {file.kind === "image" ? <img src={`j7-file://attachment/${file.id}`} alt={file.name}/> : <>
+        <span className="attachment-icon">{file.kind === "pdf" ? <FileText size={16}/> : <File size={16}/>}</span>
+        <span className="attachment-text"><span className="attachment-name">{file.name}</span><small>{fileMeta(file)}</small></span>
+      </>}
     </button>
-    {remove && <button title={s.removeAttachment} aria-label={s.removeAttachment} onClick={() => remove(file.id!)}>×</button>}
+    {remove && <button className="attachment-remove" title={s.removeAttachment} aria-label={s.removeAttachment} onClick={() => remove(file.id!)}><X size={10} strokeWidth={2.5}/></button>}
   </div>)}</div>;
+}
+function fileMeta(file: Attachment) {
+  const type = file.kind === "pdf" ? "PDF" : (/\.([a-z0-9]{1,5})$/i.exec(file.name)?.[1] ?? s.textFile).toUpperCase();
+  return file.pages !== undefined ? `${type} · ${s.pages(file.pages)}` : type;
 }
 function useLeaving<T>(value: T, delay: number): T {
   const [shown, setShown] = useState(value);

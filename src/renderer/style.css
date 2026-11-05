@@ -154,11 +154,20 @@ summary { cursor: pointer; color: var(--secondary-label); }
 .inline-edit textarea { display: block; width: 100%; min-height: 70px; border: 1px solid var(--border); }
 .attachment-draft { grid-column: 1 / -1; width: 100%; }
 .attachment-draft:empty { display:none; }
-.attachment-chips { display:flex; flex-wrap:wrap; gap:6px; }
-.attachment-chip { display:flex; align-items:center; border:1px solid var(--border-raised); border-radius:8px; max-width:240px; }
-.attachment-chip button { display:flex; align-items:center; gap:6px; overflow:hidden; }
-.attachment-chip img { width:42px; height:42px; object-fit:cover; border-radius:4px; }
-.attachment-chip small { display:block; }
+.attachment-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.attachment-chip { position:relative; display:flex; }
+.attachment-open { padding:0; border-radius:10px; border:1px solid var(--border-raised); background:var(--surface-raised); overflow:hidden; transition:border-color .15s, background-color .15s; }
+.attachment-open:hover { background:var(--surface-raised); border-color:color-mix(in srgb,var(--text-muted) 45%,transparent); }
+.attachment-chip.image .attachment-open { width:52px; height:52px; }
+.attachment-chip.image img { width:100%; height:100%; object-fit:cover; display:block; }
+.attachment-chip.file .attachment-open { height:52px; max-width:220px; gap:10px; padding:0 12px 0 8px; }
+.attachment-icon { flex:none; display:grid; place-items:center; width:34px; height:34px; border-radius:8px; background:var(--row-hover); color:var(--text-muted); }
+.attachment-text { display:flex; flex-direction:column; align-items:flex-start; min-width:0; line-height:1.25; }
+.attachment-name { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.attachment-text small { font-size:11px; color:var(--text-muted); }
+.attachment-remove { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; justify-content:center; border-radius:50%; background:var(--text); color:var(--surface); border:2px solid var(--surface); opacity:0; transform:scale(.85); transition:opacity .12s, transform .12s; }
+.attachment-remove:hover { background:var(--text); }
+.attachment-chip:hover .attachment-remove, .attachment-remove:focus-visible { opacity:1; transform:none; }
 .drop-overlay { position:absolute; inset:0; z-index:20; display:grid; place-items:center; background:var(--drop-surface); color:var(--drop-foreground); pointer-events:none; border:2px dashed var(--drop-foreground); border-radius:14px; }
 .shell {display:flex;align-items:stretch;width:680px;}
 .shell.history-open {width:940px;min-height:360px;}
@@ -264,7 +273,7 @@ textarea::placeholder { color:var(--text-muted);opacity:1; }
 .user-message { position:relative; width:fit-content; max-width:80%; margin:12px 0 12px auto; padding:0; }
 .user-text,.inline-edit { background:var(--surface-message); border-radius:16px; padding:8px 12px; }
 .inline-edit textarea { border:0; }
-.user-message .attachment-chips { margin-bottom:6px; }
+.user-message .attachment-chips { margin-bottom:6px; justify-content:flex-end; }
 .edit-question { position:absolute; right:100%; top:8px; opacity:0; }
 .user-message:hover .edit-question,.user-message:focus-within .edit-question { opacity:1; }
 .assistant-message { background:transparent; border:0; }

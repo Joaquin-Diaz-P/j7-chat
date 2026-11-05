@@ -28,6 +28,7 @@ export const strings = {
   dropAttachments: "Suelta para adjuntar",
   removeAttachment: "Quitar adjunto",
   attachmentFailed: "No se pudo adjuntar el archivo",
+  textFile: "Texto",
   pages: (n: number) => n === 1 ? "1 página" : `${n} páginas`,
   pdfTruncated: (x: number, n: number) => `Se enviarán las páginas 1 a ${x} de ${n}`,
   scannedPdf: (model: string) => `Este PDF es una imagen escaneada; ${model} no puede leerlo. Prueba con Claude`,
