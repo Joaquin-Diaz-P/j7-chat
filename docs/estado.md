@@ -45,3 +45,12 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | — | Pendientes técnicos | ⬜ | Están en docs/ideas-futuras.md, "Pendientes técnicos de la versión 1" |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.
+
+## Prueba física con la app firmada (5 de noviembre)
+
+| Código | Estado | Notas |
+|---|---|---|
+| H1 H2 H4 H6 H7 (captura y voz) | ✅ | Probado por el usuario con la app instalada y firmada con "J7 Chat Local" |
+| Zen gratis | ✅ | Funciona a través del servicio de OpenCode, con las herramientas en "ask" y rechazadas |
+| H.1 (salir con ⌘ Q mientras transcribe) | ⏸ | En pausa, a pedido del usuario |
+| B10 (`⌘ ,` en la barra) | ❌ | No funciona con el teclado real. Al usuario no le importa: usa el menú de la barra de menús |
