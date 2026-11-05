@@ -33,6 +33,13 @@ describe('capture flows with fake Hex',()=>{
     expect(f.events.some(e=>e.text)).toBe(false); expect(f.events.some(e=>e.removeId)).toBe(false);
     void cancel;
   });
+  it('dictates without a screenshot when screen recording is not allowed, keeping the notice up',async()=>{
+    const f=fixture(); vi.mocked(f.ports.capture).mockResolvedValue(undefined);
+    await f.flow.begin(true);
+    expect(f.hex.begin).toHaveBeenCalled(); expect(f.flow.state).toMatchObject({phase:'listening',locked:true,permission:'screen'});
+    expect(f.events.some(e=>e.attachment)).toBe(false);
+    await f.flow.end(); expect(f.events.at(-1)).toMatchObject({text:'dictado',autoSend:true});
+  });
   it('double tap keeps listening until finished, then sends',async()=>{
     const f=fixture(); await f.flow.begin(true);
     expect(f.flow.state).toMatchObject({phase:'listening',locked:true}); expect(f.flow.locked).toBe(true);

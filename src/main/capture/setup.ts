@@ -28,7 +28,7 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
     visible:()=>panel.window.isVisible(), show:()=>panel.show(), hide:()=>panel.hide(),
     protect:value=>{ panel.suppressHide = value; }, emit,
     capture:async()=>{
-      if (!await check('screen')) throw new Error('Permission');
+      if (!await check('screen')) return undefined;
       panel.hide(); await new Promise(resolve=>setTimeout(resolve,180));
       const path = join(tmpdir(),randomUUID()+'.png');
       try {
