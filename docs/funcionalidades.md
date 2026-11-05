@@ -31,8 +31,8 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Se comprueba:** borrando la carpeta de datos, el aviso aparece una sola vez.
 
 **A6 · Salir limpio**
-- Al salir, J7 cierra todos los procesos hijos (los cuatro programas, el ayudante nativo y Hex si J7 lo dejó grabando) y libera los atajos.
-- **Se comprueba:** después de salir, `ps` no muestra procesos de `claude`, `codex`, `gemini`, `opencode` ni del ayudante que hayan sido lanzados por J7.
+- Al salir, J7 cierra todos los procesos hijos (los programas, el ayudante nativo y Hex si J7 lo dejó grabando) y libera los atajos.
+- **Se comprueba:** después de salir, `ps` no muestra procesos de `claude`, `codex`, `opencode` ni del ayudante que hayan sido lanzados por J7.
 
 ---
 
@@ -167,12 +167,12 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 ## D · Modelos
 
 **D1 · Registro de modelos**
-- Al arrancar, J7 consulta en paralelo el estado y la lista de modelos de los cuatro programas, sin bloquear la interfaz.
+- Al arrancar, J7 consulta en paralelo el estado y la lista de modelos de los programas registrados (`claude`, `codex` y `opencode`), sin bloquear la interfaz.
 - Guarda el resultado durante 10 minutos y lo actualiza en segundo plano cada vez que se abre el selector.
 - **Se comprueba:** el selector se abre al instante con lo que hay guardado, aunque uno de los programas tarde en responder.
 
 **D2 · Selector**
-- Muestra los favoritos agrupados por programa, en este orden: Claude, GPT, Gemini, Zen gratis. Cada grupo lleva su ícono.
+- Muestra los favoritos agrupados por programa, en este orden: Claude, GPT, Zen gratis. Cada grupo lleva su ícono.
 - Más abajo, "Ver todos" despliega la lista completa.
 - Tiene un buscador por nombre y se maneja con el teclado: `↑`, `↓`, `Enter` y `Esc`.
 - **Se comprueba:** escribir "son" filtra los modelos Sonnet; `Enter` elige el modelo.
@@ -184,12 +184,12 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **D4 · Modelo por defecto**
 - Se elige en los ajustes y lo usan los chats nuevos.
-- Si no hay ninguno elegido o no está disponible, J7 usa el primero disponible en el orden Claude, GPT, Gemini, Zen.
+- Si no hay ninguno elegido o no está disponible, J7 usa el primero disponible en el orden Claude, GPT, Zen.
 - **Se comprueba:** si se desinstala o se cambia de nombre el binario del modelo por defecto, J7 cae al siguiente sin errores.
 
 **D5 · Programas no disponibles**
 - Sus modelos no aparecen en el selector.
-- Al final del selector aparece una línea: "Gemini no está disponible · Ver ajustes".
+- Al final del selector aparece una línea: "GPT no está disponible · Ver ajustes".
 - **Se comprueba:** con una ruta falsa para un programa, sus modelos desaparecen y aparece la línea.
 
 **D6 · Cambio a mitad del chat**
@@ -317,6 +317,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Lo que va llegando se guarda cada 500 ms como máximo.
 - Un turno sigue corriendo aunque se cambie de chat o se esconda la barra.
 - Puede haber un solo turno activo por chat.
+- Cada programa atiende un turno a la vez (etapa 0). Si otro chat ya tiene un turno activo con el mismo programa, el nuevo turno espera en cola, y su barra muestra "En cola".
 - **Se comprueba:** si se cambia de chat a mitad de una respuesta y se vuelve, la respuesta sigue avanzando o ya terminó.
 
 **F7 · Procesos de los programas**
@@ -368,7 +369,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Si el modelo tiene `supportsPdf` y el PDF está dentro de los límites nativos del programa (según los resultados de la etapa 0), J7 lo envía tal cual.
 - Si no, J7 envía el texto extraído dentro de `<documento nombre="…" paginas="N">…</documento>`.
 - Si el texto se pasa de 400.000 caracteres, J7 lo recorta y la ficha avisa antes de enviar: "Se enviarán las páginas 1 a X de N".
-- Si el PDF no tiene texto (está escaneado) y el modelo no lo lee de forma nativa, la ficha avisa: "Este PDF es una imagen escaneada; {modelo} no puede leerlo. Prueba con Claude o Gemini".
+- Si el PDF no tiene texto (está escaneado) y el modelo no lo lee de forma nativa, la ficha avisa: "Este PDF es una imagen escaneada; {modelo} no puede leerlo. Prueba con Claude".
 - **Se comprueba:** los tres casos, con PDF de prueba.
 
 **G8 · Modelo que no ve imágenes**
@@ -421,6 +422,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
   - `watchModifier`: con la tecla y el lado (izquierdo o derecho).
   - `captureDisplayUnderMouse`: con la ruta donde guardar la imagen.
   - `permissions`.
+  - `generateTitle`: se agrega en la etapa 5, para I3.
 - **Eventos que envía:** `holdStart`, `holdEnd` y `holdCancel`.
 - Las capturas responden `{ok, path, displayId}`.
 - Usa un `CGEventTap` de solo escucha (nunca bloquea teclas) y ScreenCaptureKit.
@@ -483,8 +485,8 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Se comprueba:** abrir y cerrar la barra sin escribir no crea chats.
 
 **I3 · Títulos automáticos**
-- Cuando termina la primera respuesta, J7 genera el título en segundo plano con el modelo gratis más rápido de Zen. La instrucción es: "Título de 3 a 6 palabras, en el idioma de la conversación, sin comillas ni punto final".
-- Si eso tarda más de 15 segundos o falla, el título son las primeras 6 palabras de la pregunta.
+- Cuando termina la primera respuesta, J7 genera el título en segundo plano con **Apple Intelligence**, a través del comando `generateTitle` del ayudante nativo (H3), que usa el framework FoundationModels. Así no gasta ninguna cuota. La instrucción es: "Título de 3 a 6 palabras, en el idioma de la conversación, sin comillas ni punto final".
+- Si Apple Intelligence no está disponible, tarda más de 15 segundos o falla, el título son las primeras 6 palabras de la pregunta.
 - Un título renombrado a mano (`manual`) nunca se reemplaza.
 - **Se comprueba:** test con un proveedor de títulos falso: éxito, fallo y título renombrado a mano.
 
@@ -512,11 +514,11 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **I7 · Retomar un chat**
 - Al abrir un chat se recupera su modelo, su 🌐 y su "Pensar más", y la vista baja al final.
-- **Se comprueba:** abrir un chat que usaba Gemini con 🌐 apagado lo muestra así.
+- **Se comprueba:** abrir un chat que usaba GPT con 🌐 apagado lo muestra así.
 
 **I8 · Rendimiento**
 - El panel carga los 200 chats más recientes y carga más al llegar al final de la lista.
-- **Se comprueba:** con 2.000 chats de prueba, el panel abre en menos de 300 ms.
+- **Se comprueba:** test unitario: con 2.000 chats de prueba, la consulta del panel tarda menos de 50 ms.
 
 **I9 · Respuestas interrumpidas**
 - Al arrancar, los mensajes que quedaron en `streaming` (porque la app se cerró a mitad de una respuesta) pasan a `interrupted` y se muestran con la marca "(interrumpido)".
@@ -555,7 +557,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Se aplica según F5.
 
 **J6 · Programas**
-- Cada uno de `claude`, `codex`, `gemini`, `opencode` y Hex muestra su estado: Listo, Sin instalar, Sin sesión o Error, con el detalle.
+- Cada uno de `claude`, `codex`, `opencode` y Hex muestra su estado: Listo, Sin instalar, Sin sesión o Error, con el detalle.
 - Cuando el estado no es "Listo", muestra el comando exacto para instalarlo o iniciar sesión, con un botón para copiarlo.
 - Tiene un botón "Volver a comprobar".
 - **Se comprueba:** con una ruta falsa aparece "Sin instalar" y su comando.
@@ -593,7 +595,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **L2 · Legibilidad sobre el vidrio**
 - Los fondos semitransparentes se calibran para que el texto tenga un contraste AA en los dos temas, aunque detrás haya un fondo blanco, negro o una foto.
-- **Se comprueba:** capturas sobre los tres fondos, en los dos temas.
+- **Se comprueba:** Claude lo revisa con la app real, sobre un fondo claro y uno oscuro, en los dos temas.
 
 **L3 · Animaciones**
 - Solo dos, de 150 ms: abrir o cerrar el historial y aparecer la barra. Sin ninguna otra animación.
@@ -620,7 +622,8 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **M4 · Tests**
 - `npm test` cubre la lógica del proceso principal.
-- `npm run test:e2e` usa Playwright con Electron y el proveedor de prueba, y recorre el flujo principal: abrir, escribir, recibir respuesta, cambiar de modelo, adjuntar e historial.
+- `npm run test:e2e` es **un solo recorrido** del flujo principal, que se arma en la etapa 6 con Playwright, Electron y el proveedor de prueba: abrir, escribir, recibir respuesta, cambiar de modelo, adjuntar y encontrar el chat en el historial.
+- El resto de la interfaz lo comprueba Claude con la app real al cerrar cada etapa, siguiendo los "Se comprueba".
 
 **M5 · Proveedor de prueba**
 - Es el proveedor `mock`, que solo existe cuando `J7_MOCK=1`.

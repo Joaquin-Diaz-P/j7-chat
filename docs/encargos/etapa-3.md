@@ -2,7 +2,7 @@
 
 Repo: `/Users/joaco/.t3/projects/j7-chat`.
 
-Antes de empezar, lee `docs/especificacion.md`, `docs/funcionalidades.md`, `docs/plan.md`, `docs/etapa-0-resultados.md` (en especial la sección de PDF e imágenes de cada programa) y los reportes de las etapas anteriores.
+Lee `docs/plan.md` (reglas para los subagentes), las secciones G y E12 de `docs/funcionalidades.md`, y la parte de imágenes y PDF de cada programa en `docs/etapa-0-resultados.md`. En resumen: Claude acepta imagen y PDF nativos; GPT acepta imagen nativa y PDF como texto; Zen, imagen solo en los modelos con visión y PDF como texto.
 
 ## Objetivo
 
@@ -58,22 +58,14 @@ G1, G2, G3, G4, G5, G6, G7, G8, G9 y E12.
   - Detección de PDF escaneado (sin texto).
   - Copia y ruta (G6).
   - El protocolo `j7-file` rechaza rutas fuera de la carpeta de adjuntos.
-- **De punta a punta, con el `mock`:**
-  - 📎 con un archivo de prueba, usando `setInputFiles`.
-  - Pegar una imagen.
-  - Arrastrar archivos, simulando el evento con `DataTransfer`.
-  - Ficha con ✕.
-  - Aviso de G8 con un modelo `mock` sin visión.
-  - Aviso de recorte de G7.
-  - El adjunto se ve en el mensaje (E12).
+- Agrega al `mock` un modelo sin visión, para que Claude pueda comprobar G8 sin gastar cuota.
 
-## Comprobación manual con programas reales
+## Al terminar
 
-- Un PDF de unas 30 páginas a Claude y a GPT: una pregunta sobre la página 25.
-- Una captura de zona a Gemini.
-- Un archivo `.py` a un modelo de Zen.
-- G4 cancelado con `Esc`.
-- G6: borrar el original y volver a abrir el adjunto.
+- `npm run typecheck` y `npm test` pasan.
+- `npm run dev` abre la app sin errores.
+- Haz como máximo **dos** turnos reales: el PDF de prueba de 30 páginas (`tests/fixtures/attachments/j7-30-pages.pdf`) a Claude Haiku y a GPT‑6‑Luna.
+- En el reporte, deja una lista corta de pasos para que Claude compruebe cada código.
 
 ## Fuera de alcance
 

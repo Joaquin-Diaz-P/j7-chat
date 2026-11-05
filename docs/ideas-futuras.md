@@ -8,6 +8,10 @@ Hacer una pregunta y que respondan dos o tres modelos lado a lado, para comparar
 
 En la primera versión esto se cubre con el botón **"Preguntar a otro modelo…"** de cada respuesta, que reenvía la misma pregunta a otro modelo dentro del mismo chat.
 
+## Gemini a través de Antigravity
+
+Google rechaza Gemini CLI con cuentas personales y pide usar Antigravity. Hay que instalar Antigravity, conectarlo por ACP como lo hace T3 Code (`apps/server/src/provider/acp/Antigravity*`) y reutilizar `src/main/providers/gemini.ts`, que ya está escrito pero no está registrado.
+
 ## Memoria automática
 
 Que J7 recuerde datos de chats anteriores y se los entregue al modelo, como la memoria de ChatGPT. En la primera versión cada chat parte de cero, salvo por las instrucciones personales.

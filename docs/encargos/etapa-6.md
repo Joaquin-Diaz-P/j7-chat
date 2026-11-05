@@ -2,7 +2,7 @@
 
 Repo: `/Users/joaco/.t3/projects/j7-chat`.
 
-Antes de empezar, lee `docs/especificacion.md`, `docs/funcionalidades.md` (secciones A, J, K y M), `docs/plan.md` y los reportes de las etapas anteriores.
+Lee `docs/plan.md` (reglas para los subagentes) y las secciones A, J, K y M de `docs/funcionalidades.md`.
 
 ## Objetivo
 
@@ -44,7 +44,7 @@ La ventana de ajustes completa, el primer arranque, el arranque al iniciar sesi�
   - El ayudante va en `extraResources`.
   - El `.icns` se genera con un script: SVG → iconset → `iconutil -c icns`.
 
-- **Crítico:** la app empaquetada se abre desde Finder sin el `PATH` de la shell. Comprueba que encuentra `claude`, `codex`, `gemini`, `opencode`, `hex` y el ayudante. Prueba la app de `release/` abriéndola con `open`, no desde la terminal de desarrollo.
+- **Crítico:** la app empaquetada se abre desde Finder sin el `PATH` de la shell. Comprueba que encuentra `claude`, `codex`, `opencode`, `hex` y el ayudante. Prueba la app de `release/` abriéndola con `open`, no desde la terminal de desarrollo.
 
 - **README (K2):** cómo instalarla, abrirla la primera vez, dar los permisos, actualizarla y desarrollar.
 
@@ -56,12 +56,15 @@ La ventana de ajustes completa, el primer arranque, el arranque al iniciar sesi�
   - Conversión de teclas a aceleradores, incluidos casos con teclado en español.
   - Validación de los atajos: sin tecla modificadora, repetidos entre sí y que no se pueden registrar.
   - Primer arranque.
-- **De punta a punta, con el `mock`:**
-  - Ventana de ajustes: cada sección.
-  - Cambiar el atajo y que funcione.
-  - Que las instrucciones personales lleguen al `mock` con `/echo-context`.
-  - Que el tema cambie en vivo.
-- **M4 completo:** `npm test` y `npm run test:e2e` pasan enteros. El flujo principal de M4 queda cubierto.
+- **M4, un solo recorrido de punta a punta** con Playwright, Electron, `J7_MOCK=1` y un `J7_DATA_DIR` temporal:
+  1. Abrir la barra.
+  2. Enviar `/md` y recibir la respuesta.
+  3. Cambiar de `mock-a` a `mock-b`.
+  4. Adjuntar un archivo con 📎.
+  5. Encontrar el chat en el historial.
+
+  Para mostrar la barra en el test, expón un gancho que solo exista con `J7_TEST=1`.
+- `npm test` y `npm run test:e2e` pasan enteros.
 
 ## Comprobación manual
 

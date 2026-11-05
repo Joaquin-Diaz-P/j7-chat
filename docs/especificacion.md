@@ -12,8 +12,9 @@ J7 no usa API keys. Habla con los programas que ya están instalados en el Mac:
 |---|---|---|
 | `claude` | Claude | El plan de Claude, compartido con claude.ai y Claude Code |
 | `codex` | GPT | La cuota de Codex (no la de chatgpt.com) |
-| `gemini` | Gemini | La cuota de Gemini CLI |
-| `opencode` | **Solo los modelos gratis de OpenCode Zen** | Gratis. Otros proveedores configurados en OpenCode no se muestran, para no generar cobros |
+| `opencode` | **Solo los modelos gratis de OpenCode Zen** | Gratis, con un límite diario. Otros proveedores configurados en OpenCode no se muestran, para no generar cobros |
+
+**Gemini queda fuera de la primera versión.** Google rechaza Gemini CLI con cuentas personales y pide usar Antigravity (etapa 0). El adaptador queda guardado en el código, sin registrar. Volver a Gemini, a través de Antigravity, es una idea a futuro.
 
 - Cada programa corre en una carpeta vacía propia de J7, con instrucciones de chat que reemplazan sus instrucciones de agente de programación.
 - **Herramientas permitidas:** solo la búsqueda web, con un botón 🌐 en la barra que viene encendido. El modelo decide cuándo buscar.
@@ -74,7 +75,7 @@ Además del atajo para abrir la barra hay dos atajos más, ambos configurables:
 ## Historial
 
 - **Almacenamiento:** solo local, en una base de datos SQLite dentro de `~/Library/Application Support/J7 Chat`. Sin nube.
-- **Títulos:** automáticos y editables. Los genera el modelo gratis más rápido de Zen. Si eso falla, se usan las primeras palabras de la pregunta.
+- **Títulos:** automáticos y editables. Los genera Apple Intelligence dentro del Mac, sin gastar ninguna cuota. Si no está disponible o falla, se usan las primeras palabras de la pregunta.
 - **Orden:** grupos Hoy, Ayer, Últimos 7 días y Anteriores, con los chats fijados arriba.
 - **Búsqueda:** un buscador arriba del historial que busca en títulos y dentro de las conversaciones.
 - **Acciones:** fijar, renombrar y borrar. Borrar pide confirmación y elimina de inmediato, sin papelera.

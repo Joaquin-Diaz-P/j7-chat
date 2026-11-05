@@ -20,9 +20,12 @@ export function createProvider(
       return new OpenCodeProvider(options);
   }
 }
+// Gemini stays out of v1: Google rejects Gemini CLI for individual accounts.
+export const REGISTERED_PROVIDERS = ["claude", "codex", "opencode"] as const;
+
 export function createRegistry(options: ProviderOptions = {}) {
   const providers = new Map<ProviderId, ChatProvider>(
-    (["claude", "codex", "gemini", "opencode"] as const).map((id) => [
+    REGISTERED_PROVIDERS.map((id) => [
       id,
       createProvider(id, options),
     ]),

@@ -2,13 +2,13 @@
 
 Repo: `/Users/joaco/.t3/projects/j7-chat`.
 
-Antes de empezar, lee `docs/especificacion.md`, `docs/funcionalidades.md`, `docs/plan.md`, `docs/etapa-0-resultados.md` y el reporte de la etapa 1, si existe.
+Lee `docs/plan.md` (reglas para los subagentes), las secciones de tus códigos en `docs/funcionalidades.md` y `docs/etapa-0-resultados.md`.
 
-> Claude va a ajustar este encargo con los resultados de la etapa 0 antes de enviarlo. Si encuentras la nota "PENDIENTE ETAPA 0", avisa en vez de suponer.
+**Gemini queda fuera de la primera versión.** `gemini.ts` se conserva, pero no se registra (`REGISTERED_PROVIDERS` en `registry.ts`).
 
 ## Objetivo
 
-Los cuatro programas dentro de la app, con:
+Los tres programas (Claude, GPT y Zen) dentro de la app, con:
 - Selector con favoritos.
 - Modelo por defecto.
 - Cambio de modelo a mitad del chat, con traspaso.
@@ -49,6 +49,8 @@ Los cuatro programas dentro de la app, con:
   - **Reintentar y editar (F4):** borran desde la respuesta (o la pregunta) y abren una sesión nueva con el resumen de lo anterior.
   - **Persistencia (F6):** guarda lo que va llegando cada 500 ms como máximo, y un turno activo por chat.
   - **Supervisión (F7):** precalienta los procesos 5 segundos después del arranque y reinicia una vez un proceso que se cae.
+  - **Cola por programa (F6):** según la etapa 0, cada instancia atiende un turno a la vez. Si otro chat ya tiene un turno activo con el mismo programa, el turno nuevo espera en cola.
+  - **Reinicios de Claude:** según la etapa 0, Claude reinicia su proceso con `resume` cuando cambian la web, el esfuerzo o las instrucciones. El servicio tiene que tolerarlo sin perder la sesión.
 
 - **Registro de modelos (D1):** caché de 10 minutos y actualización en segundo plano. Los favoritos y el modelo por defecto viven en `settings.json` (D3, D4).
 
@@ -56,7 +58,7 @@ Los cuatro programas dentro de la app, con:
   - Selector con buscador y manejo con teclado (D2), y la línea de programas no disponibles (D5).
   - Línea de cambio de modelo (D6) y etiqueta del modelo en cada respuesta (D7).
   - Acciones de la última respuesta (E8), edición de la última pregunta (E9) y fuentes (E10).
-  - Errores según la tabla de E4. Los comandos de inicio de sesión de cada programa salen de `docs/etapa-0-resultados.md` (PENDIENTE ETAPA 0).
+  - Errores según la tabla de E4. Comandos de inicio de sesión: Claude, `claude` y luego `/login`; GPT, `codex login`. Zen gratis no necesita sesión, pero tiene un límite diario: su error 429 `provider.free-limit` es de tipo `quota`.
 
 - **Proveedor `mock`:** agrega dos modelos de prueba, `mock-a` y `mock-b`, que simulen dos programas distintos. Agrega también el comando `/echo-context`, que responde con el texto exacto que recibió, para comprobar el traspaso de punta a punta.
 
@@ -67,23 +69,12 @@ Los cuatro programas dentro de la app, con:
   - `ChatService`: traspaso, sesión perdida, reintentar y editar, cambio de instrucciones, persistencia en intervalos y reinicio de procesos.
   - Registro y caché.
   - Modelo por defecto cuando el elegido no está disponible.
-- **De punta a punta, con el `mock`:**
-  - Selector con buscador y teclado.
-  - Favoritos.
-  - Cambio `mock-a` → `mock-b` con `/echo-context`, que muestra el resumen.
-  - Reintentar, preguntar a otro modelo y editar.
-  - Cada error de E4.
-  - Fuentes de la búsqueda web.
-  - 🌐 y "Pensar más" guardados por chat.
+## Al terminar
 
-## Comprobación manual con programas reales
-
-Con preguntas cortas y modelos baratos:
-- D6: Claude → GPT con "me llamo Ana", y luego "¿cómo me llamo?".
-- D5: un programa con una ruta falsa.
-- F7: matar `codex app-server` y mandar un mensaje con GPT.
-- C6: un turno con "Pensar más".
-- Un turno de cada uno de los cuatro programas.
+- `npm run typecheck` y `npm test` pasan.
+- `npm run dev` abre la app sin errores.
+- Haz como máximo **tres** turnos reales: Claude Haiku → GPT‑6‑Luna con "me llamo Ana" y luego "¿cómo me llamo?", para comprobar el traspaso.
+- En el reporte, deja una lista corta de pasos para que Claude compruebe cada código con la app real y el `mock`.
 
 ## Fuera de alcance
 

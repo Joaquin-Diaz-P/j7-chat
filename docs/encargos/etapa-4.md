@@ -2,7 +2,7 @@
 
 Repo: `/Users/joaco/.t3/projects/j7-chat`.
 
-Antes de empezar, lee `docs/especificacion.md`, `docs/funcionalidades.md` (sección H), `docs/plan.md` y los reportes de las etapas anteriores.
+Lee `docs/plan.md` (reglas para los subagentes) y la sección H de `docs/funcionalidades.md`.
 
 ## Objetivo
 
