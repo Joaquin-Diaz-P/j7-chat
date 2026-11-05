@@ -4,7 +4,7 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File } from "lucide-react";
+import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -311,8 +311,8 @@ function App() {
             if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
           }}>
-            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}>{s.attachFile}</button>
-            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
+            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}><FileUp size={15}/>{s.attachFile}</button>
+            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}><SquareDashed size={15}/>{s.capture}</button>
           </div>}
       <div className="card-clip">
       <header className="window-bar" inert={!expanded}>
