@@ -10,9 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "spike": "tsx spikes/run.ts",
-    "dev": "npm run icons && node scripts/dev.mjs",
+    "dev": "npm run build:helper && npm run icons && node scripts/dev.mjs",
     "build": "npm run icons && electron-vite build",
-    "icons": "node scripts/icons.mjs"
+    "icons": "node scripts/icons.mjs",
+    "build:helper": "mkdir -p build && swiftc -O -target arm64-apple-macosx14.0 native/j7-helper/main.swift -o build/j7-helper"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "2.4.0",

@@ -33,6 +33,8 @@ export interface ChatSnapshot {
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
 export interface PanelState { appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
 export interface J7Api {
+  captureAction(action: 'cancel'|'recover'|'idle'|'queued'|'failed'|'screen'|'input'|'status'): Promise<void>;
+  onCapture(callback: (event: import('./capture.js').CaptureEvent) => void): () => void;
   snapshot(): Promise<ChatSnapshot>;
   attachments(action: "files" | "data" | "paste" | "dialog" | "capture" | "preview", value?: unknown, count?: number): Promise<Attachment[]>;
   filePath(file: File): string;

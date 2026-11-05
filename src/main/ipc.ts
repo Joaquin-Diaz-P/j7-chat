@@ -16,7 +16,9 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
     if (trusted(event) && typeof text === "string" && text.length <= 100_000 && Array.isArray(ids) && ids.length <= 10) {
       const files = ids.map(id => attachments.files.get(String(id)));
       if (files.some(f => !f)) throw new Error("Adjunto desconocido");
+      const before = chat.snapshot().messages.filter(m => m.role === "user").length;
       chat.send(text, files.filter(f => f !== undefined));
+      if (chat.snapshot().messages.filter(m => m.role === "user").length === before) throw new Error("No se pudo enviar el mensaje");
     }
   });
   ipcMain.handle("chat:stop", (event) => {

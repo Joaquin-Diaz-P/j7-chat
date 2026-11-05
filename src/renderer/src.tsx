@@ -19,6 +19,10 @@ function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id:
 }
 function App() {
   const chat = useChat();
+  const [capture, setCapture] = useState<import('../shared/capture.js').CaptureState>({phase:'idle',seconds:0});
+  const pendingVoice = useRef(false);
+  const voiceBusy = useRef(false);
+
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentError, setAttachmentError] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -57,6 +61,13 @@ function App() {
       pending = [];
     };
     const disposers = [
+      window.j7.onCapture(event => {
+        setCapture(previous => ({...previous,busy:false,recoverable:false,...event.state}));
+        voiceBusy.current = ['transcribing','recovering','listening','capturing','opening'].includes(event.state.phase);
+        if (event.attachment) setAttachments(files => [...files,event.attachment!]);
+        if (event.removeId) setAttachments(files => files.filter(f => f.id !== event.removeId));
+        if (event.text) { setDraft(text => [text,event.text].filter(Boolean).join('\n')); pendingVoice.current = !!event.autoSend; }
+      }),
       window.j7.onSnapshot((snapshot) => { flush(); useChat.getState().setSnapshot(snapshot); }),
       window.j7.onChat((event) => { pending.push(event); timer ??= setTimeout(flush, 34); }),
       window.j7.onPanel((state) => {
@@ -75,6 +86,7 @@ function App() {
       .snapshot()
       .then((snapshot) => useChat.getState().setSnapshot(snapshot));
     window.j7.ready();
+    void window.j7.captureAction("status");
     return () => { clearTimeout(timer); disposers.forEach((dispose) => dispose()); };
   }, []);
   useLayoutEffect(() => {
@@ -123,10 +135,13 @@ function App() {
   async function send() {
     if (sending.current || chat.active || (!draft.trim() && !attachments.length) || !chat.model || imageBlocked || loadingAttachments) return;
     sending.current = true;
+    const submitted = draft;
+    const ids = attachments.map(file => file.id!);
     try {
-      await window.j7.send(draft, attachments.map(file => file.id!));
-      setAttachments([]);
-      setDraft("");
+      await window.j7.send(submitted, ids);
+      setAttachments(files => files.filter(file => !ids.includes(file.id!)));
+      setDraft(value => value === submitted ? "" : value);
+
     } catch (error) { setAttachmentError(error instanceof Error ? error.message : s.attachmentFailed); } finally {
       sending.current = false;
     }
@@ -135,10 +150,12 @@ function App() {
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
+        if (voiceBusy.current) { void window.j7.captureAction("cancel"); return; }
         window.j7.hide();
       }
       if (event.metaKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
+        if (voiceBusy.current || pendingVoice.current) return;
         setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
         void window.j7.newChat();
         input.current?.focus();
@@ -156,8 +173,15 @@ function App() {
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, []);
+  useEffect(() => {
+    if (!pendingVoice.current) return;
+    if (chat.active) { void window.j7.captureAction('queued'); return; }
+    pendingVoice.current = false;
+    if (!chat.model || imageBlocked || loadingAttachments) { void window.j7.captureAction('failed'); return; }
+    void send().then(() => window.j7.captureAction('idle'));
+  }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
   return (
-    <div className="panel" ref={content}
+    <div className="panel"  ref={content}
       onDragOver={event => { event.preventDefault(); setDragging(true); }}
       onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
       onDrop={event => {
@@ -181,6 +205,7 @@ function App() {
             title={s.newChat}
             aria-label={s.newChat}
             onClick={() => {
+              if (voiceBusy.current || pendingVoice.current) return;
               setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
               void window.j7.newChat();
               input.current?.focus();
@@ -244,6 +269,18 @@ function App() {
       {away && <button className="scroll-bottom" aria-label={s.bottom} title={s.bottom} onClick={() => { following.current = true; setAway(false); const el = conversation.current; if (el) el.scrollTop = el.scrollHeight; }}><ArrowDown size={16}/></button>}
       <div className="composer">
         <div className="attachment-draft">
+          {capture.permission && <p role="alert">{capture.permission === 'screen' ? s.captureScreen : s.captureInput} <button onClick={() => void window.j7.captureAction(capture.permission!)}>{s.systemSettings}</button></p>}
+          {capture.conflict && <p role="alert">{s.hexConflict}</p>}
+          {capture.missingHex && <p role="alert">{s.hexMissing} <button onClick={() => void window.j7.openSettings()}>{s.settings}</button></p>}
+          {capture.busy && <p role="status">{s.captureBusy}</p>}
+          {capture.phase === 'listening' && <p role="status">{s.captureListening}</p>}
+          {capture.phase === 'opening' && <p role="status">{s.captureOpening}</p>}
+          {capture.phase === 'empty' && <p role="status">{s.captureEmpty}</p>}
+          {capture.phase === 'queued' && <p role="status">{s.queued}</p>}
+          {capture.phase === 'transcribing' && <p role="status">{s.captureTranscribing} {capture.seconds >= 3 ? capture.seconds + ' s' : ''} <button onClick={() => void window.j7.captureAction('cancel')}>{s.cancel}</button></p>}
+          {capture.phase === 'recovering' && <p role="status">{s.captureRecovering}</p>}
+          {capture.phase === 'failed' && <p role="alert">{capture.recoverable ? s.captureFailed : s.captureUnavailable} {capture.recoverable && <button onClick={() => void window.j7.captureAction('recover')}>{s.captureRetry}</button>}</p>}
+
           <AttachmentChips files={attachments} remove={id => { setAttachmentError(""); setAttachments(files => files.filter(file => file.id !== id)); }}/>
           {attachmentError && <p role="alert">{attachmentError}</p>}
           {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}

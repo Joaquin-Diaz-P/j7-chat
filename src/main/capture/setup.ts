@@ -1,0 +1,70 @@
+import { app, globalShortcut, ipcMain, shell } from 'electron';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { unlink } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { NativeHelper } from '../native/helper.js';
+import { Hex, hotkeyConflicts, modifierCodes } from '../voice/hex.js';
+import { CaptureFlows } from './flows.js';
+import type { Panel } from '../window.js';
+import type { AttachmentStore } from '../attachments/index.js';
+import type { SettingsStore } from '../settings.js';
+import type { CaptureEvent } from '../../shared/capture.js';
+export function setupCapture(panel: Panel, attachments: AttachmentStore, settings: SettingsStore) {
+  const helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,'j7-helper') : join(app.getAppPath(),'build/j7-helper'));
+  const hex = new Hex();
+  const emit = (event: CaptureEvent) => { if (!panel.window.isDestroyed()) panel.window.webContents.send('capture:event',event); };
+  let permission: 'screen'|'input'|undefined;
+  const check = async (kind: 'screen'|'input') => {
+    const reply = await helper.request('permissions');
+    if (!reply[kind]) {
+      permission = kind; panel.show(); emit({state:{phase:'idle',seconds:0,permission:kind}});
+      return false;
+    }
+    if (permission === kind) { permission = undefined; emit({state:{...flows.state,permission:null}}); }
+    return true;
+  };
+  const flows = new CaptureFlows({
+    visible:()=>panel.window.isVisible(), show:()=>panel.show(), hide:()=>panel.hide(),
+    protect:value=>{ panel.suppressHide = value; }, emit,
+    capture:async()=>{
+      if (!await check('screen')) throw new Error('Permission');
+      panel.hide(); await new Promise(resolve=>setTimeout(resolve,180));
+      const path = join(tmpdir(),randomUUID()+'.png');
+      try {
+        const reply = await helper.request('captureDisplayUnderMouse',{path,pid:process.pid});
+        if (!reply.ok) throw new Error('Capture');
+        const files = await attachments.ingest([path]); return files[0]!;
+      } finally { await unlink(path).catch(()=>{}); }
+    }
+  },hex);
+  // The tap only delivers events with input permission; begin synchronously so an early holdEnd is not lost.
+  helper.on('holdStart',()=>{ void flows.begin(); });
+  helper.on('holdEnd',()=>{void flows.end();});
+  helper.on('holdCancel',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel(true);});
+  // A crash while transcribing must not discard the dictated text.
+  helper.on('disconnect',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel();});
+  const trusted = (event: Electron.IpcMainInvokeEvent) => event.sender === panel.window.webContents && event.senderFrame === panel.window.webContents.mainFrame;
+  ipcMain.handle('capture:action',async(event,action: unknown)=>{
+    if (!trusted(event)) return;
+    if (action === 'cancel') await flows.cancel();
+    if (action === 'recover' && flows.state.phase === 'failed' && flows.state.recoverable) await flows.recover();
+    if (action === 'idle' || action === 'queued' || action === 'failed') flows.acknowledge(action);
+    if (action === 'screen' || action === 'input') {
+      await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_'+(action === 'screen'?'ScreenCapture':'ListenEvent'));
+      await helper.request('permissions',{request:true});
+      await helper.watch(modifierCodes[settings.value.voiceModifier]!);
+    }
+    if (action === 'status') {
+      if (permission) emit({state:{phase:'idle',seconds:0,permission}});
+      const hotkey = await hex.hotkey();
+      emit({state:{phase:flows.state.phase,seconds:0,conflict:hotkeyConflicts(settings.value.voiceModifier,hotkey),missingHex:!hotkey}});
+      if (!await check('input')) return;
+      await helper.watch(modifierCodes[settings.value.voiceModifier]!);
+    }
+  });
+  helper.start();
+  void helper.watch(modifierCodes[settings.value.voiceModifier]!).catch(()=>{});
+  globalShortcut.register(settings.value.captureShortcut,()=>{void flows.question();});
+  return { dispose:async()=>{const stopped = flows.dispose(); helper.dispose(); await stopped;} };
+}

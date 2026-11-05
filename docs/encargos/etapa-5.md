@@ -13,6 +13,18 @@ Historial persistente en SQLite con un panel a la izquierda, búsqueda, títulos
 - **Historial:** I1, I2, I3, I4, I5, I6, I7, I8, I9.
 - **Ventana:** B8 y, de B10, `⌘ B` y `⌘ F`.
 
+## Correcciones de la etapa 4 (primero)
+
+Están en `src/main/capture/flows.ts`, `setup.ts`, `voice/hex.ts` e `index.ts`. Agrega un test para cada una.
+
+1. **Salir mientras transcribe:** hoy `dispose` espera el `stop --print` en curso hasta 120 s, y el cierre se cuelga. Al salir, espera como máximo 3 segundos y luego corta el proceso. El texto no se pierde: queda en el historial de Hex.
+2. **Hex grabando tras cancelar:** si la cancelación llega mientras `dictation start` sigue en curso, cuando `start` termine hay que lanzar un `stop` **nuevo**, no reutilizar la promesa del `stop` anterior. Hex nunca debe quedar grabando.
+3. **Recuperación:** usa `hex history --since <inicio> --oldest-first --limit 1 --json` (H7 ya está actualizado).
+4. **"Hex no está instalado" falso:** decide si Hex está instalado solo por la existencia del binario, no por si responde `settings get`. Si Hex está cerrado, `settings get` puede fallar, y eso no significa que no esté instalado.
+5. **Regla de los 5 minutos:** "Captura y pregunta" y "Captura y voz" tienen que seguirla (H1), en vez de retomar siempre el chat anterior.
+6. **Mensaje engañoso:** si el modelo elegido no ve imágenes, el flujo de voz tiene que mostrar el aviso de G8 en vez de "No se pudo completar la captura o iniciar Hex", y el texto dictado queda en el campo.
+7. **Tests que faltan en H7:** la cola ("En cola"), que hoy vive en el renderer sin test, y "barra escondida", que hoy llama a un `hide` falso que no hace nada.
+
 ## Antes de empezar: dos hallazgos de la etapa 3
 
 1. **El `AttachmentStore` hoy vive en memoria.** Tiene que pasar a la tabla `attachments` de SQLite (I1). Si no, las miniaturas y la vista rápida de los mensajes antiguos fallan después de reiniciar. El protocolo `j7-file` tiene que resolver los ids desde la base de datos, manteniendo sus protecciones actuales (ids conocidos y `realpath` dentro de la carpeta de adjuntos).

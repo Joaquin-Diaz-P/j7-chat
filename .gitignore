@@ -5,3 +5,4 @@ release/
 .reference/
 .DS_Store
 *.log
+build/

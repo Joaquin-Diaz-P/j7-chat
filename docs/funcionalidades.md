@@ -455,7 +455,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
   - Si se vuelve a mantener la tecla de voz, no empieza otra grabación y aparece el aviso "Espera a que termine la transcripción".
 - **Si hay una respuesta generándose** en ese chat cuando llega el texto, el mensaje queda en cola, con el indicador "En cola", y se envía apenas la respuesta termina.
 - **Si `stop --print` falla o pasan los 120 segundos:**
-  1. J7 intenta recuperar el texto con `hex history --since <inicio de la grabación> --limit 1 --json`.
+  1. J7 intenta recuperar el texto con `hex history --since <inicio de la grabación> --oldest-first --limit 1 --json`. Así obtiene el primer dictado después del inicio, y no uno posterior hecho con el atajo propio de Hex.
   2. Si lo recupera, el flujo sigue normalmente.
   3. Si no, aparece "Hex no devolvió la transcripción. La grabación quedó en el historial de Hex", con un botón "Reintentar recuperar". La captura queda adjunta.
 - **El texto dictado nunca se pierde.** Si el envío falla, queda en el campo de texto.

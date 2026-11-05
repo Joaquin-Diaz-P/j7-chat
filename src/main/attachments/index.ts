@@ -6,8 +6,9 @@ import { normalizeImage } from './image.js';
 import { readUtf8 } from './text.js';
 import { extractPdfText } from './pdf.js';
 const images = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic']);
-export const TEXT_EXTENSIONS = ['txt','md','csv','json','js','ts','tsx','py','html','css','xml','yaml','yml','sh','sql','jsx','mjs','cjs','c','h','cpp','rs','go','swift','rb','toml','log','ini','env'];
+export const TEXT_EXTENSIONS = ['txt','md','csv','json','js','ts','tsx','py','html','css','xml','yaml','yml','sh','sql','jsx','mjs','cjs','c','h','cpp','rs','go','swift','rb','toml','log','ini'];
 export function validateFile(name: string, size: number) {
+  if (/^\.env(?:\.|$)/i.test(basename(name))) throw new Error('Archivo de entorno no permitido');
   const extension = extname(name).slice(1).toLowerCase();
   const kind = images.has(extension) ? 'image' : extension === 'pdf' ? 'pdf' : TEXT_EXTENSIONS.includes(extension) ? 'text' : undefined;
   if (!kind) throw new Error(`J7 todavía no puede leer archivos .${extension}`);

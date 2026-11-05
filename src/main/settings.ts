@@ -6,6 +6,8 @@ export interface Position {
 }
 export interface Settings {
   shortcut: string;
+  captureShortcut: string;
+  voiceModifier: string;
   pinned: boolean;
   theme: "system" | "light" | "dark";
   positions: Record<string, Position>;
@@ -37,6 +39,8 @@ export function validateSettings(value: unknown): Settings {
       )
         ? v.shortcut
         : "Alt+J",
+    captureShortcut: typeof v.captureShortcut === "string" && /^(?:(?:Alt|Option|Command|Cmd|Control|Ctrl|Shift)\+)+[A-Za-z0-9]$/.test(v.captureShortcut) ? v.captureShortcut : "Alt+Shift+J",
+    voiceModifier: typeof v.voiceModifier === "string" && /^(?:(?:left|right)-(?:option|command|shift|control)|fn)$/.test(v.voiceModifier) ? v.voiceModifier : "right-option",
     pinned: typeof v.pinned === "boolean" ? v.pinned : false,
     theme: v.theme === "light" || v.theme === "dark" ? v.theme : "system",
     positions,

@@ -14,6 +14,8 @@ function subscribe<T>(channel: string, callback: (value: T) => void) {
   };
 }
 const api: J7Api = {
+  captureAction: action => ipcRenderer.invoke("capture:action", action),
+  onCapture: callback => subscribe("capture:event", callback),
   snapshot: () => ipcRenderer.invoke("chat:snapshot"),
   send: (text, ids) => ipcRenderer.invoke("chat:send", text, ids),
   filePath: file => webUtils.getPathForFile(file),

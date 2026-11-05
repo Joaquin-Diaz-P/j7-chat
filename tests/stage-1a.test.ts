@@ -84,6 +84,8 @@ describe("settings", () => {
   it("validates each field independently", () => {
     expect(validateSettings(null)).toEqual({
       shortcut: "Alt+J",
+      captureShortcut: "Alt+Shift+J",
+      voiceModifier: "right-option",
       pinned: false,
       theme: "system",
       positions: {},
@@ -108,6 +110,8 @@ describe("settings", () => {
       }),
     ).toEqual({
       shortcut: "Command+Shift+K",
+      captureShortcut: "Alt+Shift+J",
+      voiceModifier: "right-option",
       pinned: true,
       theme: "dark",
       positions: { a: { x: 2, y: 3 } },

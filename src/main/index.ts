@@ -1,3 +1,4 @@
+import { setupCapture } from "./capture/setup.js";
 import { AttachmentStore } from "./attachments/index.js";
 import { registerAttachments } from "./attachments/ipc.js";
 import { app, protocol, globalShortcut, type Tray } from "electron";
@@ -24,6 +25,7 @@ process.on("SIGINT", () => app.quit());
 let panel: Panel | undefined;
 let chat: ChatService | undefined;
 let tray: Tray | undefined;
+let capture: ReturnType<typeof setupCapture> | undefined;
 let exiting = false;
 let shutdownLog: ReturnType<typeof createLogger> | undefined;
 app.on("before-quit", (event) => {
@@ -31,8 +33,8 @@ app.on("before-quit", (event) => {
   event.preventDefault();
   exiting = true;
   globalShortcut.unregisterAll();
-  const fallback = setTimeout(() => app.exit(0), 4_000);
-  void (chat?.dispose() ?? Promise.resolve()).finally(() => {
+  const fallback = setTimeout(() => app.exit(0), 125_000);
+  void Promise.all([chat?.dispose(), capture?.dispose()]).finally(() => {
     clearTimeout(fallback);
     shutdownLog?.("shutdown");
     tray?.destroy();
@@ -65,6 +67,7 @@ else {
       panel = new Panel(settings, chat);
       const attachments = new AttachmentStore(join(paths.data, "attachments"));
       registerAttachments(panel, attachments);
+      capture = setupCapture(panel, attachments, settings);
       registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);
       registerShortcut(settings.value.shortcut, () => panel?.toggle(), log);

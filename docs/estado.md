@@ -33,7 +33,9 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | 3 | G1 G2 G3 G5 G6 G7 G8 G9 · E12 · E8 F7 E4 (correcciones) | ✅ | Con el mock y la app real. PDF real comprobado con Claude Haiku (nativo) y GPT‑6‑Luna (texto). El revisor corrigió G2 (pegar desde Finder) y el test intermitente |
 | 3 | G4 | 🔍 | Prueba física del usuario: selección de zona real con ✂︎ |
 | 3 | Pendientes menores | ⬜ | Avisar al modelo del recorte y quitar `.env` (etapa 4); adjuntos en SQLite y limpieza de copias huérfanas (etapa 5) |
-| 4 | H1 H2 H3 H4 H5 H6 H7 | ⬜ | |
+| 4 | H3 H5 · G5 G7 (correcciones) | ✅ | Ayudante Swift comprobado (`--self-test`, reinicio tras `kill -9`, solo escucha). Formatos de Hex confirmados |
+| 4 | H1 H2 H4 H6 H7 | 🔍 | El código está revisado y tiene tests. Falta la prueba física del usuario (docs/prueba-fisica-voz.md), después de la etapa 5. El revisor corrigió dos huecos en setup.ts |
+| 4 | Riesgos del flujo de voz | ⬜ | Cuelgue al salir mientras transcribe, Hex grabando tras cancelar, recuperación con --oldest-first, aviso falso de Hex no instalado, regla de 5 min y mensaje engañoso. Se corrigen en la etapa 5 |
 | 5 | I1 I2 I3 I4 I5 I6 I7 I8 I9 · B8 · B10 (`⌘ B`, `⌘ F`) | ⬜ | |
 | 6 | A4 A5 · B10 (`⌘ ,`) · J1 J2 J3 J4 J5 J6 J7 · K1 K2 K3 · M4 | ⬜ | |
 

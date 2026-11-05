@@ -86,6 +86,7 @@ export class Panel {
         ),
       );
   }
+  get voiceModifier() { return this.settings.value.voiceModifier; }
   private async openExternal(url: string) {
     if (/^https?:\/\//.test(url)) {
       const { shell } = await import("electron");
@@ -123,7 +124,7 @@ export class Panel {
       screen.getCursorScreenPoint(),
     );
     this.displayId = String(display.id);
-    const resume = this.clock.shouldResume(!!this.chat.snapshot().chatId);
+    const resume = this.suppressHide || this.clock.shouldResume(!!this.chat.snapshot().chatId);
     if (!resume) this.chat.newChat();
     this.anchor = displayPosition(display.workArea, this.displayId, this.settings.value.positions);
     this.place(
