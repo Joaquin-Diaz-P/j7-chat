@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 export type LogEvent =
+  | "effort-adjusted"
   | "startup"
   | "shutdown"
   | "shortcut-failed"

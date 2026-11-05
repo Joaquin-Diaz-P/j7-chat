@@ -1,4 +1,4 @@
-import { providerIcons } from './ModelSelector.js';
+import { ProviderIcon } from './ProviderIcon.js';
 import { useEffect, useRef, useState } from 'react';
 import type { HistoryChat } from '../../main/chat/sqlite-store.js';
 import { historyGroup } from '../../shared/history.js';
@@ -22,11 +22,11 @@ export function History({current,revision,focus,onSelect}:{current:string|null;r
  return <aside className="history"><input ref={search} aria-label={s.historySearch} placeholder={s.historySearch} value={query} onChange={e=>setQuery(e.target.value)}/>
  <div className="history-list" onScroll={e=>{const el=e.currentTarget;if(more && el.scrollHeight-el.scrollTop-el.clientHeight<40){setMore(false);void load(rows.length);}}}>
  {s.historyGroups.map((group,index)=><section key={group}>{rows.some(r=>historyGroup(r)===index)&&<h3>{group}</h3>}
- {rows.filter(r=>historyGroup(r)===index).map(row=>{const Icon=providerIcons[row.provider];return <div key={row.id} className="history-row" onContextMenu={e=>{e.preventDefault();setMenu(row.id);}}>
+ {rows.filter(r=>historyGroup(r)===index).map(row=>{return <div key={row.id} className="history-row" onContextMenu={e=>{e.preventDefault();setMenu(row.id);}}>
  {editing===row.id?<input autoFocus aria-label={s.renameChat} value={title} onChange={e=>setTitle(e.target.value)} onKeyDown={e=>{
  if(e.key==='Escape'){e.stopPropagation();setEditing(null);}
  if(e.key==='Enter'){void action('rename',row.id,title);setEditing(null);}
- }}/>:<button aria-current={current===row.id} onClick={()=>{onSelect();void window.j7.selectChat(row.id);}}><span><Icon size={13} aria-label={s.programLabels[row.provider]}/> {row.title||s.newChat}</span>{row.snippet&&<small>{row.snippet.split(/(\[[^\]]*\])/g).map((part,i)=>part.startsWith('[')?<mark key={i}>{part.slice(1,-1)}</mark>:part)}</small>}</button>}
+ }}/>:<button aria-current={current===row.id} onClick={()=>{onSelect();void window.j7.selectChat(row.id);}}><span><ProviderIcon provider={row.provider} size={13}/> {row.title||s.newChat}</span>{row.snippet&&<small>{row.snippet.split(/(\[[^\]]*\])/g).map((part,i)=>part.startsWith('[')?<mark key={i}>{part.slice(1,-1)}</mark>:part)}</small>}</button>}
  <button aria-label={s.historyActions} onClick={()=>setMenu(menu===row.id?null:row.id)}>⋯</button>
  {menu===row.id&&<div className="history-menu"><button onClick={()=>void action('pin',row.id,!row.pinned)}>{row.pinned?s.unpinChat:s.pinChat}</button><button onClick={()=>{setEditing(row.id);setTitle(row.title);setMenu(null);}}>{s.renameChat}</button><button onClick={()=>setConfirm(row)}>{s.deleteChat}</button></div>}
  </div>;})}</section>)}

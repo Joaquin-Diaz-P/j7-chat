@@ -124,18 +124,18 @@ describe("F1–F5 turn and session service", () => {
       expect(p.inputs[1]?.text).toContain("Usuario: first");
     } finally { await service.dispose(); rmSync(dir, { recursive: true, force: true }); }
   });
-  it("always permits web search and uses normal effort across models and reopened chats", async () => {
+  it("always permits web search and preserves selected chat effort", async () => {
     const a = new RecordingProvider("mock-a"), b = new RecordingProvider("mock-b");
     const { service, send } = await setup([a, b]);
     service.updateChat({ webSearch: false, effort: "high" }); await send("first");
     const id = service.snapshot().chatId!;
-    expect(a.inputs[0]).toMatchObject({ webSearch: true, effort: "normal" });
+    expect(a.inputs[0]).toMatchObject({ webSearch: true, effort: "high" });
     service.updateChat({ model: "mock-b:mock-b" }); await send("second");
-    expect(b.inputs[0]).toMatchObject({webSearch:true,effort:"normal"});
+    expect(b.inputs[0]).toMatchObject({webSearch:true,effort:"low"});
     service.updateChat({ model: "mock-a:mock-a" }); await send("third");
-    expect(a.inputs[1]).toMatchObject({webSearch:true,effort:"normal"});
-    service.newChat(); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "normal" });
-    service.selectChat(id); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "normal" });
+    expect(a.inputs[1]).toMatchObject({webSearch:true,effort:"low"});
+    service.newChat(); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "low" });
+    service.selectChat(id); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "low" });
     await service.dispose();
   });
 });
@@ -246,4 +246,26 @@ it('uses the turn provider login command and never suggests login for Zen', asyn
     if (id === 'opencode') expect(error).not.toContain('Terminal');
     await service.dispose();
   }
+});
+
+it("askOther adds one notice and carries the selected effort",async()=>{
+ const codex=new RecordingProvider("codex");
+ const {service,send}=await setup([new RecordingProvider("claude"),codex]);
+ try { await send("hola"); service.askOther("codex:codex","high"); await service.waitForIdle();
+ expect(service.snapshot().messages.filter(m=>m.role==="notice")).toHaveLength(1);
+ expect(codex.inputs[0]?.effort).toBe("high");
+ } finally {await service.dispose();}
+});
+it("logs effort adjustment only when a turn executes",async()=>{
+ const {service,store,send}=await setup(); const log=vi.fn();
+ // Inject the logger through the same constructor hook used by main.
+ const catalog=service.catalog;
+ const runner=new ChatService(catalog,()=>{},()=>{},undefined,undefined,undefined,store,undefined,log);
+ try {
+ await send("hola");
+ store.updateChat(service.snapshot().chatId!,{effort:"max"});
+ runner.selectChat(service.snapshot().chatId!);
+ expect(log).not.toHaveBeenCalled();
+ runner.send("otra");await runner.waitForIdle();expect(log).toHaveBeenCalledExactlyOnceWith("effort-adjusted");
+ } finally {await runner.dispose();await service.dispose();}
 });

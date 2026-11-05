@@ -1,9 +1,11 @@
+import { ProviderIcon } from "./components/ProviderIcon.js";
+import { levels } from "../shared/effort.js";
 import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
 import { Menu, Paperclip, X, Square, Plus, Pin, ArrowDown } from "lucide-react";
-import { providerIcons, ModelSelector } from "./components/ModelSelector.js";
+import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -61,7 +63,7 @@ function App() {
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
-  const ProviderIcon = model ? providerIcons[model.provider] : null;
+
   const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
   const lastAnswer = chat.messages.findLast(m => m.role === "assistant")?.id;
   const lastQuestion = chat.messages.findLast(m => m.role === "user")?.id;
@@ -167,6 +169,7 @@ function App() {
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
+        if (selector) { setSelector(null); input.current?.focus(); return; }
         if (attachmentMenu) { closeAttachments(); return; }
         if (voiceBusy.current) { void window.j7.captureAction("cancel"); return; }
         window.j7.hide();
@@ -203,7 +206,7 @@ function App() {
       window.removeEventListener("keydown", settingsListener, true);
       window.removeEventListener("keydown", listener);
     };
-  }, [attachmentMenu]);
+  }, [attachmentMenu, selector]);
   useEffect(() => {
     const decision=voiceDelivery(pendingVoice.current,chat.active,!!chat.model,imageBlocked,loadingAttachments);
     if(decision==='none' || decision==='wait')return;
@@ -226,9 +229,9 @@ function App() {
         else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
       }}>
       {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
-      {selector && chat.catalog && <ModelSelector catalog={chat.catalog} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={key => {
-        if (selector === "other") void window.j7.askOther(key);
-        else void window.j7.updateChat({ model: key });
+      {selector && chat.catalog && <ModelSelector catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
+        if (selector === "other") void window.j7.askOther(key, effort);
+        else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
         setSelector(null); input.current?.focus();
       }}/>}
 
@@ -351,7 +354,7 @@ function App() {
           }}
         />
         <div className="composer-tools">
-          <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setAttachmentMenu(false); }}>
+          <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} >
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
           {attachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
             if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
@@ -361,7 +364,7 @@ function App() {
             <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
           </div>}
           </div>
-          <button className="model-trigger" title={s.model} aria-label={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{ProviderIcon && <ProviderIcon size={14}/ >}{model?.label ?? chat.providerLabel ?? s.model}</button>
+          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort ? ` ${effortLabel(chat.effort)}` : ""}</button>
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
       </div>

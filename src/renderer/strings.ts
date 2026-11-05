@@ -1,4 +1,8 @@
 export const strings = {
+  programs: "Programas",
+  programDefault: "Por defecto",
+  favorites: "Favoritos",
+  effortLabels: {low:"Bajo", medium:"Medio", high:"Alto", xhigh:"Muy alto", max:"Máximo", ultracode:"Ultracode"} as Record<string,string>,
  attachmentMissing:"El adjunto ya no está disponible.",
  settingsTitle:"Ajustes de J7 Chat", firstRun:"Aprieta ⌥ J para abrir J7 desde cualquier app", invalidShortcut:"Usa una combinación con modificador y letra o número", duplicateShortcut:"Ese atajo se repite en J7", shortcutUsed:"Ese atajo ya lo usa otra app",
   historySearch: "Buscar en el historial",
@@ -32,7 +36,7 @@ export const strings = {
   loginCommands: { claude: "`claude` y luego `/login`", codex: "`codex login`", mock: "`claude` y luego `/login` o `codex login`" },
   zenNoModels: "OpenCode no tiene modelos gratis de Zen disponibles.",
   zenOnlyFree: "J7 solo permite modelos gratis de OpenCode Zen.",
-  effortUnsupported: "Este modelo gratis no permite cambiar el esfuerzo.",
+
   codexExited: "El proceso de Codex terminó.",
   codexUnsafeMcp: "Codex cargó servidores MCP. Se bloqueó el programa.",
   codexLogin: "J7 requiere una sesión de ChatGPT en Codex. Ejecuta codex login.",
@@ -67,7 +71,7 @@ export const strings = {
   edit: "Editar la última pregunta",
   cancel: "Cancelar",
   allModels: "Ver todos",
-  searchModels: "Buscar modelos",
+  searchModels: "Buscar modelos…",
   favorite: "Marcar como favorito",
   defaultModel: "Usar por defecto",
   defaultSelected: "Modelo por defecto",

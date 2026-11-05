@@ -30,6 +30,7 @@ export interface ZenModel {
   status?: string;
   capabilities: { input: string[] };
   variants: { id: string }[];
+  defaultVariant?: string;
   cost?: {
     input: number;
     output: number;
@@ -60,6 +61,8 @@ export function freeZenModels(models: ZenModel[]): ModelInfo[] {
       provider: "opencode",
       supportsImages: model.capabilities.input.includes("image"),
       supportsPdf: false,
+      reasoningEfforts: model.variants.map(v => v.id),
+      defaultReasoningEffort: model.defaultVariant,
       supportsEffort: model.variants.some((variant) => variant.id === "high"),
       free: true,
     }));
@@ -296,11 +299,6 @@ export class OpenCodeProvider extends BaseProvider {
         "unsupported",
         s.zenOnlyFree,
       );
-    if (input.effort === "high" && !model.supportsEffort)
-      throw new ProviderError(
-        "unsupported",
-        s.effortUnsupported,
-      );
     if (
       input.attachments.some((a) => a.kind === "image") &&
       !model.supportsImages
@@ -312,7 +310,7 @@ export class OpenCodeProvider extends BaseProvider {
     const modelRef = {
       providerID: "opencode",
       id: input.model,
-      ...(input.effort === "high" ? { variant: "high" } : {}),
+      ...(model.reasoningEfforts?.length ? { variant: input.effort } : {}),
     };
     const permissions = openCodePermissions(input.webSearch);
     let id = input.nativeSessionId;

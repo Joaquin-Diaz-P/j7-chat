@@ -88,6 +88,14 @@ export function translateClaudeEvent(raw: unknown): ChatEvent[] {
   return [];
 }
 
+// CLI 2.1.309's help and SDK 0.3.318 omit Ultracode, but the installed
+// binary explicitly handles "--effort ultracode" ("/effort <level> turns it off").
+// Pass it through extraArgs because the SDK effort union cannot represent it.
+export function claudeEfforts(model: {value: string; displayName?: string; description?: string; supportsEffort?: boolean; supportedEffortLevels?: string[]}): string[] {
+ const values = model.supportedEffortLevels ?? (model.supportsEffort ? (model.value.includes("opus") ? ["low","medium","high","xhigh","max"] : ["low","medium","high"]) : []);
+ // The catalog id can be an alias ("opus", "default"), so match the display name too.
+ return /opus[ -.]?5[-.]5/i.test(`${model.value} ${model.displayName ?? ""} ${model.description ?? ""}`) && values.length ? [...new Set([...values,"ultracode"])] : values;
+}
 export class ClaudeProvider extends BaseProvider {
   readonly id = "claude" as const;
   private query: Query | undefined;
@@ -100,7 +108,7 @@ export class ClaudeProvider extends BaseProvider {
     const key = JSON.stringify([
       input?.instructions ?? buildChatInstructions(),
       input?.webSearch ?? false,
-      input?.effort ?? "normal",
+      input?.effort ?? "low",
     ]);
     if (
       this.query &&
@@ -158,12 +166,13 @@ export class ClaudeProvider extends BaseProvider {
         ...(input
           ? {
               model: input.model,
-              effort:
-                input.effort === "high" ? ("high" as const) : ("low" as const),
+              ...(input.effort === "ultracode" ? {} : {effort:
+                input.effort as "low" | "medium" | "high" | "xhigh" | "max"}),
             }
           : {}),
         ...(input?.nativeSessionId ? { resume: input.nativeSessionId } : {}),
         extraArgs: {
+          ...(input?.effort === "ultracode" ? {effort: "ultracode"} : {}),
           "safe-mode": null,
           "disable-slash-commands": null,
           "system-prompt-snapshot": "off",
@@ -238,6 +247,12 @@ export class ClaudeProvider extends BaseProvider {
       provider: this.id,
       supportsImages: true,
       supportsPdf: true,
+      // Prefer SDK metadata. Fallback for older SDK catalogs: Opus gets all SDK
+      // levels, other effort-capable families low/medium/high; default medium.
+      reasoningEfforts: claudeEfforts(model),
+      // supportedModels in SDK 0.3.318 exposes no per-model default; medium
+      // is our documented fallback, only for models that have effort levels.
+      ...((claudeEfforts(model).length) ? {defaultReasoningEffort: "medium"} : {}),
       supportsEffort: model.supportsEffort ?? false,
     }));
   }

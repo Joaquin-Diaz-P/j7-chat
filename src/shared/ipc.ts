@@ -4,6 +4,7 @@ export interface Message {
   role: "user" | "assistant" | "notice";
   text: string;
   thinking?: string;
+  effort?: string;
   status: "interrupted" | "queued" | "streaming" | "complete" | "stopped" | "error";
   model?: string;
   modelLabel?: string;
@@ -17,6 +18,7 @@ export interface CatalogSnapshot {
   statuses: Partial<Record<ProviderId, ProviderStatus>>;
   favorites: string[];
   defaultModel: string | null;
+  effortByModel?: Record<string,string>;
 }
 export interface ChatSnapshot {
   chatId: string | null;
@@ -25,7 +27,7 @@ export interface ChatSnapshot {
   queued?: boolean;
   model?: string;
   webSearch?: boolean;
-  effort?: "normal" | "high";
+  effort?: string;
   providerLabel?: string;
   warning?: string;
   catalog?: CatalogSnapshot;
@@ -49,14 +51,14 @@ export interface J7Api {
   stop(): Promise<void>;
   newChat(): Promise<void>;
   selectChat(id: string): Promise<void>;
-  updateChat(options: { model?: string; webSearch?: boolean; effort?: "normal" | "high" }): Promise<void>;
+  updateChat(options: { model?: string; webSearch?: boolean; effort?: string }): Promise<void>;
   refreshModels(): Promise<void>;
   openSettings(): Promise<void>;
   favorite(model: string): Promise<void>;
   setDefaultModel(model: string): Promise<void>;
   retry(): Promise<void>;
   edit(text: string): Promise<void>;
-  askOther(model: string): Promise<void>;
+  askOther(model: string, effort?: string): Promise<void>;
   hide(): void;
   setContentHeight(height: number): void;
   setPinned(pinned: boolean): void;

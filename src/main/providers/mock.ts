@@ -18,6 +18,8 @@ export class MockProvider implements ChatProvider {
         provider: this.id,
         supportsImages: this.id !== "mock-b",
         supportsPdf: false,
+        reasoningEfforts: this.id === "mock-b" ? [] : ["low", "medium", "high", "xhigh"],
+        defaultReasoningEffort: "medium",
         supportsEffort: this.id !== "mock-b",
       },
     ];

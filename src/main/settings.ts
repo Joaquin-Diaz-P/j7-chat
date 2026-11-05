@@ -17,6 +17,7 @@ export interface Settings {
   positionsVersion: 2;
   positions: Record<string, Position>;
   favorites: string[];
+  effortByModel: Record<string, string>;
   defaultModel: string | null;
   personalInstructions: string;
 }
@@ -37,6 +38,7 @@ export function validateSettings(value: unknown): Settings {
         positions[id] = { x: Math.round(p.x) + (v.positionsVersion === 2 ? 0 : 340), y: Math.round(p.y) + (v.positionsVersion === 2 ? 0 : 88) };
     }
   return {
+    effortByModel: Object.fromEntries(Object.entries(v.effortByModel && typeof v.effortByModel === "object" ? v.effortByModel : {}).filter((entry): entry is [string,string] => typeof entry[1] === "string" && /^[a-z0-9_-]{1,40}$/i.test(entry[1]))),
     firstRunDone: v.firstRunDone === true,
     openAtLogin: v.openAtLogin !== false,
     shortcut: isAccelerator(v.shortcut) ? v.shortcut : "Alt+J",

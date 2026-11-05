@@ -14,7 +14,7 @@ CREATE VIRTUAL TABLE title_search USING fts5(title,content=chats,content_rowid=r
  CREATE TRIGGER ${table}_ai AFTER INSERT ON ${table} BEGIN INSERT INTO ${fts}(rowid,${col}) VALUES(new.rowid,new.${col}); END;
  CREATE TRIGGER ${table}_ad AFTER DELETE ON ${table} BEGIN INSERT INTO ${fts}(${fts},rowid,${col}) VALUES('delete',old.rowid,old.${col}); END;
  CREATE TRIGGER ${table}_au AFTER UPDATE ON ${table} BEGIN INSERT INTO ${fts}(${fts},rowid,${col}) VALUES('delete',old.rowid,old.${col}); INSERT INTO ${fts}(rowid,${col}) VALUES(new.rowid,new.${col}); END;`;
-}).join('')];
+}).join(''), `UPDATE chats SET effort='low' WHERE effort='normal';`];
 export function migrate(db: DatabaseSync) {
  db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON');
  const version = Number(db.prepare('PRAGMA user_version').get()!.user_version);

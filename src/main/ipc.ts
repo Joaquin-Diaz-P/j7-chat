@@ -52,7 +52,7 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
     chat.updateChat({
       ...(typeof value.model === "string" ? { model: value.model } : {}),
       ...(typeof value.webSearch === "boolean" ? { webSearch: value.webSearch } : {}),
-      ...(value.effort === "normal" || value.effort === "high" ? { effort: value.effort } : {}),
+      ...(typeof value.effort === "string" && /^[a-z0-9_-]{1,40}$/i.test(value.effort) ? { effort: value.effort } : {}),
     });
   });
   ipcMain.handle("settings:open", (event) => { if (trusted(event)) return showSettingsNotice(panel); });
@@ -69,8 +69,8 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.handle("chat:edit", (event, text: unknown) => {
     if (trusted(event) && typeof text === "string" && text.length <= 100_000) chat.edit(text);
   });
-  ipcMain.handle("chat:other", (event, key: unknown) => {
-    if (trusted(event) && typeof key === "string") chat.askOther(key);
+  ipcMain.handle("chat:other", (event, key: unknown, effort: unknown) => {
+    if (trusted(event) && typeof key === "string" && (effort === undefined || typeof effort === "string")) chat.askOther(key, effort);
   });
   ipcMain.on("window:hide", (event) => {
     if (trusted(event)) panel.hide();

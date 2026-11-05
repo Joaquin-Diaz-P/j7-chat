@@ -241,6 +241,8 @@ export class CodexProvider extends BaseProvider {
           provider: this.id,
           supportsImages: model.inputModalities.includes("image"),
           supportsPdf: false,
+          reasoningEfforts: model.supportedReasoningEfforts.map(e => e.reasoningEffort),
+          defaultReasoningEffort: model.defaultReasoningEffort,
           supportsEffort: model.supportedReasoningEfforts.some(
             (e) => e.reasoningEffort === "high",
           ),
@@ -309,7 +311,7 @@ export class CodexProvider extends BaseProvider {
       const params: TurnStartParams = {
         threadId: thread,
         model: input.model,
-        effort: input.effort === "high" ? "high" : "low",
+        effort: input.effort as NonNullable<TurnStartParams["effort"]>,
         approvalPolicy: "never",
         sandboxPolicy: { type: "readOnly", networkAccess: false },
         input: [

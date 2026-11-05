@@ -5,7 +5,7 @@ export interface Chat {
   model: string;
   provider: ProviderId;
   webSearch: boolean;
-  effort: "normal" | "high";
+  effort: string;
 }
 export interface ProviderSession {
   chatId: string;

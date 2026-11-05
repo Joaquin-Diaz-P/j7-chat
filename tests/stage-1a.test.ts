@@ -61,6 +61,7 @@ describe("settings", () => {
       positionsVersion: 2,
       positions: {},
       favorites: [],
+      effortByModel: {},
       defaultModel: null,
       personalInstructions: "",
     });
@@ -94,6 +95,7 @@ describe("settings", () => {
       positionsVersion: 2,
       positions: { a: { x: 342, y: 91 } },
       favorites: [],
+      effortByModel: {},
       defaultModel: null,
       personalInstructions: "",
     });

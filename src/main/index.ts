@@ -73,7 +73,7 @@ else {
         catalog,
         (event) => panel?.window.webContents.send("chat:event", event),
         (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
-        undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun, store, settings,
+        undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun, store, settings, log,
       );
       chat.titleGenerator = text => generateTitle(text, async text => {
         const reply = await titleHelper.request("generateTitle",{text});

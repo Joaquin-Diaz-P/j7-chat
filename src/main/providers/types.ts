@@ -5,7 +5,11 @@ export interface ProviderStatus {
   detail?: string;
 }
 
+export type Effort = string;
+
 export interface ModelInfo {
+  reasoningEfforts?: string[];
+  defaultReasoningEffort?: string | undefined;
   id: string;
   label: string;
   provider: ProviderId;
@@ -30,7 +34,7 @@ export interface Attachment {
 
 export interface TurnInput {
   model: string;
-  effort: "normal" | "high";
+  effort: Effort;
   webSearch: boolean;
   instructions: string;
   nativeSessionId?: string;

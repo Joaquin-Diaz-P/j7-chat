@@ -1,3 +1,4 @@
+import { initialEffort, resolveEffort } from "../../shared/effort.js";
 import { prepareAttachments } from "../attachments/policy.js";
 import type { Attachment } from "../providers/types.js";
 import { createHash, randomUUID } from "node:crypto";
@@ -28,7 +29,7 @@ export class ChatService {
     private emit: (event: ChatEnvelope) => void,
     private changed: (snapshot: ChatSnapshot) => void = () => {},
     model = "mock-a", label?: string, private warning?: string,
-    store: ChatStore = new MemoryChatStore(), private settings?: SettingsStore,
+    store: ChatStore = new MemoryChatStore(), private settings?: SettingsStore, private log: (event: "effort-adjusted") => void = () => {},
   ) {
     this.store = store;
     if (source instanceof ModelCatalog) this.catalog = source;
@@ -58,7 +59,7 @@ export class ChatService {
     if (existing) return existing;
     const model = this.selectedModel();
     if (!model) return;
-    const chat: Chat = { id: randomUUID(), model: modelKey(model), provider: model.provider, webSearch: true, effort: "normal" };
+    const chat: Chat = { id: randomUUID(), model: modelKey(model), provider: model.provider, webSearch: true, effort: initialEffort(model, this.settings?.value.effortByModel) };
     this.draftChat = chat;
     return chat;
   }
@@ -69,27 +70,35 @@ export class ChatService {
     const messages = chat ? this.store.listMessages(chat.id).map(m => m.id === turn?.message.id ? structuredClone(turn.message) : m) : [];
     return { chatId: this.chatId, messages, active: !!turn, queued: turn?.queued ?? false,
       ...(model ? { model: modelKey(model), providerLabel: model.label } : {}),
-      webSearch: true, effort: "normal", catalog: this.catalog.snapshot(),
+      webSearch: true, effort: chat?.effort ?? (model ? initialEffort(model, this.settings?.value.effortByModel) : "low"), catalog: this.catalog.snapshot(),
       ...(this.warning ? { warning: this.warning } : {}) };
   }
   notify() { if (!this.disposed) this.changed(this.snapshot()); }
   newChat() { this.draftChat=undefined; this.chatId = null; this.warning = undefined; this.notify(); }
   selectChat(id: string) { if (this.store.getChat(id)) { this.chatId = id; this.notify(); } }
-  updateChat(options: { model?: string; webSearch?: boolean; effort?: "normal" | "high" }) {
+  updateChat(options: { model?: string; webSearch?: boolean; effort?: string }) {
     if (!this.currentChat()) {
       const model=this.selectedModel(); if(!model)return;
-      this.draftChat={id:randomUUID(),model:modelKey(model),provider:model.provider,webSearch:true,effort:"normal"};
+      this.draftChat={id:randomUUID(),model:modelKey(model),provider:model.provider,webSearch:true,effort:initialEffort(model, this.settings?.value.effortByModel)};
     }
     const chat = this.currentChat()!;
     const update = (changes: Partial<Omit<Chat,"id">>) => { if(this.chatId)this.store.updateChat(chat.id,changes); else Object.assign(chat,changes); };
     if (options.model) {
       const model = this.models().find(m => modelKey(m) === options.model);
       if (model && chat.model !== options.model) {
-        update({ model: modelKey(model), provider: model.provider });
+        update({ model: modelKey(model), provider: model.provider, effort: initialEffort(model, this.settings?.value.effortByModel) });
         if (this.store.listMessages(chat.id).length) this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.switched(model.label), status: "complete" });
       }
     }
-    update({ webSearch: true, effort: "normal" });
+    if (options.effort) {
+      const model = this.models().find(m => modelKey(m) === chat.model);
+      if (model) {
+        const effort = resolveEffort(model, options.effort);
+        update({ effort });
+        this.settings?.update({ effortByModel: { ...this.settings.value.effortByModel, [chat.model]: effort } });
+      }
+    }
+    update({ webSearch: true });
     this.notify();
   }
   send(text: string, attachments: Attachment[] = []) {
@@ -107,13 +116,14 @@ export class ChatService {
     this.launch(chat, model, question);
   }
   private launch(chat: Chat, model: ModelInfo, question: Message) {
-    const message: Message = { id: randomUUID(), role: "assistant", text: "", status: "queued", model: modelKey(model), modelLabel: model.label, provider: model.provider };
+    const message: Message = { id: randomUUID(), role: "assistant", text: "", status: "queued", model: modelKey(model), modelLabel: model.label, provider: model.provider, effort: resolveEffort(model, chat.effort) };
     this.store.appendMessage(chat.id, message);
     const turn: ActiveTurn = { controller: new AbortController(), message, queued: true };
     this.active.set(chat.id, turn);
     this.notify();
     const task = this.catalog.exclusive(model.provider, async () => {
       if (turn.controller.signal.aborted) return;
+      if (message.effort !== (chat.effort === "normal" ? "low" : chat.effort)) this.log("effort-adjusted");
       turn.queued = false;
       message.status = "streaming";
       this.store.updateMessage(chat.id,message.id,message);
@@ -163,9 +173,9 @@ export class ChatService {
         let nativeId: string | undefined = session;
         let failure: Extract<ChatEvent, { type: "error" }> | undefined;
         let completed = false;
-        if (process.env.J7_DEBUG === "1") console.debug("j7:turn", { provider: model.provider, model: model.id, effort: "normal", webSearch: true });
+        if (process.env.J7_DEBUG === "1") console.debug("j7:turn", { provider: model.provider, model: model.id, effort: message.effort!, webSearch: true });
         try {
-          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: "normal", webSearch: true, instructions, attachments: [...recap.attachments, ...prepareAttachments(question.attachments ?? [], model)], text: recap.text + question.text, signal: controller.signal })) {
+          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: message.effort!, webSearch: true, instructions, attachments: [...recap.attachments, ...prepareAttachments(question.attachments ?? [], model)], text: recap.text + question.text, signal: controller.signal })) {
             if (controller.signal.aborted) break;
             if (event.type === "session") nativeId = event.nativeSessionId;
             if (event.type === "error") { failure = event; break; }
@@ -224,15 +234,17 @@ export class ChatService {
     this.store.deleteMessagesFrom(chat.id, question.id);
     this.send(text, question.attachments ?? []);
   }
-  askOther(key: string) {
+  askOther(key: string, requestedEffort?: string) {
     const chat = this.currentChat(), question = this.lastQuestion();
     const model = this.models().find(m => modelKey(m) === key);
     if (!chat || !question || !model || this.active.has(chat.id)) return;
     try { prepareAttachments(question.attachments ?? [], model); }
     catch (error) { this.warning = error instanceof Error ? error.message : s.responseFailed; this.notify(); return; }
-    this.store.updateChat(chat.id, { model: key, provider: model.provider });
+    const effort = resolveEffort(model, requestedEffort ?? initialEffort(model, this.settings?.value.effortByModel));
+    this.settings?.update({effortByModel: {...this.settings.value.effortByModel, [key]: effort}});
+    this.store.updateChat(chat.id, { model: key, provider: model.provider, effort });
     this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.sameQuestion(model.label), status: "complete" });
-    this.launch({ ...chat, model: key, provider: model.provider }, model, question);
+    this.launch({ ...chat, model: key, provider: model.provider, effort }, model, question);
   }
   async removeChat(id: string, remove: () => void) {
     const turn=this.active.get(id); turn?.controller.abort();

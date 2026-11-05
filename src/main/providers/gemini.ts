@@ -31,7 +31,7 @@ import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
 export function geminiSettings(
   webSearch: boolean,
   model: string,
-  effort: "normal" | "high",
+  effort: string,
 ) {
   return {
     security: { auth: { selectedType: "oauth-personal" } },
