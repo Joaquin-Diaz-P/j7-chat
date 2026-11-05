@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0d9488"/>
-  <text x="32" y="32" dy="0.35em" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="600" fill="#ffffff">JC</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#1C1C1E"/><stop offset="1" stop-color="#0A0A0A"/></linearGradient></defs><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#b)"/><g transform="translate(226 256)"><path fill="white" d="M48 260h60a48 48 0 0 0 96 0V72h292c25 0 37 29 22 48L288 440h-72l222-312H264v132a108 108 0 0 1-216 0Z"/></g></svg>

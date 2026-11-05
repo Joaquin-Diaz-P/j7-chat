@@ -37,7 +37,7 @@ app.on("before-quit", (event) => {
   if (exiting) return;
   event.preventDefault();
   exiting = true;
-  globalShortcut.unregisterAll();
+  if (app.isReady()) globalShortcut.unregisterAll();
   const fallback = setTimeout(() => app.exit(0), 3500);
   void Promise.all([chat?.dispose(), capture?.dispose()]).finally(() => {
     clearTimeout(fallback);

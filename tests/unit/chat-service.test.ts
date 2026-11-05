@@ -124,18 +124,18 @@ describe("F1–F5 turn and session service", () => {
       expect(p.inputs[1]?.text).toContain("Usuario: first");
     } finally { await service.dispose(); rmSync(dir, { recursive: true, force: true }); }
   });
-  it("preserves per-chat web/effort choices across unsupported models and applies them only on subsequent turns", async () => {
+  it("always permits web search and uses normal effort across models and reopened chats", async () => {
     const a = new RecordingProvider("mock-a"), b = new RecordingProvider("mock-b");
     const { service, send } = await setup([a, b]);
     service.updateChat({ webSearch: false, effort: "high" }); await send("first");
     const id = service.snapshot().chatId!;
-    expect(a.inputs[0]).toMatchObject({ webSearch: false, effort: "high" });
+    expect(a.inputs[0]).toMatchObject({ webSearch: true, effort: "normal" });
     service.updateChat({ model: "mock-b:mock-b" }); await send("second");
-    expect(b.inputs[0]?.effort).toBe("normal");
+    expect(b.inputs[0]).toMatchObject({webSearch:true,effort:"normal"});
     service.updateChat({ model: "mock-a:mock-a" }); await send("third");
-    expect(a.inputs[1]?.effort).toBe("high");
+    expect(a.inputs[1]).toMatchObject({webSearch:true,effort:"normal"});
     service.newChat(); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "normal" });
-    service.selectChat(id); expect(service.snapshot()).toMatchObject({ webSearch: false, effort: "high" });
+    service.selectChat(id); expect(service.snapshot()).toMatchObject({ webSearch: true, effort: "normal" });
     await service.dispose();
   });
 });

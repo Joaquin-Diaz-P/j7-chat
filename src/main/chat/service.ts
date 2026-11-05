@@ -69,7 +69,7 @@ export class ChatService {
     const messages = chat ? this.store.listMessages(chat.id).map(m => m.id === turn?.message.id ? structuredClone(turn.message) : m) : [];
     return { chatId: this.chatId, messages, active: !!turn, queued: turn?.queued ?? false,
       ...(model ? { model: modelKey(model), providerLabel: model.label } : {}),
-      webSearch: chat?.webSearch ?? true, effort: chat?.effort ?? "normal", catalog: this.catalog.snapshot(),
+      webSearch: true, effort: "normal", catalog: this.catalog.snapshot(),
       ...(this.warning ? { warning: this.warning } : {}) };
   }
   notify() { if (!this.disposed) this.changed(this.snapshot()); }
@@ -89,7 +89,7 @@ export class ChatService {
         if (this.store.listMessages(chat.id).length) this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.switched(model.label), status: "complete" });
       }
     }
-    update({ ...(options.webSearch !== undefined ? { webSearch: options.webSearch } : {}), ...(options.effort ? { effort: options.effort } : {}) });
+    update({ webSearch: true, effort: "normal" });
     this.notify();
   }
   send(text: string, attachments: Attachment[] = []) {
@@ -163,9 +163,9 @@ export class ChatService {
         let nativeId: string | undefined = session;
         let failure: Extract<ChatEvent, { type: "error" }> | undefined;
         let completed = false;
-        if (process.env.J7_DEBUG === "1") console.debug("j7:turn", { provider: model.provider, model: model.id, effort: model.supportsEffort ? chat.effort : "normal", webSearch: chat.webSearch });
+        if (process.env.J7_DEBUG === "1") console.debug("j7:turn", { provider: model.provider, model: model.id, effort: "normal", webSearch: true });
         try {
-          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: model.supportsEffort ? chat.effort : "normal", webSearch: chat.webSearch, instructions, attachments: [...recap.attachments, ...prepareAttachments(question.attachments ?? [], model)], text: recap.text + question.text, signal: controller.signal })) {
+          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: "normal", webSearch: true, instructions, attachments: [...recap.attachments, ...prepareAttachments(question.attachments ?? [], model)], text: recap.text + question.text, signal: controller.signal })) {
             if (controller.signal.aborted) break;
             if (event.type === "session") nativeId = event.nativeSessionId;
             if (event.type === "error") { failure = event; break; }

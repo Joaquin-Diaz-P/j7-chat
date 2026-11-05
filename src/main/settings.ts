@@ -14,6 +14,7 @@ export interface Settings {
   pinned: boolean;
   historyOpen: boolean;
   theme: "system" | "light" | "dark";
+  positionsVersion: 2;
   positions: Record<string, Position>;
   favorites: string[];
   defaultModel: string | null;
@@ -33,7 +34,7 @@ export function validateSettings(value: unknown): Settings {
         Number.isFinite(p.x) &&
         Number.isFinite(p.y)
       )
-        positions[id] = { x: Math.round(p.x), y: Math.round(p.y) };
+        positions[id] = { x: Math.round(p.x) + (v.positionsVersion === 2 ? 0 : 340), y: Math.round(p.y) + (v.positionsVersion === 2 ? 0 : 88) };
     }
   return {
     firstRunDone: v.firstRunDone === true,
@@ -44,6 +45,7 @@ export function validateSettings(value: unknown): Settings {
     historyOpen: v.historyOpen === true,
     pinned: typeof v.pinned === "boolean" ? v.pinned : false,
     theme: v.theme === "light" || v.theme === "dark" ? v.theme : "system",
+    positionsVersion: 2,
     positions,
     favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
     defaultModel: typeof v.defaultModel === "string" ? v.defaultModel : null,

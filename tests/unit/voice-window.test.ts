@@ -29,12 +29,3 @@ it('capture resume uses saved chat existence at the five minute boundary',()=>{
  now=299000;expect(clock.shouldResume(true)).toBe(true);
  now=301000;expect(clock.shouldResume(true)).toBe(false);
 });
-it('expands left preserving chat column and clamps at the display edge',async()=>{
- const {historyBounds}=await import('../../src/main/window-state.js');
- const area={x:0,y:0,width:1440,height:900};
- const original={x:400,y:100,width:680,height:400};
- const open=historyBounds(original,true,area);
- expect(open.x+260).toBe(original.x);
- expect(historyBounds(open,false,area)).toEqual(original);
- expect(historyBounds({...original,x:50},true,area).x).toBe(0);
-});

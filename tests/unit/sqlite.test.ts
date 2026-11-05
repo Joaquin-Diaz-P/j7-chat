@@ -76,6 +76,6 @@ it('does not persist empty chats when changing settings; restores saved options'
  service.updateChat({webSearch:false,effort:'high'});expect(store.list()).toHaveLength(0);
  service.send('hola');const id=service.snapshot().chatId!;
  await service.waitForIdle();service.newChat();service.selectChat(id);
- expect(service.snapshot()).toMatchObject({webSearch:false,effort:'high'});
+ expect(service.snapshot()).toMatchObject({webSearch:true,effort:'normal'});
  await service.dispose();
 });

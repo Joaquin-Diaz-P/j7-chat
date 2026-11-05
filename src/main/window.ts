@@ -1,10 +1,8 @@
+import { defaultAnchor, panelBounds } from "./window-geometry.js";
 import { app, BrowserWindow, screen, nativeTheme } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  contentBounds,
-  historyBounds,
-  displayPosition,
   VisibilityClock,
   UserMoveTracker,
   type Area,
@@ -19,6 +17,7 @@ export class Panel {
   private displayId: string | undefined;
   private anchor: Position | undefined;
   private userMoving = new UserMoveTracker();
+  private compactHeight = 124;
   private ready = false;
   private pendingShow = false;
   constructor(
@@ -28,13 +27,11 @@ export class Panel {
   ) {
     this.clock = new VisibilityClock(now);
     this.window = new BrowserWindow({
-      width: 680,
-      height: 88,
+      width: 520,
+      height: 124,
       type: "panel",
       frame: false,
       transparent: true,
-      vibrancy: "popover",
-      visualEffectState: "active",
       roundedCorners: true,
       hasShadow: true,
       resizable: false,
@@ -59,7 +56,7 @@ export class Panel {
     this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
       const bounds = this.window.getBounds();
-      const x = bounds.x + (settings.value.historyOpen ? 260 : 0), y = bounds.y;
+      const x = bounds.x + (settings.value.historyOpen ? 260 : 0) + 260, y = bounds.y + bounds.height;
       if (!this.userMoving.isUserMove(bounds) || !this.displayId) return;
       this.anchor = { x, y };
       this.displayId = String(
@@ -92,7 +89,7 @@ export class Panel {
     if (this.settings.value.historyOpen === open) return;
     const b=this.window.getBounds(), area=screen.getDisplayMatching(b).workArea;
     this.settings.update({historyOpen:open});
-    this.place(historyBounds(b,open,area));
+    this.place(panelBounds(area,this.anchor ?? defaultAnchor(area),open ? Math.max(360,b.height) : (this.chat.snapshot().messages.length ? 680 : this.compactHeight),open));
     this.notify(true);
   }
   get voiceModifier() { return this.settings.value.voiceModifier; }
@@ -136,12 +133,20 @@ export class Panel {
     this.displayId = String(display.id);
     const resume = this.clock.shouldResume(!!this.chat.snapshot().chatId);
     if (!resume) this.chat.newChat();
-    this.anchor = displayPosition(display.workArea, this.displayId, this.settings.value.positions);
+    const saved = this.settings.value.positions[this.displayId];
+    const area = display.workArea;
+    this.anchor = saved && saved.x >= area.x && saved.x <= area.x + area.width && saved.y >= area.y && saved.y <= area.y + area.height ? saved : defaultAnchor(area);
+    if (saved && this.anchor !== saved) {
+      const positions = { ...this.settings.value.positions };
+      delete positions[this.displayId];
+      this.settings.update({ positions });
+    }
     this.place(
-      contentBounds(
+      panelBounds(
         display.workArea,
         this.anchor,
-        resume ? this.window.getBounds().height : 88,
+        resume && this.chat.snapshot().messages.length ? 680 : 124,
+        this.settings.value.historyOpen,
       ),
     );
     this.window.show();
@@ -160,13 +165,14 @@ export class Panel {
   }
   setHeight(height: number) {
     if (!Number.isFinite(height) || height < 0) return;
+    this.compactHeight = height;
     const display = screen.getDisplayMatching(this.window.getBounds());
     this.place(
-      contentBounds(display.workArea, this.anchor ?? this.window.getBounds(), this.settings.value.historyOpen ? Math.max(360,height) : height),
+      panelBounds(display.workArea, this.anchor ?? defaultAnchor(display.workArea), this.chat.snapshot().messages.length ? 680 : this.settings.value.historyOpen ? Math.max(360,height) : height, this.settings.value.historyOpen),
     );
   }
   private place(bounds: Area) {
-    if(this.settings.value.historyOpen && bounds.width===680) bounds={...bounds,height:Math.max(360,bounds.height),x:Math.max(screen.getDisplayMatching(bounds).workArea.x,bounds.x-260),width:940};
+
     this.userMoving.programmatic(bounds);
     this.window.setBounds(bounds, false);
   }

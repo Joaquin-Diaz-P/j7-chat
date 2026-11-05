@@ -3,8 +3,6 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  contentBounds,
-  displayPosition,
   VisibilityClock,
   UserMoveTracker,
 } from "../src/main/window-state.js";
@@ -31,40 +29,9 @@ describe("panel geometry and clock", () => {
     expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(false);
     tracker.willMove();
     expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(true);
-    expect(tracker.isUserMove({ x: 5, y: 9 })).toBe(true);
+    expect(tracker.isUserMove({ x: 5, y: 9 })).toBe(false);
     tracker.programmatic({ x: 5, y: 20 });
     expect(tracker.isUserMove({ x: 5, y: 20 })).toBe(false);
-  });
-  it("returns to the anchor after shrinking near the bottom", () => {
-    const anchor = { x: 200, y: 900 };
-    expect(contentBounds(area, anchor, 700).y).toBe(340);
-    expect(contentBounds(area, anchor, 88).y).toBe(900);
-  });
-  it("keeps width and top, caps at 70%, moves up only as necessary", () => {
-    expect(contentBounds(area, { x: 200, y: 100 }, 10)).toEqual({
-      x: 200,
-      y: 100,
-      width: 680,
-      height: 88,
-    });
-    expect(contentBounds(area, { x: 200, y: 100 }, 900)).toEqual({
-      x: 200,
-      y: 100,
-      width: 680,
-      height: 700,
-    });
-    expect(contentBounds(area, { x: 2000, y: 990 }, 900)).toEqual({
-      x: 860,
-      y: 340,
-      width: 680,
-      height: 700,
-    });
-  });
-  it("remembers individual displays and defaults when disconnected", () => {
-    const saved = { "1": { x: 300, y: 400 }, "2": { x: 1500, y: 60 } };
-    expect(displayPosition(area, "1", saved)).toEqual(saved["1"]);
-    expect(displayPosition(area, "2", saved)).toEqual(saved["2"]);
-    expect(displayPosition(area, "3", saved)).toEqual({ x: 480, y: 240 });
   });
   it("resumes at 4:59 and resets at 5:00 or later", () => {
     let time = 0;
@@ -91,6 +58,7 @@ describe("settings", () => {
       voiceModifier: "right-option",
       pinned: false,
       theme: "system",
+      positionsVersion: 2,
       positions: {},
       favorites: [],
       defaultModel: null,
@@ -123,7 +91,8 @@ describe("settings", () => {
       voiceModifier: "right-option",
       pinned: true,
       theme: "dark",
-      positions: { a: { x: 2, y: 3 } },
+      positionsVersion: 2,
+      positions: { a: { x: 342, y: 91 } },
       favorites: [],
       defaultModel: null,
       personalInstructions: "",

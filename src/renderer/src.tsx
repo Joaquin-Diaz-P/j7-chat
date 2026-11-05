@@ -2,8 +2,8 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Menu, Paperclip, Scissors, Globe, ArrowUp, Square, Plus, Pin, ArrowDown } from "lucide-react";
-import { ModelSelector } from "./components/ModelSelector.js";
+import { Menu, Paperclip, X, Square, Plus, Pin, ArrowDown } from "lucide-react";
+import { providerIcons, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -14,15 +14,28 @@ import type { Attachment } from "../main/providers/types.js";
 import { nativePdf } from "../main/attachments/policy.js";
 function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id: string) => void }) {
   return <div className="attachment-chips">{files.map(file => <div className="attachment-chip" key={file.id ?? file.path}>
-    <button onClick={() => void window.j7.attachments("preview", file.id)} title={file.name}>
+    <button onClick={() => void window.j7.attachments("preview", file.id)} title={file.name} aria-label={file.name}>
       {file.kind === "image" ? <img src={`j7-file://attachment/${file.id}`} alt={file.name}/> : <span>{file.kind === "pdf" ? "📄" : "📃"}</span>}
       <span>{file.name}{file.pages !== undefined && <small>{s.pages(file.pages)}</small>}</span>
     </button>
-    {remove && <button aria-label={s.removeAttachment} onClick={() => remove(file.id!)}>×</button>}
+    {remove && <button title={s.removeAttachment} aria-label={s.removeAttachment} onClick={() => remove(file.id!)}>×</button>}
   </div>)}</div>;
 }
 function App() {
   const chat = useChat();
+  const [attachmentMenu, setAttachmentMenu] = useState(false);
+  const attachmentRegion = useRef<HTMLDivElement>(null);
+  function closeAttachments() { setAttachmentMenu(false); input.current?.focus(); }
+  useEffect(() => {
+    if (!attachmentMenu) return;
+    const outside = (event: PointerEvent) => {
+      if (attachmentRegion.current?.contains(event.target as Node)) return;
+      setAttachmentMenu(false);
+      if (!(event.target as Element).closest?.("button,input,textarea,select,a,[tabindex]")) input.current?.focus();
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [attachmentMenu]);
   const [historyOpen,setHistoryOpen]=useState(false);
   const [searchFocus,setSearchFocus]=useState(0);
   const historyRef=useRef(false);
@@ -48,6 +61,7 @@ function App() {
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
+  const ProviderIcon = model ? providerIcons[model.provider] : null;
   const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
   const lastAnswer = chat.messages.findLast(m => m.role === "assistant")?.id;
   const lastQuestion = chat.messages.findLast(m => m.role === "user")?.id;
@@ -102,7 +116,7 @@ function App() {
     const el = input.current;
     if (el) {
       el.style.height = "auto";
-      el.style.height = `${Math.min(el.scrollHeight, 192)}px`;
+      el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
     }
   }, [draft]);
   useEffect(() => {
@@ -113,13 +127,7 @@ function App() {
         if (content.current) {
           const root = content.current;
           if (following.current && conversation.current) conversation.current.scrollTop = conversation.current.scrollHeight;
-          window.j7.setContentHeight(
-            28 + (root.querySelector(".model-selector")?.getBoundingClientRect().height ?? 0) + (selector ? 16 : 0) + (root.querySelector(".notice")?.getBoundingClientRect().height ?? 0) +
-              (root.querySelector(".composer")?.getBoundingClientRect()
-                .height ?? 60) +
-              (root.querySelector(".transcript")?.getBoundingClientRect()
-                .height ?? 0),
-          );
+          window.j7.setContentHeight(chat.messages.length || selector ? 680 : 41 + (root.querySelector(".composer")?.getBoundingClientRect().height ?? 72));
         }
       });
     };
@@ -159,6 +167,7 @@ function App() {
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
+        if (attachmentMenu) { closeAttachments(); return; }
         if (voiceBusy.current) { void window.j7.captureAction("cancel"); return; }
         window.j7.hide();
       }
@@ -194,7 +203,7 @@ function App() {
       window.removeEventListener("keydown", settingsListener, true);
       window.removeEventListener("keydown", listener);
     };
-  }, []);
+  }, [attachmentMenu]);
   useEffect(() => {
     const decision=voiceDelivery(pendingVoice.current,chat.active,!!chat.model,imageBlocked,loadingAttachments);
     if(decision==='none' || decision==='wait')return;
@@ -204,7 +213,7 @@ function App() {
     void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
   return (
-    <div className={historyOpen?"shell history-open":"shell"}>
+    <div className={`shell ${historyOpen ? "history-open" : ""} ${chat.messages.length || selector ? "expanded" : "compact"}`}>
     {historyOpen&&<History current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/>}
     <div className="panel"  ref={content}
       onDragOver={event => { event.preventDefault(); setDragging(true); }}
@@ -223,9 +232,10 @@ function App() {
         setSelector(null); input.current?.focus();
       }}/>}
 
-      <header>
-        <span>{s.appName}</span>
+      <header className={chat.messages.length || selector ? "window-bar" : "compact-controls"}>
+        {!!(chat.messages.length || selector) && <button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
         <div>
+          <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
           <button
             title={s.newChat}
             aria-label={s.newChat}
@@ -248,7 +258,7 @@ function App() {
           </button>
         </div>
       </header>
-      {chat.warning && <div className="notice" role="status">{chat.warning}</div>}
+
       {chat.messages.length > 0 && (
         <div className="conversation" ref={conversation} onScroll={() => {
           const el = conversation.current!;
@@ -295,6 +305,7 @@ function App() {
       {away && <button className="scroll-bottom" aria-label={s.bottom} title={s.bottom} onClick={() => { following.current = true; setAway(false); const el = conversation.current; if (el) el.scrollTop = el.scrollHeight; }}><ArrowDown size={16}/></button>}
       <div className="composer">
         <div className="attachment-draft">
+          {chat.warning && <div className="notice" role="status">{chat.warning}</div>}
           {capture.permission && <p role="alert">{capture.permission === 'screen' ? s.captureScreen : s.captureInput} <button onClick={() => void window.j7.captureAction(capture.permission!)}>{s.systemSettings}</button></p>}
           {capture.conflict && <p role="alert">{s.hexConflict}</p>}
           {capture.missingHex && <p role="alert">{s.hexMissing} <button onClick={() => void window.j7.openSettings()}>{s.settings}</button></p>}
@@ -312,7 +323,6 @@ function App() {
           {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
           {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
         </div>
-        <button onClick={()=>toggleHistory()} aria-label={s.history} title={s.history}><Menu size={17}/></button>
         <textarea
           ref={input}
           onPaste={event => {
@@ -323,7 +333,7 @@ function App() {
           }}
           aria-label={s.input}
           placeholder={
-            chat.messages.length ? s.followPlaceholder : s.newPlaceholder
+            s.newPlaceholder
           }
           value={draft}
           rows={1}
@@ -341,20 +351,19 @@ function App() {
           }}
         />
         <div className="composer-tools">
-          <button disabled={loadingAttachments} onClick={() => void attach("dialog")} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
-          <button disabled={loadingAttachments} onClick={() => void attach("capture")} title={s.capture} aria-label={s.capture}><Scissors size={16}/></button>
-          <button title={s.web} aria-label={s.web} aria-pressed={chat.webSearch ?? true} onClick={() => void window.j7.updateChat({ webSearch: !chat.webSearch })}><Globe size={16}/></button>
-          {model?.supportsEffort && <button title={s.thinkMore} aria-label={s.thinkMore} aria-pressed={chat.effort === "high"} onClick={() => void window.j7.updateChat({ effort: chat.effort === "high" ? "normal" : "high" })}>{s.thinkMore}</button>}
-          <button title={s.model} aria-label={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{chat.providerLabel ?? s.model}</button>
+          <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setAttachmentMenu(false); }}>
+          <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
+          {attachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
+            if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
+          }}>
+            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}>{s.attachFile}</button>
+            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}>{s.capture}</button>
+          </div>}
+          </div>
+          <button className="model-trigger" title={s.model} aria-label={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{ProviderIcon && <ProviderIcon size={14}/ >}{model?.label ?? chat.providerLabel ?? s.model}</button>
+          {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
-        <button
-          title={chat.active ? s.stop : s.send}
-          aria-label={chat.active ? s.stop : s.send}
-          disabled={!chat.active && ((!draft.trim() && !attachments.length) || !chat.model || imageBlocked || loadingAttachments)}
-          onClick={() => (chat.active ? void window.j7.stop() : void send())}
-        >
-          {chat.active ? <Square size={17}/> : <ArrowUp size={17}/>}
-        </button>
       </div>
     </div></div>
   );
