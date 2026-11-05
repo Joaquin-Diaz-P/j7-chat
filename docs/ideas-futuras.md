@@ -13,7 +13,7 @@ En la primera versión esto se cubre con el botón **"Preguntar a otro modelo…
 Detectados en la revisión final (etapa 6):
 
 - **Tiempo de inicio de Hex:** el tiempo máximo de `hex dictation start` bajó de 5 s a 1 s para que el `stop` alcance a correr al salir. Si Hex tarda más de 1 s en empezar, la voz falla. Lo mejor sería volver a 5 s durante el uso normal y aplicar el límite corto solo al salir. Se confirma en el paso 5 de `docs/prueba-final.md`.
-- **Firma de la app:** la firma ad-hoc tiene el identificador "Electron", así que macOS podría volver a pedir los permisos después de cada actualización. Habría que firmar ad-hoc con el identificador `cl.j7.chat`.
+- [x] **Firma de la app:** se firma con la identidad local «J7 Chat Local» y el identificador `cl.j7.chat`; sin esa identidad, firma ad hoc (ver `docs/firma.md`). Falta notarizar con una cuenta de Apple Developer para que el DMG descargado abra sin **Abrir igualmente**.
 - **Intercambiar atajos:** si se intercambian entre sí el atajo de la barra y el de "Captura y pregunta", falla con "Ese atajo ya lo usa otra app", porque se registra el nuevo antes de soltar el viejo.
 - [x] **Ventana de ajustes:** rediseñada con la estética de la barra (N13).
 - **Programas en los ajustes:**
@@ -22,7 +22,7 @@ Detectados en la revisión final (etapa 6):
   - Con `J7_MOCK=1`, todos los programas salen "Error" sin detalle.
 - **Empaquetado:**
   - electron-builder agrega un `NSMicrophoneUsageDescription` en inglés que no hace falta.
-  - El `app.asar` pesa 88 MB y el `.dmg` 280 MB; se puede reducir.
+  - [x] El `.dmg` bajó de 280 MB a 120 MB: ya no incluye el binario de Claude del SDK (J7 usa el Claude instalado), las dependencias de la interfaz no se copian dos veces, Shiki carga solo 12 lenguajes y quedan solo los idiomas español e inglés. Casi todo lo que queda es Electron.
 - **Zen gratis:** el límite diario seguía agotado durante toda la construcción, así que nunca se probó una respuesta real.
 
 ## Gemini a través de Antigravity

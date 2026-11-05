@@ -7,11 +7,15 @@ import { Copy } from "lucide-react";
 import { codeText, normalizeMath, splitBlocks } from "../markdown.js";
 import { strings as s } from "../strings.js";
 import "katex/dist/katex.min.css";
-const languages = ["javascript", "typescript", "tsx", "jsx", "json", "python", "bash", "css", "html", "sql", "swift", "markdown"] as const;
-let highlighter: ReturnType<typeof import("shiki")["createHighlighter"]> | undefined;
+let highlighter: ReturnType<typeof import("shiki/core")["createHighlighterCore"]> | undefined;
 function highlight() {
   // The CSP forbids WebAssembly, so Shiki uses its JavaScript regex engine instead of Oniguruma.
-  return highlighter ??= import("shiki").then(({ createHighlighter, createJavaScriptRegexEngine }) => createHighlighter({ themes: ["github-light", "github-dark"], langs: [...languages], engine: createJavaScriptRegexEngine() }));
+  // Only these languages and themes are imported, so the bundle doesn't carry all of Shiki's grammars.
+  return highlighter ??= Promise.all([import("shiki/core"), import("shiki/engine/javascript")]).then(([{ createHighlighterCore }, { createJavaScriptRegexEngine }]) => createHighlighterCore({
+    themes: [import("shiki/themes/github-light.mjs"), import("shiki/themes/github-dark.mjs")],
+    langs: [import("shiki/langs/javascript.mjs"), import("shiki/langs/typescript.mjs"), import("shiki/langs/tsx.mjs"), import("shiki/langs/jsx.mjs"), import("shiki/langs/json.mjs"), import("shiki/langs/python.mjs"), import("shiki/langs/bash.mjs"), import("shiki/langs/css.mjs"), import("shiki/langs/html.mjs"), import("shiki/langs/sql.mjs"), import("shiki/langs/swift.mjs"), import("shiki/langs/markdown.mjs")],
+    engine: createJavaScriptRegexEngine(),
+  }));
 }
 function Code({ text, language }: { text: string; language: string }) {
   const [highlighted, setHighlighted] = useState({ text: "", html: "" });

@@ -7,8 +7,14 @@ files:
   - assets/iconTemplate*.png
   - THIRD_PARTY_NOTICES.md
   - package.json
+  # J7 uses the Claude Code the person already has installed, so the SDK's bundled binary (~300 MB) stays out.
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
 afterSign: scripts/signing/after-sign.cjs
 asar: true
+electronLanguages:
+  - es
+  - es_419
+  - en
 extraResources:
   - from: build/j7-helper
     to: j7-helper
@@ -23,3 +29,4 @@ mac:
     NSScreenCaptureUsageDescription: J7 Chat captura la zona elegida de la pantalla para adjuntarla a tu pregunta.
 dmg:
   sign: false
+  format: ULFO
