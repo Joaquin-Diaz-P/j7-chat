@@ -53,7 +53,7 @@ describe("settings", () => {
       firstRunDone: false,
       openAtLogin: true,
       historyOpen: false,
-      shortcut: "Alt+J",
+      shortcut: "Alt+Space",
       captureShortcut: "Alt+Shift+J",
       voiceModifier: "right-option",
       pinned: false,
@@ -109,7 +109,7 @@ describe("settings", () => {
       expect(new SettingsStore(file).value.pinned).toBe(true);
       writeFileSync(file, "{broken");
       expect(new SettingsStore(file).value.pinned).toBe(false);
-      expect(JSON.parse(readFileSync(file, "utf8")).shortcut).toBe("Alt+J");
+      expect(JSON.parse(readFileSync(file, "utf8")).shortcut).toBe("Alt+Space");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

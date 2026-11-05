@@ -25,6 +25,7 @@ export class ChatService {
   private warmup: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
   private legacyModel: ModelInfo | undefined;
+  private welcome: string | undefined;
   constructor(
     source: ModelCatalog | ChatProvider,
     private emit: (event: ChatEnvelope) => void,
@@ -32,6 +33,7 @@ export class ChatService {
     model = "mock-a", label?: string, private warning?: string,
     store: ChatStore = new MemoryChatStore(), private settings?: SettingsStore, private log: (event: "effort-adjusted") => void = () => {},
   ) {
+    this.welcome = warning;
     this.store = store;
     if (source instanceof ModelCatalog) this.catalog = source;
     else {
@@ -39,7 +41,7 @@ export class ChatService {
       this.legacyModel = { id: model, label: label ?? s.mock, provider: source.id, supportsImages: false, supportsPdf: false, supportsEffort: true };
     }
   }
-  dismissWelcome() { if(this.warning===s.firstRun) {this.warning=undefined;this.notify();} }
+  dismissWelcome() { if(this.warning && this.warning===this.welcome) {this.warning=undefined;this.notify();} }
   start() {
     const history = this.store as ChatStore & {list?: (query:string, offset:number)=>{id:string;titleSource:string;title:string}[];rename?: (id:string,title:string,manual:boolean)=>void};
     if(this.titleGenerator && history.list) for(let offset=0;;offset+=200) {

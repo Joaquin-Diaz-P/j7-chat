@@ -3,7 +3,7 @@ export const strings = {
   favorites: "Favoritos",
   effortLabels: {low:"Bajo", medium:"Medio", high:"Alto", xhigh:"Muy alto", max:"Máximo", ultracode:"Ultracode"} as Record<string,string>,
  attachmentMissing:"El adjunto ya no está disponible.",
- settingsTitle:"Ajustes de J7 Chat", firstRun:"Aprieta ⌥ J para abrir J7 desde cualquier app", invalidShortcut:"Usa una combinación con modificador y letra o número", duplicateShortcut:"Ese atajo se repite en J7", shortcutUsed:"Ese atajo ya lo usa otra app",
+ settingsTitle:"Ajustes de J7 Chat", firstRun:(key: string) => `Aprieta ${key} para abrir J7 desde cualquier app`, invalidShortcut:"Usa una combinación con modificador y letra o número", duplicateShortcut:"Ese atajo se repite en J7", shortcutUsed:"Ese atajo ya lo usa otra app",
   historySearch: "Buscar en el historial",
   historyGroups: ["Fijados","Hoy","Ayer","Últimos 7 días","Anteriores"],
   historyActions: "Acciones del chat",

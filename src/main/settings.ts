@@ -42,7 +42,7 @@ export function validateSettings(value: unknown): Settings {
     effortByModel: Object.fromEntries(Object.entries(v.effortByModel && typeof v.effortByModel === "object" ? v.effortByModel : {}).filter((entry): entry is [string,string] => typeof entry[1] === "string" && /^[a-z0-9_-]{1,40}$/i.test(entry[1])).map(([key, value]) => [canonicalModelKey(key), value])),
     firstRunDone: v.firstRunDone === true,
     openAtLogin: v.openAtLogin !== false,
-    shortcut: isAccelerator(v.shortcut) ? v.shortcut : "Alt+J",
+    shortcut: isAccelerator(v.shortcut) ? v.shortcut : "Alt+Space",
     captureShortcut: isAccelerator(v.captureShortcut) ? v.captureShortcut : "Alt+Shift+J",
     voiceModifier: typeof v.voiceModifier === "string" && /^(?:(?:left|right)-(?:option|command|shift|control)|fn)$/.test(v.voiceModifier) ? v.voiceModifier : "right-option",
     historyOpen: v.historyOpen === true,

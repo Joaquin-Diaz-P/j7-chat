@@ -17,6 +17,7 @@ import { ChatService } from "./chat/service.js";
 import { Panel } from "./window.js";
 import { registerIpc } from "./ipc.js";
 import { registerShortcut } from "./shortcuts.js";
+import { shortcutLabel } from "../shared/shortcut.js";
 import { createTray } from "./tray.js";
 protocol.registerSchemesAsPrivileged([{ scheme: "j7-file", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 app.setName("J7 Chat");
@@ -73,7 +74,7 @@ else {
         catalog,
         (event) => panel?.window.webContents.send("chat:event", event),
         (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
-        undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun, store, settings, log,
+        undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun(shortcutLabel(settings.value.shortcut)), store, settings, log,
       );
       chat.titleGenerator = text => generateTitle(text, async text => {
         const reply = await titleHelper.request("generateTitle",{text});
