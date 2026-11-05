@@ -36,6 +36,7 @@ export const strings = {
   codexExited: "El proceso de Codex terminó.",
   codexUnsafeMcp: "Codex cargó servidores MCP. Se bloqueó el programa.",
   codexLogin: "J7 requiere una sesión de ChatGPT en Codex. Ejecuta codex login.",
+  openCodeServiceUnavailable: "Zen no está disponible: no se pudo conectar al servicio de OpenCode. Revisa OpenCode y su autenticación en Ajustes.",
   openCodeExited: "El proceso de OpenCode terminó.",
   openCodeStartupExited: "OpenCode terminó durante el inicio.",
   openCodeTimeout: "OpenCode no respondió a tiempo.",

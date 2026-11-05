@@ -1,3 +1,4 @@
+import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
@@ -165,9 +166,6 @@ function App() {
         event.preventDefault();toggleHistory(event.key.toLowerCase()==='f'?true:!historyRef.current);
         if(event.key.toLowerCase()==='f')setSearchFocus(n=>n+1);
       }
-      if (event.metaKey && (event.code === "Comma" || event.key === ",")) {
-        event.preventDefault(); void window.j7.openSettings();
-      }
       if (event.metaKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
         if (voiceBusy.current || pendingVoice.current) return;
@@ -185,8 +183,17 @@ function App() {
         void window.j7.stop();
       }
     };
+    const settingsListener = (event: KeyboardEvent) => {
+      if (isSettingsShortcut(event)) {
+        event.preventDefault(); event.stopPropagation(); void window.j7.openSettings();
+      }
+    };
+    window.addEventListener("keydown", settingsListener, true);
     window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
+    return () => {
+      window.removeEventListener("keydown", settingsListener, true);
+      window.removeEventListener("keydown", listener);
+    };
   }, []);
   useEffect(() => {
     const decision=voiceDelivery(pendingVoice.current,chat.active,!!chat.model,imageBlocked,loadingAttachments);
@@ -298,7 +305,7 @@ function App() {
           {capture.phase === 'queued' && <p role="status">{s.queued}</p>}
           {capture.phase === 'transcribing' && <p role="status">{s.captureTranscribing} {capture.seconds >= 3 ? capture.seconds + ' s' : ''} <button onClick={() => void window.j7.captureAction('cancel')}>{s.cancel}</button></p>}
           {capture.phase === 'recovering' && <p role="status">{s.captureRecovering}</p>}
-          {capture.phase === 'failed' && <p role="alert">{capture.recoverable ? s.captureFailed : s.captureUnavailable} {capture.recoverable && <button onClick={() => void window.j7.captureAction('recover')}>{s.captureRetry}</button>}</p>}
+          {capture.phase === 'failed' && !capture.permission && <p role="alert">{capture.recoverable ? s.captureFailed : s.captureUnavailable} {capture.recoverable && <button onClick={() => void window.j7.captureAction('recover')}>{s.captureRetry}</button>}</p>}
 
           <AttachmentChips files={attachments} remove={id => { setAttachmentError(""); setAttachments(files => files.filter(file => file.id !== id)); }}/>
           {attachmentError && <p role="alert">{attachmentError}</p>}

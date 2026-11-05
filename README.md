@@ -2,7 +2,7 @@
 
 Barra personal de consultas rápidas para macOS Apple Silicon (macOS 14 o posterior). Usa las sesiones de Claude, Codex y OpenCode instalados en el Mac. Hex se usa para dictado y se instala por separado: `brew install --cask anomalyco/tap/hex`, según su [README oficial](https://github.com/anomalyco/hex/blob/dev/README.md).
 
-Abre el DMG de `release/` y copia **J7 Chat.app** a Aplicaciones para instalarla. La primera vez usa clic derecho → Abrir. La distribución es local, sin firma ni notarización. Durante el desarrollo también puedes abrir `release/J7 Chat.app` directamente.
+Abre el DMG de `release/` y copia **J7 Chat.app** a Aplicaciones para instalarla. La primera vez usa clic derecho → Abrir. La distribución es local, con firma local, sin notarización. Durante el desarrollo también puedes abrir `release/J7 Chat.app` directamente.
 
 `⌥ J` abre la barra; `⌥ ⇧ J` captura y adjunta; mantener Opción derecha captura y dicta con Hex. `⌘ ,` o el menú de la barra abren Ajustes. Allí puedes cambiar tema, arranque al iniciar sesión, atajos, modelo y favoritos e instrucciones personales. Los cambios se guardan automáticamente.
 
@@ -12,7 +12,7 @@ Los datos están en `~/Library/Application Support/J7 Chat`: `settings.json`, `j
 
 ## Desarrollo
 
-Requiere Node 24+, Xcode Command Line Tools y macOS arm64. Ejecuta `npm ci`, `npm run dev`. `npm run build:helper` compila el ayudante Swift; `npm run build` genera el bundle e iconos; `npm run dist` genera `release/J7 Chat.app` y el DMG arm64 sin firma. `npm run typecheck`, `npm test` y `npm run test:e2e` verifican tipos, unidades y un recorrido Electron con Playwright y proveedores mock. `J7_DATA_DIR` permite datos aislados, `J7_MOCK=1` evita inferencia real. El gancho de mostrar la barra solo existe con `J7_TEST=1`.
+Requiere Node 24+, Xcode Command Line Tools y macOS arm64. Ejecuta `npm ci`, `npm run dev`. `npm run build:helper` compila el ayudante Swift; `npm run build` genera el bundle e iconos; `npm run dist` genera `release/J7 Chat.app` y el DMG arm64 firmado localmente. `npm run typecheck`, `npm test` y `npm run test:e2e` verifican tipos, unidades y un recorrido Electron con Playwright y proveedores mock. `J7_DATA_DIR` permite datos aislados, `J7_MOCK=1` evita inferencia real. El gancho de mostrar la barra solo existe con `J7_TEST=1`.
 
 ## Comprobación manual después de instalar
 
@@ -25,3 +25,18 @@ Requiere Node 24+, Xcode Command Line Tools y macOS arm64. Ejecuta `npm ci`, `np
 7. Cierra sesión y vuelve a entrar para comprobar el inicio automático; desactívalo en General y repite.
 
 Ver `THIRD_PARTY_NOTICES.md` para licencias y referencias.
+
+### K2 · Identidad local estable
+
+Antes del primer `npm run dist`, ejecuta `bash scripts/signing/create-identity.sh`. Crea «J7 Chat Local» en el llavero de inicio de sesión; es idempotente. Si el llavero está bloqueado o requiere confianza, sigue las instrucciones del script en Acceso a Llaveros. Conserva el certificado y su clave: todas las actualizaciones deben firmarse con la misma identidad para conservar permisos. `npm run dist` firma la app (`cl.j7.chat`) y el ayudante (`cl.j7.chat.helper`) antes de crear el DMG. Tras reemplazar la versión anterior, concede Grabación de pantalla y Accesibilidad una vez; si persiste una entrada antigua, desactívala y vuelve a activarla para la nueva app.
+
+Si `codesign` solicita acceso a la clave privada, cancela esa compilación y abre Acceso a Llaveros → inicio de sesión → Mis certificados → J7 Chat Local → clave privada → Obtener información → Control de acceso: permite `/usr/bin/codesign`. En versiones de macOS que exigen la lista de particiones, ejecuta en Terminal (la contraseña se lee oculta, no se guarda):
+
+```sh
+read -s 'j7_keychain_password?Contraseña del llavero de inicio de sesión: '; echo
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -l 'J7 Chat Local' -k "$j7_keychain_password" "$HOME/Library/Keychains/login.keychain-db"
+unset j7_keychain_password
+npm run dist
+```
+
+Si la firma indica un certificado no confiable: Acceso a Llaveros → J7 Chat Local → Obtener información → Confianza → Firma de código → Confiar siempre. No elimines ni regeneres la identidad al actualizar.

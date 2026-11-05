@@ -1,11 +1,12 @@
 import { strings as s } from "../../renderer/strings.js";
-import { randomUUID } from "node:crypto";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { mkdir } from "node:fs/promises";
-import { createServer } from "node:net";
+import { execFile } from "node:child_process";
+import { readFile, rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { promisify } from "node:util";
+import { ensurePaths } from "../paths.js";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { setTimeout as delay } from "node:timers/promises";
+
 import { textWithAttachments } from "../attachments/content.js";
 import { buildChatInstructions } from "../chat/instructions.js";
 import {
@@ -13,12 +14,10 @@ import {
   BaseProvider,
   cleanEnvironment,
   object,
-  privateHome,
   ProviderError,
   urlsIn,
   classifyError,
   resumeError,
-  stopChild,
 } from "./runtime.js";
 import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
 
@@ -65,8 +64,13 @@ export function freeZenModels(models: ZenModel[]): ModelInfo[] {
       free: true,
     }));
 }
+// Session rules override agent tool permissions, including skill/MCP tools.
+// Service plugins remain loaded: their hooks and injected context are not
+// isolated by session permissions, and J7 must never mutate shared config.
+// Zen only grants free models when OpenCode's tools are offered, so they are set to "ask"
+// and every permission request is rejected: tools are visible to the model but never run.
 export const openCodePermissions = (web: boolean) => [
-  { action: "*", resource: "*", effect: "deny" },
+  { action: "*", resource: "*", effect: "ask" },
   ...(web
     ? [
         { action: "websearch", resource: "*", effect: "allow" },
@@ -74,50 +78,6 @@ export const openCodePermissions = (web: boolean) => [
       ]
     : []),
 ];
-export function openCodeConfig(instructions: string) {
-  return {
-    update: "disable",
-    share: "disabled",
-    snapshots: false,
-    formatter: false,
-    lsp: false,
-    warming: false,
-    instructions: [],
-    skills: [],
-    plugins: [],
-    mcp: { servers: {} },
-    permissions: openCodePermissions(false),
-    policies: [
-      ...["mcp.use", "skill.use", "plugin.use"].map((action) => ({
-        action,
-        resource: "*",
-        effect: "deny",
-      })),
-    ],
-    agents: {
-      j7: {
-        description: "Asistente de J7 Chat sin herramientas",
-        mode: "primary",
-        system: instructions,
-        permissions: openCodePermissions(false),
-      },
-      "j7-web": {
-        description: "Asistente de J7 Chat con búsqueda web",
-        mode: "primary",
-        system: instructions,
-        permissions: openCodePermissions(true),
-      },
-    },
-    default_agent: "j7",
-    experimental: {
-      todo: false,
-      schedules: false,
-      artifacts: false,
-      subagent_depth: 0,
-      image_generate: false,
-    },
-  };
-}
 export function translateOpenCodeEvent(
   raw: unknown,
   tools = new Map<string, string>(),
@@ -161,20 +121,6 @@ export function translateOpenCodeEvent(
     return [classifyError(new Error(JSON.stringify(data.error)))];
   return [];
 }
-async function freePort(): Promise<number> {
-  const server = createServer();
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
-  const address = server.address();
-  if (!address || typeof address === "string")
-    throw new Error(s.portFailed);
-  await new Promise<void>((resolve, reject) =>
-    server.close((error) => (error ? reject(error) : resolve())),
-  );
-  return address.port;
-}
 export async function* parseSse(
   stream: ReadableStream<Uint8Array>,
 ): AsyncIterable<unknown> {
@@ -205,7 +151,6 @@ export async function* parseSse(
 }
 export class OpenCodeProvider extends BaseProvider {
   readonly id = "opencode" as const;
-  private child: ChildProcessWithoutNullStreams | undefined;
   private url = "";
   private authorization = "";
   private instructions = "";
@@ -237,126 +182,34 @@ export class OpenCodeProvider extends BaseProvider {
   private async connect(
     instructions = this.instructions || buildChatInstructions(),
   ) {
-    if (this.child && this.instructions !== instructions) await this.dispose();
-    if (this.child) return;
-    const start = performance.now(),
-      paths = await privateHome(this.id, this.options),
-      port = await freePort();
-    const password = randomUUID();
-    this.authorization = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`;
-    this.url = `http://127.0.0.1:${port}`;
     this.instructions = instructions;
-    const dirs = {
-      config: join(paths.root, "config"),
-      data: join(paths.root, "data"),
-      state: join(paths.root, "state"),
-      cache: join(paths.root, "cache"),
-    };
-    await Promise.all(
-      Object.values(dirs).map((path) =>
-        mkdir(path, { recursive: true, mode: 0o700 }),
-      ),
-    );
-    const binary = await this.binary();
-    this.assertOpen();
-    const child = spawn(
-      binary,
-      ["serve", "--hostname", "127.0.0.1", "--port", String(port)],
-      {
-        cwd: paths.workspace,
-        env: {
-          ...cleanEnvironment(this.options.environment),
-          HOME: paths.root,
-          XDG_CONFIG_HOME: dirs.config,
-          XDG_DATA_HOME: dirs.data,
-          XDG_STATE_HOME: dirs.state,
-          XDG_CACHE_HOME: dirs.cache,
-          OPENCODE_TEST_HOME: paths.root,
-          OPENCODE_DISABLE_PROJECT_CONFIG: "1",
-          OPENCODE_DISABLE_CLAUDE_CODE: "1",
-          OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: "1",
-          OPENCODE_CONFIG_DIR: join(dirs.config, "opencode"),
-          OPENCODE_CONFIG_CONTENT: JSON.stringify(openCodeConfig(instructions)),
-          OPENCODE_PASSWORD: password,
-        },
-        stdio: "pipe",
-      },
-    );
-    this.child = child;
-    child.stdout.on("data", () => {});
-    child.stderr.on("data", () => {});
-    let spawnError: Error | undefined;
-    child.on("error", (error) => {
-      spawnError = error;
-    });
-    child.on("exit", () => {
-      if (this.child === child) this.child = undefined;
-      this.events?.push({
-        type: "error",
-        kind: "other",
-        message: s.openCodeExited,
-        recovery: "process",
-      });
-      this.events?.end();
-    });
+    if (this.url) return;
+    const start = performance.now();
     try {
-      let ready = false;
-      while (performance.now() - start < 20_000) {
-        if (spawnError) throw spawnError;
-        if (child.exitCode !== null)
-          throw new Error(s.openCodeStartupExited);
-        try {
-          await this.api("/api/info");
-          ready = true;
-          break;
-        } catch {
-          await delay(100);
-        }
+      const paths = await ensurePaths(this.options.dataDir);
+      await reapOpenCode(join(paths.providers, "opencode.pid"));
+      const binary = await this.binary();
+      const env = cleanEnvironment(this.options.environment);
+      const run = async (args: string[]) => (await promisify(execFile)(binary, args, {
+        env, timeout: 20_000, maxBuffer: 64 * 1024,
+      })).stdout;
+      let status = await run(["service", "status"]).catch(() => "");
+      if (!serviceUrl(status)) {
+        await run(["service", "start"]);
+        status = await run(["service", "status"]);
       }
-      if (!ready) throw new Error(s.openCodeTimeout);
-      const agents = await this.api<{
-        data: { id: string; permissions: unknown; system?: string }[];
-      }>("/api/agent");
-      if (
-        !agents.data.some(
-          (agent) => agent.id === "j7" && agent.system === instructions,
-        )
-      )
-        throw new ProviderError(
-          "unsupported",
-          s.openCodeUnsafeAgent,
-        );
-      const sources =
-        await this.api<
-          { type: string; path?: string; info?: Record<string, unknown> }[]
-        >("/api/config");
-      this.diagnostic({
-        type: "config-paths",
-        paths: sources.map((source) => source.path),
-      });
-      if (
-        sources.some(
-          (source) => source.path && !source.path.startsWith(paths.root),
-        )
-      )
-        throw new ProviderError(
-          "unsupported",
-          s.openCodeUnsafeConfig,
-        );
-      this.diagnostic({
-        type: "isolation",
-        agents: agents.data
-          .filter((agent) => agent.id.startsWith("j7"))
-          .map((agent) => ({ id: agent.id, permissions: agent.permissions })),
-        configSources: sources.map((source) => ({
-          type: source.type,
-          path: source.path,
-        })),
-        mcpServers: [],
-        plugins: [],
-        toolInventory:
-          "V2 publica permisos de agentes; no un inventario de herramientas.",
-      });
+      const url = serviceUrl(status);
+      if (!url) throw new Error("service unavailable");
+      const home = this.options.environment?.HOME ?? homedir();
+      const config = object(JSON.parse(await readFile(join(
+        this.options.environment?.XDG_CONFIG_HOME ?? join(home, ".config"),
+        "opencode", "service.json",
+      ), "utf8")));
+      if (typeof config.password !== "string" || !config.password) throw new Error("missing service authentication");
+      this.url = url;
+      this.authorization = `Basic ${Buffer.from(`opencode:${config.password}`).toString("base64")}`;
+      this.assertOpen();
+      await this.api("/api/info");
       this.streamController = new AbortController();
       const response = await fetch(`${this.url}/api/event`, {
         headers: {
@@ -406,7 +259,7 @@ export class OpenCodeProvider extends BaseProvider {
       });
     } catch (error) {
       await this.dispose();
-      throw error;
+      throw new ProviderError("unsupported", s.openCodeServiceUnavailable);
     }
   }
   protected async checkAuth() {
@@ -461,29 +314,24 @@ export class OpenCodeProvider extends BaseProvider {
       id: input.model,
       ...(input.effort === "high" ? { variant: "high" } : {}),
     };
-    const agent = input.webSearch ? "j7-web" : "j7",
-      permissions = openCodePermissions(input.webSearch),
-      paths = await privateHome(this.id, this.options);
+    const permissions = openCodePermissions(input.webSearch);
     let id = input.nativeSessionId;
     if (id) {
       const sessionPath = `/api/session/${encodeURIComponent(id)}`;
       try {
       await this.api(sessionPath);
-      await this.api(sessionPath, "PATCH", { permissions });
-      await this.api(`${sessionPath}/agent`, "POST", { agent });
       await this.api(`${sessionPath}/model`, "POST", { model: modelRef });
       } catch (error) { yield resumeError(error); return; }
     } else {
       id = (
         await this.api<{ data: { id: string } }>("/api/session", "POST", {
           title: "J7 Chat",
-          agent,
           model: modelRef,
-          location: { directory: paths.workspace },
           permissions,
         })
       ).data.id;
     }
+    await this.api(`/api/session/${encodeURIComponent(id)}`, "PATCH", { permissions });
     this.activeSession = id;
     yield { type: "session", nativeSessionId: id };
     const events = new AsyncQueue<ChatEvent>();
@@ -499,7 +347,8 @@ export class OpenCodeProvider extends BaseProvider {
     try {
       input.signal.throwIfAborted();
       await this.api(`/api/session/${encodeURIComponent(id)}/prompt`, "POST", {
-        text: await textWithAttachments(input, false),
+        // OpenCode 2.2.x PromptInput has no system field.
+        text: `${this.instructions}\n\n${await textWithAttachments(input, false)}`,
         files: input.attachments
           .filter((a) => a.kind === "image")
           .map((a) => ({ uri: pathToFileURL(a.path).href, name: a.name })),
@@ -512,12 +361,38 @@ export class OpenCodeProvider extends BaseProvider {
     }
   }
   async dispose() {
-    const child = this.child;
-    this.child = undefined;
     this.streamController?.abort();
     await this.pump;
-    if (child) await stopChild(child);
+    this.streamController = undefined;
+    this.pump = undefined;
+    this.url = "";
     this.models = undefined;
     this.authorization = "";
   }
+}
+
+export async function reapOpenCode(pidFile: string, inspect = processCommand, kill = (pid: number) => process.kill(pid, "SIGTERM")) {
+  let text: string;
+  try { text = await readFile(pidFile, "utf8"); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+  const pid = Number(text.trim());
+  if (Number.isSafeInteger(pid) && pid > 1 && pid !== process.pid) {
+    const command = await inspect(pid);
+    if (command && /^(?:\S*\/)?opencode serve --hostname 127\.0\.0\.1 --port \d+$/.test(command.trim())) {
+      try { kill(pid); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error; }
+    }
+  }
+  await rm(pidFile, { force: true });
+}
+async function processCommand(pid: number): Promise<string | undefined> {
+  const { execFile } = await import("node:child_process");
+  return new Promise(resolve => execFile("/bin/ps", ["-p", String(pid), "-o", "command="], (error, stdout) => resolve(error ? undefined : stdout.trim())));
+}
+
+// Accept only the local managed service, never a URL embedded in an error message.
+export function serviceUrl(status: string): string | undefined {
+  const value = status.trim();
+  return /^http:\/\/127\.0\.0\.1:\d+\/?$/.test(value) ? value.replace(/\/$/, "") : undefined;
 }

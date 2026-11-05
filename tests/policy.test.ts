@@ -3,7 +3,6 @@ import { CODEX_SAFE_CONFIG } from "../src/main/providers/codex.js";
 import { geminiSettings } from "../src/main/providers/gemini.js";
 import {
   freeZenModels,
-  openCodeConfig,
   openCodePermissions,
   type ZenModel,
 } from "../src/main/providers/opencode.js";
@@ -110,17 +109,15 @@ describe("isolation policies", () => {
         .customOverrides[0]?.modelConfig.generateContentConfig.thinkingConfig,
     ).toEqual({ thinkingLevel: "HIGH" });
   });
-  it("OpenCode defaults to deny and only grants web actions", () => {
+  it("OpenCode asks for every action and only grants web actions", () => {
     expect(openCodePermissions(false)).toEqual([
-      { action: "*", resource: "*", effect: "deny" },
+      { action: "*", resource: "*", effect: "ask" },
     ]);
     expect(
       openCodePermissions(true)
         .filter((rule) => rule.effect === "allow")
         .map((rule) => rule.action),
     ).toEqual(["websearch", "webfetch"]);
-    expect(openCodeConfig("chat").agents.j7.system).toBe("chat");
-    expect(openCodeConfig("chat").plugins).toEqual([]);
   });
   it.each(["claude", "codex", "gemini", "opencode"] as const)(
     "reports missing %s without starting a process",

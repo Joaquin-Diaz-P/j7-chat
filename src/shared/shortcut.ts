@@ -25,3 +25,7 @@ export function shortcutLabel(value: string) {
  if (side) return `${({option:'⌥',command:'⌘',control:'⌃',shift:'⇧'} as Record<string,string>)[side[2]!]} ${side[1]==='left'?'izquierdo':'derecho'}`;
  return value.split('+').map(x=>({Command:'⌘',Cmd:'⌘',CommandOrControl:'⌘',Control:'⌃',Ctrl:'⌃',Alt:'⌥',Option:'⌥',Shift:'⇧'} as Record<string,string>)[x] ?? x).join(' ');
 }
+
+export function isSettingsShortcut(event: Pick<KeyboardEvent, "metaKey" | "ctrlKey" | "altKey" | "shiftKey" | "code" | "key">): boolean {
+ return event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && (event.code === "Comma" || event.key === ",");
+}

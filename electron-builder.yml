@@ -7,6 +7,7 @@ files:
   - assets/iconTemplate*.png
   - THIRD_PARTY_NOTICES.md
   - package.json
+afterSign: scripts/signing/after-sign.cjs
 asar: true
 extraResources:
   - from: build/j7-helper
