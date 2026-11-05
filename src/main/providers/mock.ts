@@ -1,3 +1,4 @@
+import { textWithAttachments } from "../attachments/content.js";
 import { strings as s } from "../../renderer/strings.js";
 import type { ChatProvider, ChatEvent, TurnInput, ModelInfo } from "./types.js";
 export class MockProvider implements ChatProvider {
@@ -15,7 +16,7 @@ export class MockProvider implements ChatProvider {
         id: this.id === "mock" ? "mock-a" : this.id,
         label: this.id === "mock-b" ? s.mockB : s.mockA,
         provider: this.id,
-        supportsImages: false,
+        supportsImages: this.id !== "mock-b",
         supportsPdf: false,
         supportsEffort: this.id !== "mock-b",
       },
@@ -54,7 +55,7 @@ export class MockProvider implements ChatProvider {
         query: s.mockSearch,
       };
     const thinking = !command.includes("/echo-context") && (command.includes("/think") || input.effort === "high");
-    const text = command.includes("/echo-context") ? input.text
+    const text = command.includes("/echo-context") ? await textWithAttachments(input, false)
       : command.includes("/md")
       ? s.mockMarkdown
       : thinking

@@ -1,3 +1,5 @@
+import { prepareAttachments } from "../attachments/policy.js";
+import type { Attachment } from "../providers/types.js";
 import { createHash, randomUUID } from "node:crypto";
 import { strings as s } from "../../renderer/strings.js";
 import { buildChatInstructions } from "./instructions.js";
@@ -79,15 +81,16 @@ export class ChatService {
     this.store.updateChat(chat.id, { ...(options.webSearch !== undefined ? { webSearch: options.webSearch } : {}), ...(options.effort ? { effort: options.effort } : {}) });
     this.notify();
   }
-  send(text: string) {
-    if (this.disposed || !text.trim()) return;
+  send(text: string, attachments: Attachment[] = []) {
+    if (this.disposed || !text.trim() && !attachments.length) return;
     if (!this.ensureChat()) { this.warning = s.noAvailableModels; this.notify(); return; }
     const chat = this.ensureChat();
     if (!chat || this.active.has(chat.id)) return;
     const model = this.selectedModel(chat);
     if (!model) { this.warning = s.noAvailableModels; this.notify(); return; }
+    prepareAttachments(attachments, model);
     this.warning = undefined;
-    const question: Message = { id: randomUUID(), role: "user", text, status: "complete" };
+    const question: Message = { id: randomUUID(), role: "user", text, attachments, status: "complete" };
     this.store.appendMessage(chat.id, question);
     this.launch(chat, model, question);
   }
@@ -116,7 +119,7 @@ export class ChatService {
   }
   private fail(message: Message, provider: ProviderId, error: Extract<ChatEvent, { type: "error" }>) {
     const name = s.programLabels[provider];
-    const command = provider === "claude" ? s.loginCommands.claude : provider === "codex" ? s.loginCommands.codex : s.loginCommands.mock;
+    const command = provider === "claude" ? s.loginCommands.claude : provider === "codex" ? s.loginCommands.codex : provider === "gemini" ? "`gemini`" : provider === "opencode" ? "" : s.loginCommands.mock;
     message.errorKind = error.kind;
     message.status = "error";
     message.text = error.kind === "auth" ? s.authError(name, command) : error.kind === "quota" ? s.quotaError(name) : error.message.slice(0, 600);
@@ -143,7 +146,7 @@ export class ChatService {
         let completed = false;
         if (process.env.J7_DEBUG === "1") console.debug("j7:turn", { provider: model.provider, model: model.id, effort: model.supportsEffort ? chat.effort : "normal", webSearch: chat.webSearch });
         try {
-          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: model.supportsEffort ? chat.effort : "normal", webSearch: chat.webSearch, instructions, attachments: [...recap.attachments, ...(question.attachments ?? [])], text: recap.text + question.text, signal: controller.signal })) {
+          for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: model.supportsEffort ? chat.effort : "normal", webSearch: chat.webSearch, instructions, attachments: [...recap.attachments, ...prepareAttachments(question.attachments ?? [], model)], text: recap.text + question.text, signal: controller.signal })) {
             if (controller.signal.aborted) break;
             if (event.type === "session") nativeId = event.nativeSessionId;
             if (event.type === "error") { failure = event; break; }
@@ -200,15 +203,17 @@ export class ChatService {
     const chat = this.currentChat(), question = this.lastQuestion();
     if (!chat || !question || this.active.has(chat.id) || !text.trim()) return;
     this.store.deleteMessagesFrom(chat.id, question.id);
-    this.send(text);
+    this.send(text, question.attachments ?? []);
   }
   askOther(key: string) {
     const chat = this.currentChat(), question = this.lastQuestion();
     const model = this.models().find(m => modelKey(m) === key);
     if (!chat || !question || !model || this.active.has(chat.id)) return;
+    try { prepareAttachments(question.attachments ?? [], model); }
+    catch (error) { this.warning = error instanceof Error ? error.message : s.responseFailed; this.notify(); return; }
     this.store.updateChat(chat.id, { model: key, provider: model.provider });
     this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.sameQuestion(model.label), status: "complete" });
-    this.send(question.text);
+    this.launch({ ...chat, model: key, provider: model.provider }, model, question);
   }
   stop() {
     const turn = this.chatId ? this.active.get(this.chatId) : undefined;

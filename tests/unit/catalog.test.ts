@@ -85,3 +85,17 @@ it("revalidates on explicit selector refresh while keeping cached models immedia
   await pending; expect(p.listModels).toHaveBeenCalledTimes(2);
   await catalog.dispose();
 });
+it('times out a hung status, publishes error and releases its queue', async () => {
+  vi.useFakeTimers();
+  const p = provider('claude');
+  p.getStatus = () => new Promise(() => {});
+  const catalog = new ModelCatalog(undefined, [p]);
+  const refresh = catalog.refresh();
+  await vi.advanceTimersByTimeAsync(10_001);
+  await refresh;
+  expect(catalog.snapshot().statuses.claude?.state).toBe('error');
+  expect(catalog.snapshot().models).toEqual([]);
+  expect(catalog.busy('claude')).toBe(false);
+  expect(await catalog.exclusive('claude', async () => 42)).toBe(42);
+  await catalog.dispose();
+});

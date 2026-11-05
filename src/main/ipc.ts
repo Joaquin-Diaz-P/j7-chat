@@ -2,7 +2,8 @@ import { ipcMain } from "electron";
 import { showSettingsNotice } from "./tray.js";
 import type { Panel } from "./window.js";
 import type { ChatService } from "./chat/service.js";
-export function registerIpc(panel: Panel, chat: ChatService) {
+import type { AttachmentStore } from "./attachments/index.js";
+export function registerIpc(panel: Panel, chat: ChatService, attachments: AttachmentStore) {
   const trusted = (
     event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
   ) =>
@@ -11,9 +12,12 @@ export function registerIpc(panel: Panel, chat: ChatService) {
   ipcMain.handle("chat:snapshot", (event) => {
     if (trusted(event)) return chat.snapshot();
   });
-  ipcMain.handle("chat:send", (event, text: unknown) => {
-    if (trusted(event) && typeof text === "string" && text.length <= 100_000)
-      chat.send(text);
+  ipcMain.handle("chat:send", (event, text: unknown, ids: unknown = []) => {
+    if (trusted(event) && typeof text === "string" && text.length <= 100_000 && Array.isArray(ids) && ids.length <= 10) {
+      const files = ids.map(id => attachments.files.get(String(id)));
+      if (files.some(f => !f)) throw new Error("Adjunto desconocido");
+      chat.send(text, files.filter(f => f !== undefined));
+    }
   });
   ipcMain.handle("chat:stop", (event) => {
     if (trusted(event)) chat.stop();

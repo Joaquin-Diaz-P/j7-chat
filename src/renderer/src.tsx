@@ -6,13 +6,37 @@ import { createRoot } from "react-dom/client";
 import { useChat } from "./store.js";
 import { strings as s } from "./strings.js";
 import "./style.css";
+import type { Attachment } from "../main/providers/types.js";
+import { nativePdf } from "../main/attachments/policy.js";
+function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id: string) => void }) {
+  return <div className="attachment-chips">{files.map(file => <div className="attachment-chip" key={file.id ?? file.path}>
+    <button onClick={() => void window.j7.attachments("preview", file.id)} title={file.name}>
+      {file.kind === "image" ? <img src={`j7-file://attachment/${file.id}`} alt={file.name}/> : <span>{file.kind === "pdf" ? "📄" : "📃"}</span>}
+      <span>{file.name}{file.pages !== undefined && <small>{s.pages(file.pages)}</small>}</span>
+    </button>
+    {remove && <button aria-label={s.removeAttachment} onClick={() => remove(file.id!)}>×</button>}
+  </div>)}</div>;
+}
 function App() {
   const chat = useChat();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const attachmentLock = useRef(false);
+  async function attach(action: "files" | "data" | "paste" | "dialog" | "capture", value?: unknown) {
+    if (attachmentLock.current) return;
+    attachmentLock.current = true; setLoadingAttachments(true);
+    try { const files = await window.j7.attachments(action, value, attachments.length); setAttachments(previous => [...previous, ...files]); setAttachmentError(""); return files.length; }
+    catch (error) { setAttachmentError(error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, "") : s.attachmentFailed); }
+    finally { attachmentLock.current = false; setLoadingAttachments(false); }
+  }
   const [selector, setSelector] = useState<"model" | "other" | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
+  const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
   const lastAnswer = chat.messages.findLast(m => m.role === "assistant")?.id;
   const lastQuestion = chat.messages.findLast(m => m.role === "user")?.id;
 
@@ -43,7 +67,7 @@ function App() {
           content.current.classList.add("appear");
         }
         document.documentElement.classList.toggle("dark", state.dark);
-        if (!state.resume) setDraft("");
+        if (!state.resume) { setDraft(""); setAttachments([]); }
         input.current?.focus();
       }),
     ];
@@ -97,12 +121,13 @@ function App() {
     if (el && following.current) el.scrollTop = el.scrollHeight;
   }, [chat.messages]);
   async function send() {
-    if (sending.current || chat.active || !draft.trim() || !chat.model) return;
+    if (sending.current || chat.active || (!draft.trim() && !attachments.length) || !chat.model || imageBlocked || loadingAttachments) return;
     sending.current = true;
     try {
-      await window.j7.send(draft);
+      await window.j7.send(draft, attachments.map(file => file.id!));
+      setAttachments([]);
       setDraft("");
-    } finally {
+    } catch (error) { setAttachmentError(error instanceof Error ? error.message : s.attachmentFailed); } finally {
       sending.current = false;
     }
   }
@@ -114,7 +139,7 @@ function App() {
       }
       if (event.metaKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
-        setDraft(""); setSelector(null); setEditing(null);
+        setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
         void window.j7.newChat();
         input.current?.focus();
       }
@@ -132,7 +157,17 @@ function App() {
     return () => window.removeEventListener("keydown", listener);
   }, []);
   return (
-    <div className="panel" ref={content}>
+    <div className="panel" ref={content}
+      onDragOver={event => { event.preventDefault(); setDragging(true); }}
+      onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
+      onDrop={event => {
+        event.preventDefault(); setDragging(false);
+        const files = [...event.dataTransfer.files];
+        const paths = files.map(file => window.j7.filePath(file));
+        if (files.length) void Promise.all(files.map(async (file, index) => paths[index] || new Uint8Array(await file.arrayBuffer()))).then(entries => attach("files", entries));
+        else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
+      }}>
+      {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
       {selector && chat.catalog && <ModelSelector catalog={chat.catalog} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={key => {
         if (selector === "other") void window.j7.askOther(key);
         else void window.j7.updateChat({ model: key });
@@ -146,7 +181,7 @@ function App() {
             title={s.newChat}
             aria-label={s.newChat}
             onClick={() => {
-              setDraft(""); setSelector(null); setEditing(null);
+              setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
               void window.j7.newChat();
               input.current?.focus();
             }}
@@ -185,6 +220,7 @@ function App() {
                   <button title={s.send} aria-label={s.send} disabled={!editDraft.trim()} onClick={() => { void window.j7.edit(editDraft); setEditing(null); }}>{s.send}</button>
                   <button title={s.cancel} aria-label={s.cancel} onClick={() => setEditing(null)}>{s.cancel}</button>
                 </div> : message.role === "assistant" ? <ResponseMarkdown text={message.text}/> : <div className="user-text">{message.text}</div>}
+                {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.status === "queued" && <p role="status">{s.queued}</p>}
                 {message.status === "streaming" && !message.text && <p role="status">{s.thinking}</p>}
                 {message.status === "stopped" && <small>{s.stopped}</small>}
@@ -207,9 +243,21 @@ function App() {
       )}
       {away && <button className="scroll-bottom" aria-label={s.bottom} title={s.bottom} onClick={() => { following.current = true; setAway(false); const el = conversation.current; if (el) el.scrollTop = el.scrollHeight; }}><ArrowDown size={16}/></button>}
       <div className="composer">
+        <div className="attachment-draft">
+          <AttachmentChips files={attachments} remove={id => { setAttachmentError(""); setAttachments(files => files.filter(file => file.id !== id)); }}/>
+          {attachmentError && <p role="alert">{attachmentError}</p>}
+          {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
+          {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
+        </div>
         <button disabled aria-label={s.history} title={s.soon}><Menu size={17}/></button>
         <textarea
           ref={input}
+          onPaste={event => {
+            event.preventDefault();
+            const text = event.clipboardData.getData("text/plain");
+            const start = event.currentTarget.selectionStart, end = event.currentTarget.selectionEnd;
+            void attach("paste").then(count => { if (!count && text) setDraft(value => value.slice(0, start) + text + value.slice(end)); });
+          }}
           aria-label={s.input}
           placeholder={
             chat.messages.length ? s.followPlaceholder : s.newPlaceholder
@@ -230,8 +278,8 @@ function App() {
           }}
         />
         <div className="composer-tools">
-          <button disabled title={s.soon} aria-label={s.attach}><Paperclip size={16}/></button>
-          <button disabled title={s.soon} aria-label={s.capture}><Scissors size={16}/></button>
+          <button disabled={loadingAttachments} onClick={() => void attach("dialog")} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
+          <button disabled={loadingAttachments} onClick={() => void attach("capture")} title={s.capture} aria-label={s.capture}><Scissors size={16}/></button>
           <button title={s.web} aria-label={s.web} aria-pressed={chat.webSearch ?? true} onClick={() => void window.j7.updateChat({ webSearch: !chat.webSearch })}><Globe size={16}/></button>
           {model?.supportsEffort && <button title={s.thinkMore} aria-label={s.thinkMore} aria-pressed={chat.effort === "high"} onClick={() => void window.j7.updateChat({ effort: chat.effort === "high" ? "normal" : "high" })}>{s.thinkMore}</button>}
           <button title={s.model} aria-label={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{chat.providerLabel ?? s.model}</button>
@@ -239,7 +287,7 @@ function App() {
         <button
           title={chat.active ? s.stop : s.send}
           aria-label={chat.active ? s.stop : s.send}
-          disabled={!chat.active && (!draft.trim() || !chat.model)}
+          disabled={!chat.active && ((!draft.trim() && !attachments.length) || !chat.model || imageBlocked || loadingAttachments)}
           onClick={() => (chat.active ? void window.j7.stop() : void send())}
         >
           {chat.active ? <Square size={17}/> : <ArrowUp size={17}/>}

@@ -13,6 +13,11 @@ Historial persistente en SQLite con un panel a la izquierda, búsqueda, títulos
 - **Historial:** I1, I2, I3, I4, I5, I6, I7, I8, I9.
 - **Ventana:** B8 y, de B10, `⌘ B` y `⌘ F`.
 
+## Antes de empezar: dos hallazgos de la etapa 3
+
+1. **El `AttachmentStore` hoy vive en memoria.** Tiene que pasar a la tabla `attachments` de SQLite (I1). Si no, las miniaturas y la vista rápida de los mensajes antiguos fallan después de reiniciar. El protocolo `j7-file` tiene que resolver los ids desde la base de datos, manteniendo sus protecciones actuales (ids conocidos y `realpath` dentro de la carpeta de adjuntos).
+2. **Copias huérfanas:** las copias de los adjuntos que se quitan con ✕, o de borradores que nunca se envían, se quedan en `{datos}/attachments`. Al arrancar, borra los archivos de esa carpeta que no estén en la tabla `attachments` y tengan más de 24 horas. Agrega un test.
+
 ## Enfoque técnico
 
 - **Motor de SQLite:**

@@ -156,3 +156,11 @@ summary { cursor: pointer; color: var(--secondary-label); }
 .model-label { display: block; margin-top: 6px; }
 .response-error { background: #c9891820; border-left: 2px solid #b57a15; padding: 10px; border-radius: 6px; }
 .inline-edit textarea { display: block; width: 100%; min-height: 70px; border: 1px solid var(--border); }
+.attachment-draft { grid-column: 1 / -1; width: 100%; }
+.attachment-draft:empty { display:none; }
+.attachment-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.attachment-chip { display:flex; align-items:center; border:1px solid #8885; border-radius:8px; max-width:240px; }
+.attachment-chip button { display:flex; align-items:center; gap:6px; overflow:hidden; }
+.attachment-chip img { width:42px; height:42px; object-fit:cover; border-radius:4px; }
+.attachment-chip small { display:block; }
+.drop-overlay { position:absolute; inset:0; z-index:20; display:grid; place-items:center; background:#555e; color:white; pointer-events:none; border:2px dashed white; border-radius:14px; }

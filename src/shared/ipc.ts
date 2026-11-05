@@ -34,7 +34,9 @@ export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEv
 export interface PanelState { appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
 export interface J7Api {
   snapshot(): Promise<ChatSnapshot>;
-  send(text: string): Promise<void>;
+  attachments(action: "files" | "data" | "paste" | "dialog" | "capture" | "preview", value?: unknown, count?: number): Promise<Attachment[]>;
+  filePath(file: File): string;
+  send(text: string, ids?: string[]): Promise<void>;
   stop(): Promise<void>;
   newChat(): Promise<void>;
   selectChat(id: string): Promise<void>;

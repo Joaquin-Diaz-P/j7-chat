@@ -17,7 +17,8 @@ describe("PDF attachment fallback", () => {
   it("reports deliberate truncation", async () => {
     const pdf = await extractPdfText(path, 25);
     expect(pdf.truncated).toBe(true);
-    expect(pdf.text).toHaveLength(25);
+    expect(pdf.text).toHaveLength(0);
+    expect(pdf.sentPages).toBe(0);
   });
   it("passes extracted text for non-native models and omits it for native PDF", async () => {
     const input = {

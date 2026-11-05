@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type {
   J7Api,
   ChatEnvelope,
@@ -15,7 +15,9 @@ function subscribe<T>(channel: string, callback: (value: T) => void) {
 }
 const api: J7Api = {
   snapshot: () => ipcRenderer.invoke("chat:snapshot"),
-  send: (text) => ipcRenderer.invoke("chat:send", text),
+  send: (text, ids) => ipcRenderer.invoke("chat:send", text, ids),
+  filePath: file => webUtils.getPathForFile(file),
+  attachments: (action, value, count = 0) => ipcRenderer.invoke("attachments:action", action, value, count),
   stop: () => ipcRenderer.invoke("chat:stop"),
   newChat: () => ipcRenderer.invoke("chat:new"),
   selectChat: (id) => ipcRenderer.invoke("chat:select", id),

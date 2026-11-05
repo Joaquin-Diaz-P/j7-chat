@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import {
   chmod,
   mkdir,
@@ -80,10 +80,15 @@ if(m.method==='session/prompt'){send({id:900,method:'session/request_permission'
       events.push(event);
     expect(events).toContainEqual({ type: "text-delta", text: "47" });
     expect(events.at(-1)).toEqual({ type: "done" });
-    const messages = (await readFile(logPath, "utf8"))
-      .trim()
-      .split("\n")
-      .map((line) => JSON.parse(line));
+    // The peer logs the permission reply asynchronously; wait for it.
+    const messages = await vi.waitFor(async () => {
+      const lines = (await readFile(logPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      if (!lines.some((m) => m.id === 900)) throw new Error("reply not logged");
+      return lines;
+    });
     expect(
       messages.some(
         (m) =>

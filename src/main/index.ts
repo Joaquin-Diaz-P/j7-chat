@@ -1,4 +1,6 @@
-import { app, globalShortcut, type Tray } from "electron";
+import { AttachmentStore } from "./attachments/index.js";
+import { registerAttachments } from "./attachments/ipc.js";
+import { app, protocol, globalShortcut, type Tray } from "electron";
 import { join } from "node:path";
 import { ensurePaths, getPaths } from "./paths.js";
 import { mkdirSync } from "node:fs";
@@ -10,6 +12,7 @@ import { Panel } from "./window.js";
 import { registerIpc } from "./ipc.js";
 import { registerShortcut } from "./shortcuts.js";
 import { createTray } from "./tray.js";
+protocol.registerSchemesAsPrivileged([{ scheme: "j7-file", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 app.setName("J7 Chat");
 if (process.env.J7_DATA_DIR) {
   const data = getPaths().data;
@@ -60,7 +63,9 @@ else {
         undefined, undefined, undefined, undefined, settings,
       );
       panel = new Panel(settings, chat);
-      registerIpc(panel, chat);
+      const attachments = new AttachmentStore(join(paths.data, "attachments"));
+      registerAttachments(panel, attachments);
+      registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);
       registerShortcut(settings.value.shortcut, () => panel?.toggle(), log);
       panel.window.webContents.on("render-process-gone", () =>

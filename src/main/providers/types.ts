@@ -16,6 +16,11 @@ export interface ModelInfo {
 }
 
 export interface Attachment {
+  id?: string;
+  pages?: number;
+  sentPages?: number;
+  hasText?: boolean;
+  truncated?: boolean;
   kind: "image" | "pdf" | "text";
   path: string;
   name: string;

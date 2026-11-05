@@ -17,7 +17,7 @@ export async function textWithAttachments(
           : { text: attachment.extractedText, truncated: false };
       text += `\n\nTexto del PDF adjunto (${attachment.name}):\n${extracted.text}`;
       if (extracted.truncated)
-        text += "\n[AVISO: J7 recortó el texto del PDF a 200000 caracteres.]";
+        text += "\n[AVISO: J7 recortó el texto del PDF a 400000 caracteres.]";
     }
   }
   return text;

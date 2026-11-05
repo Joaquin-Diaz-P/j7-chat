@@ -108,6 +108,8 @@ describe("F1–F5 turn and session service", () => {
     service.askOther("codex:codex"); await service.waitForIdle();
     expect(service.snapshot().model).toBe("codex:codex");
     expect(service.snapshot().messages.filter(m => m.role === "assistant")).toHaveLength(2);
+    expect(service.snapshot().messages.filter(m => m.role === "user")).toHaveLength(1);
+    expect(service.snapshot().messages).toHaveLength(4);
     expect(service.snapshot().messages[2]?.text).toBe("→ codex responde la misma pregunta");
     expect(b.inputs[0]?.text.endsWith("question")).toBe(true);
     await service.dispose();
@@ -232,4 +234,16 @@ it("preserves every character in /echo-context, including CRLF and Unicode separ
     await vi.runAllTimersAsync(); await task;
     expect(result).toBe(text);
   } finally { vi.useRealTimers(); }
+});
+it('uses the turn provider login command and never suggests login for Zen', async () => {
+  for (const id of ['claude', 'codex', 'opencode'] as const) {
+    const p = new RecordingProvider(id);
+    p.script = async function* () { yield { type: 'error', kind: 'auth', message: 'auth' }; };
+    const { service, send } = await setup([p]); await send('question');
+    const error = service.snapshot().messages.at(-1)!.text;
+    if (id === 'claude') { expect(error).toContain('/login'); expect(error).not.toContain('codex login'); }
+    if (id === 'codex') { expect(error).toContain('codex login'); expect(error).not.toContain('/login'); }
+    if (id === 'opencode') expect(error).not.toContain('Terminal');
+    await service.dispose();
+  }
 });

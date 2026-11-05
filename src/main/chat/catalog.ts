@@ -2,6 +2,12 @@ import type { CatalogSnapshot } from "../../shared/ipc.js";
 import type { ChatProvider, ModelInfo, ProviderId, ProviderStatus } from "../providers/types.js";
 import { createProvider, REGISTERED_PROVIDERS } from "../providers/registry.js";
 import type { SettingsStore } from "../settings.js";
+export const STATUS_TIMEOUT_MS = 10_000;
+async function bounded<T>(operation: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try { return await Promise.race([operation, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("Program timeout")), STATUS_TIMEOUT_MS); })]); }
+  finally { clearTimeout(timer); }
+}
 export const MODEL_CACHE_MS = 10 * 60_000;
 export const modelKey = (model: Pick<ModelInfo, "provider" | "id">) => `${model.provider}:${model.id}`;
 export function chooseDefaultModel(models: ModelInfo[], preferred: string | null): ModelInfo | undefined {
@@ -47,9 +53,9 @@ export class ModelCatalog {
       if (!force && (this.expires.get(id) ?? 0) > this.now()) return Promise.resolve();
       const task = this.exclusive(id, async () => {
         try {
-          const status = await provider.getStatus();
+          const status = await bounded(provider.getStatus());
           if (this.disposed) return;
-          const models = status.state === "ready" ? await provider.listModels() : [];
+          const models = status.state === "ready" ? await bounded(provider.listModels()) : [];
           if (this.disposed) return;
           this.statuses[id] = status;
           this.models.set(id, models);
@@ -77,7 +83,10 @@ export class ModelCatalog {
     this.changed();
   }
   async prewarm() {
-    await Promise.allSettled([...this.providers].map(([id, provider]) => this.exclusive(id, async () => { await provider.getStatus(); })));
+    await Promise.allSettled([...this.providers].map(([id, provider]) => this.exclusive(id, async () => {
+      try { await bounded(provider.getStatus()); }
+      catch { this.statuses[id] = { state: "error" }; this.models.set(id, []); this.changed(); }
+    })));
   }
   async dispose() {
     this.disposed = true;

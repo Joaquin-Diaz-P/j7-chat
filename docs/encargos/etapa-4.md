@@ -16,6 +16,11 @@ El flujo de voz tiene que aguantar que Hex se demore o falle sin perder nunca el
 
 H1, H2, H3, H4, H5, H6 y H7.
 
+## Correcciones de la etapa 3 (primero)
+
+1. **G7:** cuando el texto de un PDF se recorta, el modelo también tiene que saberlo, no solo la ficha. Agrega al bloque `<documento>` el atributo `recortado="páginas 1 a X de N"` y una línea final que diga que el resto no se incluyó. Agrega un test.
+2. **G5:** quita `.env` (y cualquier `.env.*`) de las extensiones de texto permitidas, para que nadie mande secretos sin querer.
+
 ## Hechos comprobados
 
 Esto se probó en el Mac del usuario el 4 de noviembre de 2026, con Hex 3.3.0.
