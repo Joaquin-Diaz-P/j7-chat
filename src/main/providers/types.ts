@@ -55,11 +55,15 @@ export type ChatEvent =
       recovery?: "session" | "process";
     };
 
+export type TurnHint = Pick<TurnInput, "model" | "effort" | "webSearch" | "instructions">;
+
 export interface ChatProvider {
   id: ProviderId;
   getStatus(): Promise<ProviderStatus>;
   listModels(): Promise<ModelInfo[]>;
   runTurn(input: TurnInput): AsyncIterable<ChatEvent>;
+  /** Starts a fresh session with these options, so the first turn of a new chat doesn't wait for the program to start. */
+  prepare?(hint: TurnHint): Promise<void>;
   dispose(): Promise<void>;
   shutdown?(): Promise<void>;
 }

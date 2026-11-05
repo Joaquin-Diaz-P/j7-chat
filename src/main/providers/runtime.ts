@@ -186,7 +186,7 @@ export class AsyncQueue<T> implements AsyncIterable<T> {
 }
 export abstract class BaseProvider implements ChatProvider {
   abstract readonly id: ProviderId;
-  private busy = false;
+  protected busy = false;
   private closed = false;
   constructor(protected options: ProviderOptions = {}) {}
   protected async binary() {

@@ -49,7 +49,7 @@ export class ChatService {
       for(const row of rows) if(!row.title.trim() && row.titleSource!=="manual") { const question=this.store.listMessages(row.id).find(m=>m.role==="user"); if(question)void this.titleGenerator(question.text).then(title=>history.rename?.(row.id,title,false)).catch(()=>{}); }
     }
     void this.catalog.refresh().catch(() => {}).finally(() => this.notify());
-    this.warmup = setTimeout(() => { void this.catalog.prewarm().catch(() => {}); }, 5_000);
+    this.warmup = setTimeout(() => { void this.catalog.prewarm().catch(() => {}).finally(() => this.prewarm()); }, 5_000);
     this.warmup.unref();
   }
   private models() { const models = this.catalog.snapshot().models; return models.length ? models : this.legacyModel ? [this.legacyModel] : []; }
@@ -77,7 +77,18 @@ export class ChatService {
       ...(this.warning ? { warning: this.warning } : {}) };
   }
   notify() { if (!this.disposed) this.changed(this.snapshot()); }
-  newChat() { this.draftChat=undefined; this.chatId = null; this.warning = undefined; this.notify(); }
+  /** Gets the program ready for the empty chat on screen, so its first answer doesn't wait for the program to start. */
+  prewarm() {
+    const empty = () => { const chat = this.currentChat(); return !chat || !this.store.listMessages(chat.id).length; };
+    if (this.disposed || !empty()) return;
+    const chat = this.currentChat(), model = this.selectedModel(chat);
+    const provider = model && this.catalog.providers.get(model.provider);
+    if (!model || !provider?.prepare || this.catalog.snapshot().statuses[model.provider]?.state !== "ready") return;
+    const hint = { model: model.id, effort: resolveEffort(model, chat?.effort ?? initialEffort(model, this.settings?.value.effortByModel)), webSearch: true, instructions: buildChatInstructions(this.settings?.value.personalInstructions) };
+    // Runs in the provider's queue; a turn sent meanwhile goes first and the chat is no longer empty.
+    void this.catalog.exclusive(model.provider, async () => { if (!this.disposed && empty()) await provider.prepare!(hint); }).catch(() => {});
+  }
+  newChat() { this.draftChat=undefined; this.chatId = null; this.warning = undefined; this.notify(); this.prewarm(); }
   selectChat(id: string) { if (this.store.getChat(id)) { this.chatId = id; this.notify(); } }
   updateChat(options: { model?: string; webSearch?: boolean; effort?: string }) {
     if (!this.currentChat()) {
@@ -104,6 +115,7 @@ export class ChatService {
     }
     update({ webSearch: true });
     this.notify();
+    this.prewarm();
   }
   send(text: string, attachments: Attachment[] = []) {
     if (this.disposed || !text.trim() && !attachments.length) return;

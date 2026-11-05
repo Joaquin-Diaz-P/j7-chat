@@ -18,7 +18,7 @@ import {
   classifyError,
   resumeError,
 } from "./runtime.js";
-import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
+import type { ChatEvent, ModelInfo, TurnHint, TurnInput } from "./types.js";
 
 export function translateClaudeEvent(raw: unknown): ChatEvent[] {
   const message = object(raw);
@@ -104,7 +104,9 @@ export class ClaudeProvider extends BaseProvider {
   private key = "";
   private sessionId: string | undefined;
   private pump: Promise<void> | undefined;
-  private async connect(input?: TurnInput) {
+  // A process that already answered holds that chat's conversation; an unused one can start any new chat.
+  private used = false;
+  private async connect(input?: TurnHint & Pick<TurnInput, "nativeSessionId">) {
     const key = JSON.stringify([
       input?.instructions ?? buildChatInstructions(),
       input?.webSearch ?? false,
@@ -114,7 +116,7 @@ export class ClaudeProvider extends BaseProvider {
       this.query &&
       input &&
       (this.key !== key ||
-        (input && this.sessionId && !input.nativeSessionId) ||
+        (this.used && !input.nativeSessionId) ||
         (input?.nativeSessionId && this.sessionId !== input.nativeSessionId))
     )
       await this.dispose();
@@ -126,6 +128,7 @@ export class ClaudeProvider extends BaseProvider {
       paths = await privateHome(this.id, this.options);
     this.prompts = new AsyncQueue<SDKUserMessage>();
     this.key = key;
+    this.used = false;
     const webTools = input?.webSearch ? ["WebSearch", "WebFetch"] : [];
     const binary = await this.binary();
     this.assertOpen();
@@ -301,6 +304,7 @@ export class ClaudeProvider extends BaseProvider {
     input.signal.addEventListener("abort", abort, { once: true });
     try {
       input.signal.throwIfAborted();
+      this.used = true;
       this.prompts!.push({
         type: "user",
         session_id: this.sessionId ?? "",
@@ -320,5 +324,9 @@ export class ClaudeProvider extends BaseProvider {
     active?.close();
     await this.pump;
     this.sessionId = undefined;
+    this.used = false;
+  }
+  async prepare(hint: TurnHint) {
+    if (!this.busy) await this.connect(hint);
   }
 }

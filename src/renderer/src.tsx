@@ -82,7 +82,7 @@ function App() {
   const [selector, setSelector] = useState<"model" | "other" | null>(null);
   const shownSelector = useLeaving(selector, 150);
   const shownAttachmentMenu = useLeaving(attachmentMenu, 150);
-  const shownMessages = useLeaving(chat.messages.length > 0, 220);
+  const shownMessages = useLeaving(chat.messages.length > 0, 190);
   const [editing, setEditing] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [copied, setCopied] = useState<string | null>(null);

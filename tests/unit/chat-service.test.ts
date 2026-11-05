@@ -8,9 +8,10 @@ import { MemoryChatStore } from "../../src/main/chat/memory-store.js";
 import { SettingsStore } from "../../src/main/settings.js";
 import { MockProvider } from "../../src/main/providers/mock.js";
 import { classifyError } from "../../src/main/providers/runtime.js";
-import type { ChatEvent, ChatProvider, ProviderId, TurnInput } from "../../src/main/providers/types.js";
+import type { ChatEvent, ChatProvider, ProviderId, TurnHint, TurnInput } from "../../src/main/providers/types.js";
 class RecordingProvider implements ChatProvider {
   inputs: TurnInput[] = [];
+  hints: TurnHint[] = [];
   disposed = 0;
   script: (input: TurnInput, count: number) => AsyncIterable<ChatEvent> = async function* (_input, count) {
     yield { type: "session", nativeSessionId: `session-${count}` };
@@ -21,6 +22,7 @@ class RecordingProvider implements ChatProvider {
   async getStatus() { return { state: "ready" as const }; }
   async listModels() { return [{ id: this.id, provider: this.id, label: this.id, supportsImages: true, supportsPdf: false, supportsEffort: this.id !== "mock-b" }]; }
   async *runTurn(input: TurnInput) { this.inputs.push(input); yield* this.script(input, this.inputs.length); }
+  async prepare(hint: TurnHint) { this.hints.push(hint); }
   async dispose() { this.disposed++; }
 }
 async function setup(providers: ChatProvider[] = [new RecordingProvider("claude"), new RecordingProvider("codex")], settings?: SettingsStore) {
@@ -198,6 +200,17 @@ describe("F6–F7 persistence, queues and supervision", () => {
     service.start(); await vi.advanceTimersByTimeAsync(4999); expect(warm).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1); expect(warm).toHaveBeenCalledOnce();
     await service.dispose(); await vi.advanceTimersByTimeAsync(10_000); expect(warm).toHaveBeenCalledOnce();
+  });
+  it("prepares the program for an empty chat with the options its first turn will use, never for a chat with messages", async () => {
+    const claude = new RecordingProvider("claude");
+    const { service, catalog, send } = await setup([claude]);
+    service.newChat(); await catalog.exclusive("claude", async () => {});
+    expect(claude.hints).toHaveLength(1);
+    await send("hola");
+    const { model, effort, webSearch, instructions } = claude.inputs[0]!;
+    expect(claude.hints[0]).toEqual({ model, effort, webSearch, instructions });
+    service.updateChat({ effort: "high" }); await catalog.exclusive("claude", async () => {});
+    expect(claude.hints).toHaveLength(1);
   });
   it("never retries auth/quota errors automatically and formats each E4 error", async () => {
     const p = new RecordingProvider("codex"); const { service } = await setup([p]);

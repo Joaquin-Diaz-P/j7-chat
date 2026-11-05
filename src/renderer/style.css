@@ -304,11 +304,11 @@ article [role=status],article details { color:var(--text-muted); }
   position:absolute; inset:24px; width:auto; height:auto; min-height:0;
   display:block; padding:0; border:0; border-radius:0; background:transparent;
   overflow:visible; box-shadow:none;
-  --motion:280ms; --ease:cubic-bezier(.32,.72,0,1);
+  --motion:240ms; --ease:cubic-bezier(.32,.72,0,1);
   animation:canvas-appear 150ms var(--ease);
   transform-origin:bottom right;
 }
-.shell.compact { --motion:220ms; }
+.shell.compact { --motion:190ms; }
 
 @property --card-top { syntax:'<length>'; inherits:true; initial-value:0px; }
 @property --card-left { syntax:'<length>'; inherits:true; initial-value:260px; }
