@@ -18,6 +18,14 @@ Lee `docs/plan.md`, en especial las reglas para los subagentes, y en `docs/funci
 - **Estética:** L1, L2, L3, L4.
 - **Calidad:** M1.
 
+## Correcciones de la etapa 1a (primero)
+
+1. **B4:** el evento `moved` también se dispara después de los `setBounds` del programa, de forma asíncrona, así que el flag `resizing` no lo filtra, y se guardan posiciones sin que el usuario arrastre. Guarda la posición solo cuando el movimiento lo hizo el usuario. Por ejemplo: ignora `moved` si los límites coinciden con los últimos que fijó el programa, o usa `will-move`.
+2. **B5:** guarda un **anclaje** (la posición guardada o la de defecto) y calcula siempre los límites desde ese anclaje, no desde los límites actuales. Al achicarse, la barra tiene que volver a su anclaje.
+3. **A6:** con SIGTERM, la app registra "shutdown", pero el proceso sigue vivo más de 5 segundos. Encuentra la causa y haz que salga en menos de 2 segundos, tanto con SIGTERM como con "Salir" del menú.
+
+Agrega tests para 1 y 2 en `window-state`.
+
 ## Enfoque técnico
 
 - **Markdown (E1, E5):**

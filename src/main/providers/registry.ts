@@ -1,3 +1,4 @@
+import { MockProvider } from "./mock.js";
 import { ClaudeProvider } from "./claude.js";
 import { CodexProvider } from "./codex.js";
 import { GeminiProvider } from "./gemini.js";
@@ -10,6 +11,7 @@ export function createProvider(
   options: ProviderOptions = {},
 ): ChatProvider {
   switch (id) {
+    case "mock": return new MockProvider();
     case "claude":
       return new ClaudeProvider(options);
     case "codex":

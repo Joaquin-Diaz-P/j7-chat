@@ -1,0 +1,22 @@
+export const strings = {
+  appName: "J7 Chat",
+  openApp: "Abrir J7 Chat",
+  settings: "Ajustes…",
+  settingsLater: "Los ajustes estarán disponibles en la etapa 6.",
+  accept: "Aceptar",
+  quitApp: "Salir de J7 Chat",
+  shortcutFailed:
+    "No se pudo registrar el atajo. Ese atajo ya lo usa otra app o no es válido.",
+  responseFailed: "No se pudo completar la respuesta",
+  newPlaceholder: "Pregunta algo…",
+  followPlaceholder: "Sigue preguntando…",
+  send: "Enviar",
+  stop: "Detener",
+  stopped: "(detenido)",
+  pin: "Mantener visible",
+  newChat: "Chat nuevo",
+  input: "Pregunta",
+  user: "Tú",
+  assistant: "Mock",
+  error: "No se pudo enviar el mensaje",
+};

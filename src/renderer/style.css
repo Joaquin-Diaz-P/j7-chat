@@ -1,0 +1,104 @@
+@import "tailwindcss";
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202020;
+  color-scheme: light;
+}
+:root.dark {
+  color: #eee;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+}
+.panel {
+  width: 680px;
+  border-radius: 12px;
+  background: rgb(245 245 245 / 0.75);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+}
+.dark .panel {
+  background: rgb(30 30 30 / 0.78);
+}
+header {
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  -webkit-app-region: drag;
+}
+header div {
+  display: flex;
+}
+button,
+textarea {
+  -webkit-app-region: no-drag;
+}
+button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+button:hover,
+button[aria-pressed="true"] {
+  background: #8883;
+}
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+button:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #129caa;
+}
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  min-height: 60px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+textarea {
+  background: transparent;
+  border: 0;
+  resize: none;
+  flex: 1;
+  line-height: 24px;
+  max-height: 192px;
+  padding: 0 4px;
+  outline: none;
+}
+.conversation {
+  min-height: 0;
+  overflow: auto;
+  flex: 0 1 auto;
+  padding: 0 18px;
+}
+article {
+  padding: 10px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+small {
+  opacity: 0.65;
+  font-size: 11px;
+}
+article div {
+  font-size: 14px;
+  line-height: 1.5;
+}

@@ -1,4 +1,4 @@
-export type ProviderId = "claude" | "codex" | "gemini" | "opencode";
+export type ProviderId = "mock" | "claude" | "codex" | "gemini" | "opencode";
 
 export interface ProviderStatus {
   state: "ready" | "not_installed" | "not_authenticated" | "error";

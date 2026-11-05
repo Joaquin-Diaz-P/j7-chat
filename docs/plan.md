@@ -6,13 +6,20 @@ El qué está en [especificacion.md](especificacion.md); el detalle de cada func
 
 1. **Encargo.** Cada etapa tiene un encargo en `docs/encargos/etapa-N.md` con los códigos que debe implementar, los archivos y el enfoque técnico.
 2. **Construcción.** Un subagente de Codex con el modelo y el razonamiento de la tabla de etapas ejecuta el encargo. Escribe el código y los tests unitarios de la lógica, comprueba que `npm run dev` arranca sin errores y entrega un reporte.
-3. **Revisión de Claude**, código por código:
+3. **Revisión, a cargo de un subagente Claude Opus con razonamiento medio**, código por código:
    - Lee los cambios.
    - Corre `npm run typecheck` y `npm test`.
-   - Prueba la app real siguiendo cada "Se comprueba", con el proveedor `mock` para no gastar cuota y un turno real corto cuando haga falta.
-   - Anota el resultado en `docs/estado.md`.
-4. **Correcciones.** Los fallos pequeños los corrige Claude. Si son grandes, se arma un encargo nuevo solo con los códigos que fallaron.
-5. **Cierre.** Cuando todos los códigos de la etapa están en ✅, Claude hace un commit en la rama `desarrollo` y parte la etapa siguiente.
+   - Prueba la app real siguiendo cada "Se comprueba", con el proveedor `mock`.
+   - Entrega una tabla con cada código: ✅, ❌ (con la causa) o 🔍 (necesita una prueba física).
+   - **Cómo probar la app:**
+     - `npm run dev -- --remoteDebuggingPort 9333`, con un `J7_DATA_DIR` temporal.
+     - `node scripts/verify/cdp.mjs '<comandos CDP>'` para escribir, apretar teclas y leer el DOM.
+     - `scripts/verify/windows.swift <pid>` para leer los límites de la ventana.
+     - `agent-desktop press alt+j` para el atajo global.
+     - `agent-desktop` no puede leer ventanas tipo panel.
+4. **El orquestador** (Claude, la sesión principal) solo lee ese reporte, actualiza `docs/estado.md` y decide.
+5. **Correcciones.** Lo que falla se agrega al principio del encargo de la etapa siguiente, o, si bloquea, se manda en un encargo corto de correcciones.
+6. **Cierre.** El orquestador hace un commit por etapa en la rama `desarrollo`.
 
 **Para ahorrar cuota:**
 - Los encargos son cortos y no piden volver a leer `.reference/t3code`; la referencia es `docs/etapa-0-resultados.md` y el código que ya existe.

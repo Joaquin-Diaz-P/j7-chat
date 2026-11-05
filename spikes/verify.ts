@@ -26,7 +26,7 @@ await mkdir(output, { recursive: true });
 const ids =
   providerArg === "--all"
     ? (["claude", "codex", "gemini", "opencode"] as const)
-    : [providerArg as ProviderId];
+    : [providerArg as Exclude<ProviderId, "mock">];
 const models = {
   claude: "haiku",
   codex: "gpt-6-luna",
