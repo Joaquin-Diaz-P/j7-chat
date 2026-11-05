@@ -1,0 +1,94 @@
+# Encargo: etapa 2, todos los modelos
+
+Repo: `/Users/joaco/.t3/projects/j7-chat`.
+
+Antes de empezar, lee `docs/especificacion.md`, `docs/funcionalidades.md`, `docs/plan.md`, `docs/etapa-0-resultados.md` y el reporte de la etapa 1, si existe.
+
+> Claude va a ajustar este encargo con los resultados de la etapa 0 antes de enviarlo. Si encuentras la nota "PENDIENTE ETAPA 0", avisa en vez de suponer.
+
+## Objetivo
+
+Los cuatro programas dentro de la app, con:
+- Selector con favoritos.
+- Modelo por defecto.
+- Cambio de modelo a mitad del chat, con traspaso.
+- "Pensar más" y 🌐.
+- Fuentes de la búsqueda web.
+- Acciones de las respuestas.
+- Edición de la última pregunta.
+- Errores claros.
+- Procesos de los programas supervisados.
+
+## Códigos que implementas
+
+- **Barra de entrada:** C5, C6.
+- **Modelos:** D1, D2, D3, D4, D5, D6, D7.
+- **Respuestas:** E4, E8, E9, E10.
+- **Turnos y sesiones:** F1, F2, F3, F4, F5, F6, F7.
+
+## Enfoque técnico
+
+- **`ChatStore` (`src/main/chat/store.ts`):** una interfaz con estas operaciones:
+  - `createChat`, `getChat`, `updateChat` (modelo, programa, web y esfuerzo).
+  - `listMessages`, `appendMessage`, `updateMessage` (contenido, estado y meta), `deleteMessagesFrom(messageId)`.
+  - `getProviderSession`, `upsertProviderSession`.
+
+  Por ahora se implementa en memoria, en `memory-store.ts`. Escribe sus tests como una **suite de contrato reutilizable**, `tests/unit/chat-store.contract.ts`, que reciba una fábrica de stores: la etapa 5 la va a correr con SQLite.
+
+- **Resumen (`src/main/chat/recap.ts`):** una función pura que, a partir de los mensajes y del último mensaje visto, arma el bloque de F2 respetando sus límites (100.000 caracteres y las imágenes de los últimos 4 mensajes). Debe tener tests exhaustivos, con el caso Claude → GPT → Claude de F2.
+
+- **`ChatService`:**
+  - **Algoritmo de un turno:**
+    1. Resuelve el programa del modelo.
+    2. Lee su sesión nativa.
+    3. Si el hash de las instrucciones cambió, descarta la sesión (F5).
+    4. Calcula los mensajes que el programa no vio y arma el resumen (F2).
+    5. Ejecuta `runTurn`.
+    6. Si retomar la sesión falla, la abre de nuevo con el resumen completo (F3).
+    7. Guarda la sesión nueva y actualiza el último mensaje visto.
+  - **Reintentar y editar (F4):** borran desde la respuesta (o la pregunta) y abren una sesión nueva con el resumen de lo anterior.
+  - **Persistencia (F6):** guarda lo que va llegando cada 500 ms como máximo, y un turno activo por chat.
+  - **Supervisión (F7):** precalienta los procesos 5 segundos después del arranque y reinicia una vez un proceso que se cae.
+
+- **Registro de modelos (D1):** caché de 10 minutos y actualización en segundo plano. Los favoritos y el modelo por defecto viven en `settings.json` (D3, D4).
+
+- **Interfaz:**
+  - Selector con buscador y manejo con teclado (D2), y la línea de programas no disponibles (D5).
+  - Línea de cambio de modelo (D6) y etiqueta del modelo en cada respuesta (D7).
+  - Acciones de la última respuesta (E8), edición de la última pregunta (E9) y fuentes (E10).
+  - Errores según la tabla de E4. Los comandos de inicio de sesión de cada programa salen de `docs/etapa-0-resultados.md` (PENDIENTE ETAPA 0).
+
+- **Proveedor `mock`:** agrega dos modelos de prueba, `mock-a` y `mock-b`, que simulen dos programas distintos. Agrega también el comando `/echo-context`, que responde con el texto exacto que recibió, para comprobar el traspaso de punta a punta.
+
+## Tests
+
+- **Unitarios:**
+  - Resumen.
+  - `ChatService`: traspaso, sesión perdida, reintentar y editar, cambio de instrucciones, persistencia en intervalos y reinicio de procesos.
+  - Registro y caché.
+  - Modelo por defecto cuando el elegido no está disponible.
+- **De punta a punta, con el `mock`:**
+  - Selector con buscador y teclado.
+  - Favoritos.
+  - Cambio `mock-a` → `mock-b` con `/echo-context`, que muestra el resumen.
+  - Reintentar, preguntar a otro modelo y editar.
+  - Cada error de E4.
+  - Fuentes de la búsqueda web.
+  - 🌐 y "Pensar más" guardados por chat.
+
+## Comprobación manual con programas reales
+
+Con preguntas cortas y modelos baratos:
+- D6: Claude → GPT con "me llamo Ana", y luego "¿cómo me llamo?".
+- D5: un programa con una ruta falsa.
+- F7: matar `codex app-server` y mandar un mensaje con GPT.
+- C6: un turno con "Pensar más".
+- Un turno de cada uno de los cuatro programas.
+
+## Fuera de alcance
+
+Adjuntos, captura, voz, historial persistente y ventana de ajustes. Los favoritos se marcan desde "Ver todos" en el selector.
+
+## Reporte final
+
+Con el formato de la regla 11 del plan.
