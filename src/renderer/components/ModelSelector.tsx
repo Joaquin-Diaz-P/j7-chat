@@ -25,7 +25,7 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose }: 
  useEffect(()=>{if(column) root.current?.querySelectorAll<HTMLButtonElement>(".model-reasoning button")[levelIndex]?.focus();},[column,levelIndex,key]);
  useEffect(()=>{root.current?.querySelector('[data-focused="true"]')?.scrollIntoView({block:"nearest"});},[index]);
  useEffect(()=>{const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node) && !(e.target as Element).closest(".model-trigger"))onClose();};document.addEventListener("pointerdown",dismiss);return()=>document.removeEventListener("pointerdown",dismiss);},[onClose]);
- return <div ref={root} className={`model-selector ${supported.length ? "with-effort" : ""}`} tabIndex={-1} onClick={e=>{if(!(e.target as Element).closest("button,input"))root.current?.querySelector("input")?.focus();}} role="dialog" aria-label={s.model} onKeyDown={e=>{
+ return <div ref={root} className="model-selector with-effort" tabIndex={-1} onClick={e=>{if(!(e.target as Element).closest("button,input"))root.current?.querySelector("input")?.focus();}} role="dialog" aria-label={s.model} onKeyDown={e=>{
   if(e.metaKey && /^[1-9]$/.test(e.key)){e.preventDefault();e.stopPropagation();const m=models[Number(e.key)-1];if(m)onSelect(`${m.provider}:${m.id}`);return;}
   if(!["Escape","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.key))return;
   e.stopPropagation();
@@ -47,6 +47,6 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose }: 
  </div>;})}{!models.length&&<div role="row"><span role="gridcell">{query.trim() && catalog.models.length ? s.noResults : catalog.models.length ? s.noAvailableModels : s.noModels}</span></div>}</div>
  {Object.entries(catalog.statuses).filter(([,v])=>v.state!=="ready").map(([id])=><div className="unavailable" key={id}><button onClick={()=>void window.j7.openSettings()}>{s.unavailable(s.programLabels[id as ProviderId])}</button></div>)}
  </section>
- {!!supported.length&&<section className="model-reasoning" role="menu" aria-label={s.reasoning}><header>{s.reasoning}<small>{active?.label}</small></header>{supported.map((value,i)=><button role="menuitemradio" aria-checked={chosen===value} key={value} data-focused={column&&levelIndex===i} onClick={()=>onSelect(key,value)}>{effortLabel(value)}{active?.defaultReasoningEffort===value&&<small>{s.programDefault}</small>}{chosen===value&&<Check size={13}/>}</button>)}</section>}
+ <section className="model-reasoning" role="menu" aria-label={s.reasoning}><header>{s.reasoning}<small>{active?.label}</small></header>{!supported.length&&<p className="no-levels">{s.noEffortLevels}</p>}{supported.map((value,i)=><button role="menuitemradio" aria-checked={chosen===value} key={value} data-focused={column&&levelIndex===i} onClick={()=>onSelect(key,value)}>{effortLabel(value)}{active?.defaultReasoningEffort===value&&<small>{s.programDefault}</small>}{chosen===value&&<Check size={13}/>}</button>)}</section>
  </div>;
 }
