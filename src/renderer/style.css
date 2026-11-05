@@ -333,3 +333,28 @@ article [role=status],article details { color:var(--text-muted); }
 .shell > .attachment-menu { left:calc(100% - min(520px,100%) + 16px); bottom:50px; }
 .history-row button[aria-current=true] { background:var(--row-selected); }
 button[aria-pressed=true] { background:var(--row-active); }
+
+/* Settings share the chat palette and retain native macOS window controls. */
+.settings-view {padding:0;overflow:hidden;background:var(--surface);color:var(--text);font-size:13px}
+.settings-view nav {width:200px;padding:48px 12px 16px;gap:4px;background:color-mix(in srgb,var(--surface-raised) 50%,var(--surface));border-right:1px solid var(--border);-webkit-app-region:drag}
+.settings-brand {display:flex;align-items:center;gap:9px;font-weight:600;margin:8px 10px 24px}.settings-brand svg {width:20px;height:20px}
+.settings-view nav button {display:flex;align-items:center;gap:10px;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:6px;color:var(--text-muted);-webkit-app-region:no-drag}
+.settings-view nav button[aria-pressed=true] {background:var(--sidebar-row-selected);color:var(--text)}
+.settings-view section {padding:44px 28px 24px;min-width:0}.settings-view h2 {font-size:20px;font-weight:600;margin:0 0 22px;-webkit-app-region:drag}
+.settings-card {background:var(--surface-raised);border:1px solid var(--border-raised);border-radius:10px;padding:0 16px;overflow:hidden}
+.settings-view .settings-row {display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:56px;margin:0;padding:10px 0;border-bottom:1px solid var(--border)}
+.settings-view .settings-row:last-child {border-bottom:0}.settings-view p {margin:0}.settings-view h3 {font-size:13px;font-weight:600;margin:18px 0 8px}.settings-view small {display:block;color:var(--text-muted);font-size:12px;font-weight:400;margin-top:4px}
+.settings-view button,.settings-view select {font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border-raised);border-radius:6px;padding:6px 9px;cursor:pointer}.settings-view button:hover {background:var(--row-hover)}
+.settings-view select {appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--text-muted) 50%),linear-gradient(135deg,var(--text-muted) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 10px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+.settings-view input[role=switch] {appearance:none;width:32px;height:19px;border-radius:12px;background:var(--border-raised);position:relative;cursor:pointer;flex-shrink:0}.settings-view input[role=switch]:before {content:'';position:absolute;left:3px;top:3px;width:13px;height:13px;background:var(--text);border-radius:50%;transition:transform .15s}.settings-view input[role=switch]:checked {background:var(--accent)}.settings-view input[role=switch]:checked:before {transform:translateX(13px);background:white}
+.settings-view :is(button,select,input,textarea):focus-visible {outline:2px solid var(--accent);outline-offset:3px}
+.settings-view kbd {display:inline-block;background:var(--row-hover);border:1px solid var(--border-raised);border-radius:4px;padding:1px 5px;margin:0 2px;font:12px var(--font-sans)}
+.settings-view textarea {resize:vertical;min-height:220px;background:var(--surface);border:1px solid var(--border-raised);border-radius:6px;padding:12px;color:var(--text);margin-top:16px;font:inherit}.settings-view .settings-counter {text-align:right;font-size:12px;color:var(--text-muted);padding:8px 0 12px}
+.settings-model,.settings-model-controls {display:flex;align-items:center;gap:8px}.settings-model {min-width:0}.settings-model-controls {flex-shrink:0}.settings-view .settings-program {padding-bottom:16px;border-bottom:1px solid var(--border)}
+.status-dot {display:inline-block;width:7px;height:7px;border-radius:50%;background:#e15c56;margin-right:8px}.status-dot.ready {background:#45ad76}.status-dot.not_authenticated {background:#dca544}
+.settings-view .settings-command {display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px}.settings-command code {font:11px var(--font-mono);overflow-wrap:anywhere;flex:1;min-width:0}
+.settings-card>button {margin:12px 0}.settings-toast {position:fixed;bottom:16px;right:24px;color:var(--text-muted);font-size:12px;background:var(--surface-raised);border:1px solid var(--border);padding:8px 12px;border-radius:6px}
+
+.settings-view {--sidebar-row-selected:color-mix(in srgb,var(--text) 7%,transparent)}
+.settings-titlebar {position:absolute;top:0;left:0;right:0;height:40px;-webkit-app-region:drag}
+.settings-view :is(button,input,select,textarea) {-webkit-app-region:no-drag}

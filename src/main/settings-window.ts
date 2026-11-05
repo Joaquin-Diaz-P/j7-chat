@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, nativeTheme, globalShortcut, shell } from 'electron';
 import { join } from 'node:path';
+import { validateEffortUpdates } from './settings-effort.js';
 import type { SettingsStore, Settings } from './settings.js';
 import type { Panel } from './window.js';
 import type { ChatService } from './chat/service.js';
@@ -15,7 +16,7 @@ export function setupSettings(settings: SettingsStore, panel: Panel, chat: ChatS
  app.on('will-quit',()=>helper.dispose());
  opener = () => {
   if(window && !window.isDestroyed()) { window.show(); window.focus(); return; }
-  window = new BrowserWindow({width:720,height:560,title:s.settingsTitle,webPreferences:{preload:join(import.meta.dirname,'../preload/index.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
+  window = new BrowserWindow({width:760,height:540,titleBarStyle:"hiddenInset",backgroundColor:(settings.value.theme==='dark' || (settings.value.theme==='system' && nativeTheme.shouldUseDarkColors))?"#000000":"#fdfdfd",title:s.settingsTitle,webPreferences:{preload:join(import.meta.dirname,'../preload/index.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
   window.on('page-title-updated',e=>e.preventDefault());
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   window.webContents.on('will-navigate',e=>e.preventDefault());
@@ -31,6 +32,7 @@ export function setupSettings(settings: SettingsStore, panel: Panel, chat: ChatS
  ipcMain.handle('settings:save',async(e,raw:Partial<Settings>)=>{
   if(!trusted(e) || !raw || typeof raw!=='object')return;
   const value={...settings.value};
+  if(raw.effortByModel!==undefined)value.effortByModel={...value.effortByModel,...validateEffortUpdates(raw.effortByModel,chat.catalog.snapshot().models)};
   if(raw.theme && ['system','light','dark'].includes(raw.theme)) value.theme=raw.theme;
   if(typeof raw.openAtLogin==='boolean')value.openAtLogin=raw.openAtLogin;
   if(typeof raw.personalInstructions==='string')value.personalInstructions=raw.personalInstructions.slice(0,4000);

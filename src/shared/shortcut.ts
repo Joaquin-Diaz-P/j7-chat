@@ -2,7 +2,7 @@ export function accelerator(e: Pick<KeyboardEvent,'code'|'altKey'|'ctrlKey'|'met
  const codes: Record<string,string>={Space:'Space',Tab:'Tab',Enter:'Enter',Escape:'Escape',Backspace:'Backspace',Delete:'Delete',ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',Home:'Home',End:'End',PageUp:'PageUp',PageDown:'PageDown',Semicolon:';',Comma:',',Period:'.',Slash:'/',BracketLeft:'[',BracketRight:']',Quote:"'",Minus:'-',Equal:'=',Backslash:'\\'};
  const key = /^(Key[A-Z]|Digit[0-9])$/.test(e.code) ? e.code.replace(/^(Key|Digit)/,'') : /^F(?:[1-9]|1[0-9]|2[0-4])$/.test(e.code) ? e.code : codes[e.code];
  const mods = [e.metaKey?'Command':'',e.ctrlKey?'Control':'',e.altKey?'Alt':'',e.shiftKey?'Shift':''].filter(Boolean);
- return key && mods.length ? [...mods,key].join('+') : undefined;
+ return e.code!=='Tab' && key && mods.length ? [...mods,key].join('+') : undefined;
 }
 export function voiceModifier(code: string) {
  const match = /^(Alt|Meta|Control|Shift)(Left|Right)$/.exec(code);
@@ -10,7 +10,7 @@ export function voiceModifier(code: string) {
 }
 export function shortcutIdentity(value: string) { return value.split('+').map(x=>({Cmd:'Command',Option:'Alt',Ctrl:'Control'}[x] ?? x)).sort().join('+'); }
 export function isAccelerator(value: unknown): value is string {
- return typeof value==='string' && /^(?:(?:Alt|Option|Command|Cmd|CommandOrControl|Control|Ctrl|Shift)\+)+(?:[A-Z0-9]|F(?:[1-9]|1[0-9]|2[0-4])|Space|Tab|Enter|Escape|Backspace|Delete|Up|Down|Left|Right|Home|End|PageUp|PageDown|[;,./\[\]'=\-\\])$/i.test(value);
+ return typeof value==='string' && !/(?:^|\+)Tab$/i.test(value) && /^(?:(?:Alt|Option|Command|Cmd|CommandOrControl|Control|Ctrl|Shift)\+)+(?:[A-Z0-9]|F(?:[1-9]|1[0-9]|2[0-4])|Space|Tab|Enter|Escape|Backspace|Delete|Up|Down|Left|Right|Home|End|PageUp|PageDown|[;,./\[\]'=\-\\])$/i.test(value);
 }
 export function replaceShortcuts(changes: {previous:string;next:string;activate:()=>boolean}[], unregister:(key:string)=>void, failure:string) {
  const installed:string[]=[];
@@ -28,4 +28,8 @@ export function shortcutLabel(value: string) {
 
 export function isSettingsShortcut(event: Pick<KeyboardEvent, "metaKey" | "ctrlKey" | "altKey" | "shiftKey" | "code" | "key">): boolean {
  return event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && (event.code === "Comma" || event.key === ",");
+}
+
+export function recorderAction(code: string): 'cancel' | 'leave' | 'record' {
+ return code==='Escape'?'cancel':code==='Tab'?'leave':'record';
 }

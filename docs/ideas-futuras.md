@@ -15,7 +15,7 @@ Detectados en la revisión final (etapa 6):
 - **Tiempo de inicio de Hex:** el tiempo máximo de `hex dictation start` bajó de 5 s a 1 s para que el `stop` alcance a correr al salir. Si Hex tarda más de 1 s en empezar, la voz falla. Lo mejor sería volver a 5 s durante el uso normal y aplicar el límite corto solo al salir. Se confirma en el paso 5 de `docs/prueba-final.md`.
 - **Firma de la app:** la firma ad-hoc tiene el identificador "Electron", así que macOS podría volver a pedir los permisos después de cada actualización. Habría que firmar ad-hoc con el identificador `cl.j7.chat`.
 - **Intercambiar atajos:** si se intercambian entre sí el atajo de la barra y el de "Captura y pregunta", falla con "Ese atajo ya lo usa otra app", porque se registra el nuevo antes de soltar el viejo.
-- **Ventana de ajustes:** funciona, pero el diseño es muy básico. Habría que darle la estética de la barra.
+- [x] **Ventana de ajustes:** rediseñada con la estética de la barra (N13).
 - **Programas en los ajustes:**
   - El detalle de `claude` dice "/login", pero el comando que muestra es `claude auth login`.
   - Se muestran los dos comandos (instalar e iniciar sesión) sin importar el estado.

@@ -138,7 +138,7 @@ export const strings = {
   error: "No se pudo enviar el mensaje",
 };
 export const settingsStrings = {
- sections:['General','Atajos','Modelos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Pulsa para grabar', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+ sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
 };
 
 export const settingsCommands: Record<string,string[]> = {
