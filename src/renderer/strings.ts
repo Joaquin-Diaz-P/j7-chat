@@ -1,4 +1,10 @@
 export const strings = {
+  historySearch: "Buscar en el historial",
+  historyGroups: ["Fijados","Hoy","Ayer","Últimos 7 días","Anteriores"],
+  historyActions: "Acciones del chat",
+  pinChat: "Fijar", unpinChat: "Desfijar", renameChat: "Renombrar", deleteChat: "Borrar",
+  noResults: "Sin resultados", interrupted: "(interrumpido)",
+  confirmDelete: (title: string) => `¿Borrar «${title}»? No se puede deshacer`,
   captureUnavailable: "No se pudo completar la captura o iniciar Hex. Revisa los permisos y los programas en los ajustes.",
   captureListening: "● Escuchando… suelta la tecla de voz para enviar",
   captureOpening: "Abriendo Hex…",

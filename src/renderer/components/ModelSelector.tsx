@@ -3,7 +3,7 @@ import type { CatalogSnapshot } from "../../shared/ipc.js";
 import { strings as s } from "../strings.js";
 import { Star, Check, Sparkles, Bot, Zap, FlaskConical } from "lucide-react";
 import type { ProviderId } from "../../main/providers/types.js";
-const icons = { claude: Sparkles, codex: Bot, opencode: Zap, mock: FlaskConical, "mock-a": FlaskConical, "mock-b": FlaskConical, gemini: Sparkles };
+export const providerIcons = { claude: Sparkles, codex: Bot, opencode: Zap, mock: FlaskConical, "mock-a": FlaskConical, "mock-b": FlaskConical, gemini: Sparkles };
 export function ModelSelector({ catalog, onSelect, onClose }: { catalog: CatalogSnapshot; onSelect: (key: string) => void; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
@@ -33,7 +33,7 @@ export function ModelSelector({ catalog, onSelect, onClose }: { catalog: Catalog
     <div className="model-list" role="listbox" aria-label={s.model}>
       {models.map((model, i) => {
         const key = `${model.provider}:${model.id}`;
-        const Icon = icons[model.provider];
+        const Icon = providerIcons[model.provider];
         return <div key={key}>
           {models[i - 1]?.provider !== model.provider && <small className="model-group"><Icon size={13}/>{s.programLabels[model.provider]}</small>}
           <div className="model-row" data-focused={i === activeIndex}>

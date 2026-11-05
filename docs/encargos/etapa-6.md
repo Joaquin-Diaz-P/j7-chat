@@ -16,6 +16,16 @@ La ventana de ajustes completa, el primer arranque, el arranque al iniciar sesi�
 - **Empaquetado:** K1, K2, K3.
 - **Calidad:** M4 completo.
 
+## Correcciones de la etapa 5 (primero)
+
+1. **I3, idioma y formato:**
+   - El título tiene que salir en el idioma de la pregunta: hoy una pregunta en inglés recibe un título en español.
+   - Limpia el resultado en `titles.ts`: sin comillas de ningún tipo y sin punto final. Hoy `dime "hola" mundo` dio `Hola" mundo con comillas`.
+   - Agrega tests.
+2. **I3, chats sin título:** un chat que quedó interrumpido por un cierre forzado se queda como "Chat nuevo". Al arrancar, junto con I9, genera el título de los chats que no tengan título automático y tengan al menos una pregunta.
+3. **Error sin capturar:** en el log de desarrollo apareció una vez `Error: net::ERR_FILE_NOT_FOUND` sin capturar. Encuentra de dónde viene (las rutas candidatas son `loadFile`, `j7-file`, `previewFile` y las miniaturas) y manéjalo.
+4. **Voz:** si la app se cierra justo mientras `hex dictation start` está en curso, el `stop` posterior tiene que alcanzar a ejecutarse dentro del límite de 3 segundos. Agrega un test.
+
 ## Enfoque técnico
 
 - **Ventana de ajustes (`src/main/settings-window.ts`):** un `BrowserWindow` normal de 720 × 560, con el título "Ajustes de J7 Chat". Usa el mismo bundle del renderer, con la ruta `#/settings`. No se esconde al perder el foco, y esconder la barra no la afecta.

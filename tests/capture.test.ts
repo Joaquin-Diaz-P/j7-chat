@@ -86,3 +86,22 @@ it('release during capture stops after pending start completes',async()=>{
   const begin=f.flow.begin();await f.flow.end();resolve();await begin;
   expect(f.hex.stop).toHaveBeenCalledOnce();expect(f.events.at(-1)?.text).toBe('dictado');
 });
+it('shutdown bounds a hung stop to three seconds',async()=>{
+ vi.useFakeTimers();const f=fixture(vi.fn(()=>new Promise(()=>{})));
+ await f.flow.begin();void f.flow.end();
+ const done=vi.fn();const dispose=f.flow.dispose().then(done);
+ await vi.advanceTimersByTimeAsync(2999);expect(done).not.toHaveBeenCalled();
+ await vi.advanceTimersByTimeAsync(1);await dispose;expect(done).toHaveBeenCalled();
+});
+it('issues a fresh stop when cancelled start resolves after an earlier stop',async()=>{
+ let release!:(v:{code:number;text:string})=>void;
+ const f=fixture();f.hex.begin.mockImplementation(()=>new Promise(r=>{release=r;}));
+ const begin=f.flow.begin();await Promise.resolve();await f.flow.cancel();
+ release({code:0,text:''});await begin;expect(f.hex.stop).toHaveBeenCalledTimes(2);
+});
+it('requests oldest history first and detects installation independent of settings',async()=>{
+ const hex=new Hex(process.execPath);const run=vi.spyOn(hex,'run').mockResolvedValue({code:1,text:''});
+ expect(hex.installed()).toBe(true);await hex.hotkey();expect(hex.installed()).toBe(true);
+ const start=new Date(0);await hex.recoverSince(start);
+ expect(run).toHaveBeenLastCalledWith(['history','--since',start.toISOString(),'--oldest-first','--limit','1','--json']);
+});

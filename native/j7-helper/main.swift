@@ -1,3 +1,6 @@
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 import Cocoa
 import ScreenCaptureKit
 import IOKit.hid
@@ -82,6 +85,19 @@ func command(_ message: [String: Any]) async {
     let id = message["id"] ?? NSNull()
     do {
         switch message["command"] as? String {
+        case "generateTitle":
+#if canImport(FoundationModels)
+            if #available(macOS 26.0, *) {
+                guard case .available = SystemLanguageModel.default.availability else {
+                    emit(["id":id,"ok":false,"reason":"unavailable"]); return
+                }
+                let session = LanguageModelSession(instructions:"Título de 3 a 6 palabras, en el idioma de la conversación, sin comillas ni punto final")
+                let result = try await session.respond(to:"No respondas la pregunta. Escribe solo el título de esta conversación:\n\n" + (message["text"] as? String ?? ""))
+                emit(["id":id,"ok":true,"title":result.content])
+            } else { emit(["id":id,"ok":false,"reason":"unavailable"]) }
+#else
+            emit(["id":id,"ok":false,"reason":"unavailable"])
+#endif
         case "permissions":
             if message["request"] as? Bool == true {
                 if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }

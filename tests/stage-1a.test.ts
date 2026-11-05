@@ -83,6 +83,7 @@ describe("panel geometry and clock", () => {
 describe("settings", () => {
   it("validates each field independently", () => {
     expect(validateSettings(null)).toEqual({
+      historyOpen: false,
       shortcut: "Alt+J",
       captureShortcut: "Alt+Shift+J",
       voiceModifier: "right-option",
@@ -103,12 +104,14 @@ describe("settings", () => {
     ).toEqual(validateSettings({}));
     expect(
       validateSettings({
-        shortcut: "Command+Shift+K",
+        historyOpen: false,
+      shortcut: "Command+Shift+K",
         pinned: true,
         theme: "dark",
         positions: { a: { x: 2, y: 3 } },
       }),
     ).toEqual({
+      historyOpen: false,
       shortcut: "Command+Shift+K",
       captureShortcut: "Alt+Shift+J",
       voiceModifier: "right-option",

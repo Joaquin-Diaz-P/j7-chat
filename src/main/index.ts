@@ -1,3 +1,6 @@
+import { SqliteChatStore } from "./chat/sqlite-store.js";
+import { NativeHelper } from "./native/helper.js";
+import { generateTitle } from "./titles.js";
 import { setupCapture } from "./capture/setup.js";
 import { AttachmentStore } from "./attachments/index.js";
 import { registerAttachments } from "./attachments/ipc.js";
@@ -33,7 +36,7 @@ app.on("before-quit", (event) => {
   event.preventDefault();
   exiting = true;
   globalShortcut.unregisterAll();
-  const fallback = setTimeout(() => app.exit(0), 125_000);
+  const fallback = setTimeout(() => app.exit(0), 3500);
   void Promise.all([chat?.dispose(), capture?.dispose()]).finally(() => {
     clearTimeout(fallback);
     shutdownLog?.("shutdown");
@@ -58,14 +61,21 @@ else {
       log("startup");
       const settings = new SettingsStore(join(paths.data, "settings.json"));
       const catalog = new ModelCatalog(settings, undefined, () => chat?.notify());
+      const store = new SqliteChatStore(join(paths.data,"j7.db"),join(paths.data,"attachments"));
+      const titleHelper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,"j7-helper") : join(app.getAppPath(),"build/j7-helper"));
       chat = new ChatService(
         catalog,
         (event) => panel?.window.webContents.send("chat:event", event),
         (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
-        undefined, undefined, undefined, undefined, settings,
+        undefined, undefined, undefined, store, settings,
       );
+      chat.titleGenerator = text => generateTitle(text, async text => {
+        const reply = await titleHelper.request("generateTitle",{text});
+        return reply.ok && typeof reply.title === "string" ? reply.title : "";
+      });
       panel = new Panel(settings, chat);
-      const attachments = new AttachmentStore(join(paths.data, "attachments"));
+      const attachments = new AttachmentStore(join(paths.data, "attachments"),store)
+      await attachments.cleanup();
       registerAttachments(panel, attachments);
       capture = setupCapture(panel, attachments, settings);
       registerIpc(panel, chat, attachments);

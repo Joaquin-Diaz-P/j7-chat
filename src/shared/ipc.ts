@@ -4,7 +4,7 @@ export interface Message {
   role: "user" | "assistant" | "notice";
   text: string;
   thinking?: string;
-  status: "queued" | "streaming" | "complete" | "stopped" | "error";
+  status: "interrupted" | "queued" | "streaming" | "complete" | "stopped" | "error";
   model?: string;
   modelLabel?: string;
   provider?: ProviderId;
@@ -31,8 +31,10 @@ export interface ChatSnapshot {
   catalog?: CatalogSnapshot;
 }
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
-export interface PanelState { appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
+export interface PanelState { historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
 export interface J7Api {
+  history(query?: string, offset?: number): Promise<import('../main/chat/sqlite-store.js').HistoryChat[]>;
+  historyAction(action: 'rename'|'pin'|'delete'|'open', id: string, value?: string|boolean): Promise<void>;
   captureAction(action: 'cancel'|'recover'|'idle'|'queued'|'failed'|'screen'|'input'|'status'): Promise<void>;
   onCapture(callback: (event: import('./capture.js').CaptureEvent) => void): () => void;
   snapshot(): Promise<ChatSnapshot>;

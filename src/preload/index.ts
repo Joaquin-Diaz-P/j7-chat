@@ -14,6 +14,8 @@ function subscribe<T>(channel: string, callback: (value: T) => void) {
   };
 }
 const api: J7Api = {
+  history: (query,offset)=>ipcRenderer.invoke("history:list",query,offset),
+  historyAction: (action,id,value)=>ipcRenderer.invoke("history:action",action,id,value),
   captureAction: action => ipcRenderer.invoke("capture:action", action),
   onCapture: callback => subscribe("capture:event", callback),
   snapshot: () => ipcRenderer.invoke("chat:snapshot"),

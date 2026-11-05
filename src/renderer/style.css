@@ -164,3 +164,14 @@ summary { cursor: pointer; color: var(--secondary-label); }
 .attachment-chip img { width:42px; height:42px; object-fit:cover; border-radius:4px; }
 .attachment-chip small { display:block; }
 .drop-overlay { position:absolute; inset:0; z-index:20; display:grid; place-items:center; background:#555e; color:white; pointer-events:none; border:2px dashed white; border-radius:14px; }
+.shell {display:flex;align-items:stretch;width:680px;}
+.shell.history-open {width:940px;min-height:360px;}
+.history {width:260px;flex-shrink:0;padding:10px;background:var(--background);max-height:100vh;display:flex;flex-direction:column;border-right:1px solid #8884;}
+.history input {width:100%;padding:6px;background:transparent;color:inherit;border:1px solid #8885;border-radius:6px;}
+.history-list {overflow:auto;flex:1;min-height:0;}
+.history h3 {font-size:11px;opacity:.6;margin:12px 0 4px;}
+.history-row {position:relative;display:flex;flex-wrap:wrap;}
+.history-row>button:first-child {flex:1;min-width:0;display:block;text-align:left;}
+.history-row span,.history-row small {display:block;overflow:hidden;text-overflow:ellipsis;}
+.history-row button[aria-current=true] {background:#8883;}
+.history-menu {display:flex;flex-wrap:wrap;background:var(--background);border:1px solid #8884;}

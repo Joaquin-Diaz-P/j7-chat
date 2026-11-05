@@ -36,7 +36,9 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | 4 | H3 H5 · G5 G7 (correcciones) | ✅ | Ayudante Swift comprobado (`--self-test`, reinicio tras `kill -9`, solo escucha). Formatos de Hex confirmados |
 | 4 | H1 H2 H4 H6 H7 | 🔍 | El código está revisado y tiene tests. Falta la prueba física del usuario (docs/prueba-fisica-voz.md), después de la etapa 5. El revisor corrigió dos huecos en setup.ts |
 | 4 | Riesgos del flujo de voz | ⬜ | Cuelgue al salir mientras transcribe, Hex grabando tras cancelar, recuperación con --oldest-first, aviso falso de Hex no instalado, regla de 5 min y mensaje engañoso. Se corrigen en la etapa 5 |
-| 5 | I1 I2 I3 I4 I5 I6 I7 I8 I9 · B8 · B10 (`⌘ B`, `⌘ F`) | ⬜ | |
+| 5 | I1 I2 I3 I4 I5 I6 I7 I8 I9 · B8 · B10 (`⌘ B`, `⌘ F`) | ✅ | Con el mock, cuatro reinicios y un `kill -9`. B8 medido con CoreGraphics. El revisor corrigió I3: Apple Intelligence respondía la pregunta en vez de dar un título |
+| 5 | Adjuntos en SQLite y copias huérfanas · siete correcciones de voz | ✅ | Comprobados en la app y en el código |
+| 5 | Pendientes menores | ⬜ | Título en el idioma de la pregunta y sin comillas, títulos de chats interrumpidos, error ERR_FILE_NOT_FOUND sin capturar y `stop` al salir durante `start`. Se corrigen en la etapa 6 |
 | 6 | A4 A5 · B10 (`⌘ ,`) · J1 J2 J3 J4 J5 J6 J7 · K1 K2 K3 · M4 | ⬜ | |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.

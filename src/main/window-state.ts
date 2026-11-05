@@ -60,3 +60,7 @@ export class VisibilityClock {
     );
   }
 }
+
+export function historyBounds(bounds: Area, open: boolean, area: Area): Area {
+ return {...bounds,x:Math.max(area.x,bounds.x+(open?-260:260)),width:open?940:680,height:open?Math.max(360,bounds.height):bounds.height};
+}

@@ -1,11 +1,16 @@
-import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { execFile, type ChildProcess } from 'node:child_process';
 export interface HexResult { code: number; text: string }
 export class Hex {
   constructor(readonly binary = '/Applications/Hex.app/Contents/MacOS/hex') {}
+  private children = new Set<ChildProcess>();
+  installed() { return existsSync(this.binary); }
+  abort() { for (const child of this.children) child.kill('SIGKILL'); }
   run(args: string[], timeout = 5000): Promise<HexResult> {
-    return new Promise(resolve => execFile(this.binary, args, { timeout, maxBuffer: 4 * 1024 * 1024 }, (error, stdout) => {
+    return new Promise(resolve => { const child = execFile(this.binary, args, { timeout, maxBuffer: 4 * 1024 * 1024 }, (error, stdout) => {
+      this.children.delete(child);
       resolve({ code: error ? typeof error.code === 'number' ? error.code : -1 : 0, text: stdout.trim() });
-    }));
+    }); this.children.add(child); });
   }
   status() { return this.run(['status','--json']); }
   start() { return this.run(['start']); }
@@ -13,7 +18,7 @@ export class Hex {
   stop() { return this.run(['dictation','stop','--print'], 120000); }
   async hotkey() { return (await this.run(['settings','get','dictation_hotkey'])).text; }
   async recoverSince(date: Date) {
-    const result = await this.run(['history','--since',date.toISOString(),'--limit','1','--json']);
+    const result = await this.run(['history','--since',date.toISOString(),'--oldest-first','--limit','1','--json']);
     if (result.code !== 0) return '';
     try {
       const history = JSON.parse(result.text) as { entries?: { timestamp_ms: number; final_text: string; kind: string }[] };

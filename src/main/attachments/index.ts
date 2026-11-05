@@ -1,4 +1,4 @@
-import { copyFile, mkdir, stat, realpath, unlink } from 'node:fs/promises';
+import { copyFile, mkdir, stat, realpath, unlink, readdir } from 'node:fs/promises';
 import { basename, extname, join, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Attachment } from '../providers/types.js';
@@ -18,7 +18,17 @@ export function validateFile(name: string, size: number) {
 }
 export class AttachmentStore {
   readonly files = new Map<string, Attachment>();
-  constructor(readonly directory: string) {}
+  constructor(readonly directory: string, private persistence?: import('../chat/sqlite-store.js').SqliteChatStore) {
+    for (const file of persistence?.attachments() ?? []) this.files.set(file.id!,file);
+  }
+  async cleanup(now = Date.now()) {
+    await mkdir(this.directory,{recursive:true});
+    const known = new Set((this.persistence?.attachments() ?? [...this.files.values()]).map(f=>f.path));
+    for (const name of await readdir(this.directory)) {
+      const path=join(this.directory,name), info=await stat(path);
+      if(info.isFile() && !known.has(path) && now-info.mtimeMs>86400000) await unlink(path);
+    }
+  }
   async ingest(paths: string[], existing = 0) {
     if (existing + paths.length > 10) throw new Error('Hasta 10 adjuntos por mensaje');
     const result: Attachment[] = [];
@@ -52,7 +62,7 @@ export class AttachmentStore {
     return this.resolve(url.pathname.slice(1));
   }
   async resolve(id: string) {
-    const file = this.files.get(id);
+    const file = this.persistence?.getAttachment(id) ?? this.files.get(id);
     if (!file) throw new Error('Adjunto desconocido');
     const path = await realpath(file.path);
     if (dirname(path) !== await realpath(this.directory)) throw new Error('Ruta de adjunto no permitida');

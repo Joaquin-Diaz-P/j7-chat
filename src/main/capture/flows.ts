@@ -38,7 +38,7 @@ export class CaptureFlows {
       this.recording = true;
       let result = await this.hex.begin();
       if (result.code === 3 && token === this.generation) { this.phase('opening'); await this.hex.start(); if (token === this.generation) result = await this.hex.begin(); }
-      if (token !== this.generation) { await this.stop(); this.recording = false; return; }
+      if (token !== this.generation) { await this.hex.stop(); this.recording = false; return; }
       if (result.code !== 0) throw new Error('Hex start');
       this.phase('listening');
       if (this.released) await this.end();
@@ -72,5 +72,10 @@ export class CaptureFlows {
     if (chord && this.attachment) { this.ports.emit({state:this.state,removeId:this.attachment.id!}); if (!this.wasVisible) this.ports.hide(); }
     if (this.recording) { await this.stop(); this.recording = false; }
   }
-  dispose() { return this.cancel(); }
+  async dispose() {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([this.cancel(), new Promise<void>(resolve => { timer = setTimeout(resolve, 3000); })]);
+    clearTimeout(timer);
+    (this.hex as { abort?: () => void }).abort?.();
+  }
 }

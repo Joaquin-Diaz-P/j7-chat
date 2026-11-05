@@ -13,8 +13,10 @@ import type { ChatStore, Chat } from "./store.js";
 import type { ChatEnvelope, ChatSnapshot, Message } from "../../shared/ipc.js";
 interface ActiveTurn { controller: AbortController; message: Message; queued: boolean }
 export class ChatService {
+  titleGenerator?: (text:string)=>Promise<string>;
   readonly catalog: ModelCatalog;
   readonly store: ChatStore;
+  private draftChat: Chat | undefined;
   private chatId: string | null = null;
   private active = new Map<string, ActiveTurn>();
   private running = new Set<Promise<void>>();
@@ -44,15 +46,14 @@ export class ChatService {
   private selectedModel(chat = this.currentChat()) {
     return chat ? this.models().find(m => modelKey(m) === chat.model) : chooseDefaultModel(this.models(), this.catalog.snapshot().defaultModel);
   }
-  private currentChat() { return this.chatId ? this.store.getChat(this.chatId) : undefined; }
+  private currentChat() { return this.chatId ? this.store.getChat(this.chatId) : this.draftChat; }
   private ensureChat(): Chat | undefined {
     const existing = this.currentChat();
     if (existing) return existing;
     const model = this.selectedModel();
     if (!model) return;
     const chat: Chat = { id: randomUUID(), model: modelKey(model), provider: model.provider, webSearch: true, effort: "normal" };
-    this.store.createChat(chat);
-    this.chatId = chat.id;
+    this.draftChat = chat;
     return chat;
   }
   snapshot(): ChatSnapshot {
@@ -66,19 +67,23 @@ export class ChatService {
       ...(this.warning ? { warning: this.warning } : {}) };
   }
   notify() { if (!this.disposed) this.changed(this.snapshot()); }
-  newChat() { this.chatId = null; this.warning = undefined; this.notify(); }
+  newChat() { this.draftChat=undefined; this.chatId = null; this.warning = undefined; this.notify(); }
   selectChat(id: string) { if (this.store.getChat(id)) { this.chatId = id; this.notify(); } }
   updateChat(options: { model?: string; webSearch?: boolean; effort?: "normal" | "high" }) {
-    const chat = this.ensureChat();
-    if (!chat) return;
+    if (!this.currentChat()) {
+      const model=this.selectedModel(); if(!model)return;
+      this.draftChat={id:randomUUID(),model:modelKey(model),provider:model.provider,webSearch:true,effort:"normal"};
+    }
+    const chat = this.currentChat()!;
+    const update = (changes: Partial<Omit<Chat,"id">>) => { if(this.chatId)this.store.updateChat(chat.id,changes); else Object.assign(chat,changes); };
     if (options.model) {
       const model = this.models().find(m => modelKey(m) === options.model);
       if (model && chat.model !== options.model) {
-        this.store.updateChat(chat.id, { model: modelKey(model), provider: model.provider });
+        update({ model: modelKey(model), provider: model.provider });
         if (this.store.listMessages(chat.id).length) this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.switched(model.label), status: "complete" });
       }
     }
-    this.store.updateChat(chat.id, { ...(options.webSearch !== undefined ? { webSearch: options.webSearch } : {}), ...(options.effort ? { effort: options.effort } : {}) });
+    update({ ...(options.webSearch !== undefined ? { webSearch: options.webSearch } : {}), ...(options.effort ? { effort: options.effort } : {}) });
     this.notify();
   }
   send(text: string, attachments: Attachment[] = []) {
@@ -89,6 +94,7 @@ export class ChatService {
     const model = this.selectedModel(chat);
     if (!model) { this.warning = s.noAvailableModels; this.notify(); return; }
     prepareAttachments(attachments, model);
+    if (!this.chatId) { this.store.createChat(chat); this.chatId=chat.id; this.draftChat=undefined; }
     this.warning = undefined;
     const question: Message = { id: randomUUID(), role: "user", text, attachments, status: "complete" };
     this.store.appendMessage(chat.id, question);
@@ -104,6 +110,7 @@ export class ChatService {
       if (turn.controller.signal.aborted) return;
       turn.queued = false;
       message.status = "streaming";
+      this.store.updateMessage(chat.id,message.id,message);
       this.notify();
       await this.run(chat, model, question, turn);
     }, turn.controller.signal).catch(error => {
@@ -112,6 +119,12 @@ export class ChatService {
       if (message.status === "queued" || message.status === "streaming") message.status = turn.controller.signal.aborted ? "stopped" : "complete";
       this.store.updateMessage(chat.id, message.id, message);
       this.active.delete(chat.id);
+      if (this.store.listMessages(chat.id).filter(m=>m.role==="user").length===1 && this.titleGenerator) {
+        void this.titleGenerator(question.text).then(title=>{
+          const store=this.store as ChatStore & {rename?: (id:string,title:string,manual:boolean)=>void};
+          store.rename?.(chat.id,title,false); this.notify();
+        });
+      }
       this.notify();
     });
     this.running.add(task);
@@ -214,6 +227,12 @@ export class ChatService {
     this.store.updateChat(chat.id, { model: key, provider: model.provider });
     this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.sameQuestion(model.label), status: "complete" });
     this.launch({ ...chat, model: key, provider: model.provider }, model, question);
+  }
+  async removeChat(id: string, remove: () => void) {
+    const turn=this.active.get(id); turn?.controller.abort();
+    if(turn)await this.waitForIdle();
+    remove();
+    if(this.chatId===id)this.newChat(); else this.notify();
   }
   stop() {
     const turn = this.chatId ? this.active.get(this.chatId) : undefined;

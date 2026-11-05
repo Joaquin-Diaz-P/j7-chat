@@ -1,3 +1,5 @@
+import { voiceDelivery } from "./voice-delivery.js";
+import { History } from "./components/History.js";
 import { Menu, Paperclip, Scissors, Globe, ArrowUp, Square, Plus, Pin, ArrowDown } from "lucide-react";
 import { ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
@@ -19,6 +21,10 @@ function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id:
 }
 function App() {
   const chat = useChat();
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const [searchFocus,setSearchFocus]=useState(0);
+  const historyRef=useRef(false);
+  function toggleHistory(open=!historyRef.current) {historyRef.current=open;setHistoryOpen(open);void window.j7.historyAction('open','',open);}
   const [capture, setCapture] = useState<import('../shared/capture.js').CaptureState>({phase:'idle',seconds:0});
   const pendingVoice = useRef(false);
   const voiceBusy = useRef(false);
@@ -72,6 +78,7 @@ function App() {
       window.j7.onChat((event) => { pending.push(event); timer ??= setTimeout(flush, 34); }),
       window.j7.onPanel((state) => {
         setPinned(state.pinned);
+        if(state.historyOpen!==undefined){historyRef.current=state.historyOpen;setHistoryOpen(state.historyOpen);}
         if (state.appeared && content.current) {
           content.current.classList.remove("appear");
           void content.current.offsetWidth;
@@ -127,7 +134,7 @@ function App() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [chat.messages.length, selector]);
+  }, [chat.messages.length, selector, historyOpen]);
   useLayoutEffect(() => {
     const el = conversation.current;
     if (el && following.current) el.scrollTop = el.scrollHeight;
@@ -153,6 +160,10 @@ function App() {
         if (voiceBusy.current) { void window.j7.captureAction("cancel"); return; }
         window.j7.hide();
       }
+      if (event.metaKey && ['b','f'].includes(event.key.toLowerCase())) {
+        event.preventDefault();toggleHistory(event.key.toLowerCase()==='f'?true:!historyRef.current);
+        if(event.key.toLowerCase()==='f')setSearchFocus(n=>n+1);
+      }
       if (event.metaKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
         if (voiceBusy.current || pendingVoice.current) return;
@@ -174,13 +185,16 @@ function App() {
     return () => window.removeEventListener("keydown", listener);
   }, []);
   useEffect(() => {
-    if (!pendingVoice.current) return;
-    if (chat.active) { void window.j7.captureAction('queued'); return; }
-    pendingVoice.current = false;
-    if (!chat.model || imageBlocked || loadingAttachments) { void window.j7.captureAction('failed'); return; }
-    void send().then(() => window.j7.captureAction('idle'));
+    const decision=voiceDelivery(pendingVoice.current,chat.active,!!chat.model,imageBlocked,loadingAttachments);
+    if(decision==='none' || decision==='wait')return;
+    if(decision==='queued'){void window.j7.captureAction('queued');return;}
+    pendingVoice.current=false;
+    if(decision!=='send'){void window.j7.captureAction(decision==='blocked-image'?'idle':'failed');return;}
+    void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
   return (
+    <div className={historyOpen?"shell history-open":"shell"}>
+    {historyOpen&&<History current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/>}
     <div className="panel"  ref={content}
       onDragOver={event => { event.preventDefault(); setDragging(true); }}
       onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
@@ -248,6 +262,7 @@ function App() {
                 {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.status === "queued" && <p role="status">{s.queued}</p>}
                 {message.status === "streaming" && !message.text && <p role="status">{s.thinking}</p>}
+                {message.status === "interrupted" && <small>{s.interrupted}</small>}
                 {message.status === "stopped" && <small>{s.stopped}</small>}
                 {message.sources && message.sources.length > 0 && <details><summary>{s.sources(message.sources.length)}</summary><ul>{message.sources.map(url => <li key={url}><a href={url} target="_blank" rel="noreferrer">{new URL(url).hostname}</a></li>)}</ul></details>}
                 {message.role === "assistant" && <>
@@ -286,7 +301,7 @@ function App() {
           {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
           {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
         </div>
-        <button disabled aria-label={s.history} title={s.soon}><Menu size={17}/></button>
+        <button onClick={()=>toggleHistory()} aria-label={s.history} title={s.history}><Menu size={17}/></button>
         <textarea
           ref={input}
           onPaste={event => {
@@ -330,7 +345,7 @@ function App() {
           {chat.active ? <Square size={17}/> : <ArrowUp size={17}/>}
         </button>
       </div>
-    </div>
+    </div></div>
   );
 }
 createRoot(document.getElementById("root")!).render(<App />);

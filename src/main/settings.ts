@@ -9,6 +9,7 @@ export interface Settings {
   captureShortcut: string;
   voiceModifier: string;
   pinned: boolean;
+  historyOpen: boolean;
   theme: "system" | "light" | "dark";
   positions: Record<string, Position>;
   favorites: string[];
@@ -41,6 +42,7 @@ export function validateSettings(value: unknown): Settings {
         : "Alt+J",
     captureShortcut: typeof v.captureShortcut === "string" && /^(?:(?:Alt|Option|Command|Cmd|Control|Ctrl|Shift)\+)+[A-Za-z0-9]$/.test(v.captureShortcut) ? v.captureShortcut : "Alt+Shift+J",
     voiceModifier: typeof v.voiceModifier === "string" && /^(?:(?:left|right)-(?:option|command|shift|control)|fn)$/.test(v.voiceModifier) ? v.voiceModifier : "right-option",
+    historyOpen: v.historyOpen === true,
     pinned: typeof v.pinned === "boolean" ? v.pinned : false,
     theme: v.theme === "light" || v.theme === "dark" ? v.theme : "system",
     positions,

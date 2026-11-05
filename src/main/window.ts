@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   contentBounds,
+  historyBounds,
   displayPosition,
   VisibilityClock,
   UserMoveTracker,
@@ -57,8 +58,9 @@ export class Panel {
     });
     this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
-      const { x, y } = this.window.getBounds();
-      if (!this.userMoving.isUserMove({ x, y }) || !this.displayId) return;
+      const bounds = this.window.getBounds();
+      const x = bounds.x + (settings.value.historyOpen ? 260 : 0), y = bounds.y;
+      if (!this.userMoving.isUserMove(bounds) || !this.displayId) return;
       this.anchor = { x, y };
       this.displayId = String(
         screen.getDisplayMatching(this.window.getBounds()).id,
@@ -86,6 +88,13 @@ export class Panel {
         ),
       );
   }
+  setHistory(open: boolean) {
+    if (this.settings.value.historyOpen === open) return;
+    const b=this.window.getBounds(), area=screen.getDisplayMatching(b).workArea;
+    this.settings.update({historyOpen:open});
+    this.place(historyBounds(b,open,area));
+    this.notify(true);
+  }
   get voiceModifier() { return this.settings.value.voiceModifier; }
   private async openExternal(url: string) {
     if (/^https?:\/\//.test(url)) {
@@ -106,6 +115,7 @@ export class Panel {
       this.window.webContents.send("window:state", {
         resume,
         appeared,
+        historyOpen: this.settings.value.historyOpen,
         pinned: this.settings.value.pinned,
         dark: nativeTheme.shouldUseDarkColors,
       });
@@ -124,7 +134,7 @@ export class Panel {
       screen.getCursorScreenPoint(),
     );
     this.displayId = String(display.id);
-    const resume = this.suppressHide || this.clock.shouldResume(!!this.chat.snapshot().chatId);
+    const resume = this.clock.shouldResume(!!this.chat.snapshot().chatId);
     if (!resume) this.chat.newChat();
     this.anchor = displayPosition(display.workArea, this.displayId, this.settings.value.positions);
     this.place(
@@ -152,10 +162,11 @@ export class Panel {
     if (!Number.isFinite(height) || height < 0) return;
     const display = screen.getDisplayMatching(this.window.getBounds());
     this.place(
-      contentBounds(display.workArea, this.anchor ?? this.window.getBounds(), height),
+      contentBounds(display.workArea, this.anchor ?? this.window.getBounds(), this.settings.value.historyOpen ? Math.max(360,height) : height),
     );
   }
   private place(bounds: Area) {
+    if(this.settings.value.historyOpen && bounds.width===680) bounds={...bounds,height:Math.max(360,bounds.height),x:Math.max(screen.getDisplayMatching(bounds).workArea.x,bounds.x-260),width:940};
     this.userMoving.programmatic(bounds);
     this.window.setBounds(bounds, false);
   }

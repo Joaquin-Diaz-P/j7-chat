@@ -1,3 +1,4 @@
+import { SqliteChatStore } from "./chat/sqlite-store.js";
 import { ipcMain } from "electron";
 import { showSettingsNotice } from "./tray.js";
 import type { Panel } from "./window.js";
@@ -9,6 +10,21 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ) =>
     event.sender === panel.window.webContents &&
     event.senderFrame === panel.window.webContents.mainFrame;
+  ipcMain.handle("history:list",(event,query:unknown='',offset:unknown=0)=>{
+    if(trusted(event) && chat.store instanceof SqliteChatStore && typeof query==='string' && query.length<=1000 && typeof offset==='number' && Number.isSafeInteger(offset) && offset>=0) return chat.store.list(query,offset);
+    return [];
+  });
+  ipcMain.handle("history:action",async(event,action:unknown,id:unknown,value:unknown)=>{
+    if(!trusted(event) || typeof id!=='string')return;
+    if(action==='open' && typeof value==='boolean') {panel.setHistory(value);return;}
+    const store=chat.store; if(!(store instanceof SqliteChatStore))return;
+    if(action==='rename' && typeof value==='string' && value.trim())store.rename(id,value.trim());
+    if(action==='pin' && typeof value==='boolean')store.pin(id,value);
+    if(action==='delete') {
+      await chat.removeChat(id,()=>store.deleteChat(id));
+    }
+    chat.notify();
+  });
   ipcMain.handle("chat:snapshot", (event) => {
     if (trusted(event)) return chat.snapshot();
   });
