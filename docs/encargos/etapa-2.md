@@ -6,6 +6,14 @@ Lee `docs/plan.md` (reglas para los subagentes), las secciones de tus códigos e
 
 **Gemini queda fuera de la primera versión.** `gemini.ts` se conserva, pero no se registra (`REGISTERED_PROVIDERS` en `registry.ts`).
 
+## Correcciones de etapas anteriores (primero)
+
+1. **Arranque sin bloqueo:** hoy `selectChatProvider()` se espera antes de crear la ventana, la bandeja y el atajo, sin tiempo límite. Si Claude se cuelga, J7 nunca aparece. La ventana, la bandeja y el atajo tienen que aparecer de inmediato; los programas se conectan en segundo plano (D1, F7).
+2. **Salir durante el arranque:** hoy deja vivo el proceso de Claude. La limpieza tiene que funcionar en cualquier momento (A6).
+3. **E7:** `$$…$$` y `\[…\]` en una sola línea tienen que mostrarse como fórmula de bloque (`.katex-display`). Normalízalos antes de `remark-math`, poniendo los delimitadores en líneas propias, sin tocar el código. Agrega un test.
+4. **L3:** la animación de 150 ms tiene que correr cada vez que aparece la barra, no solo al cargar. Por ejemplo, vuelve a activar la clase al recibir `window:state` cuando la barra se muestra.
+5. **M1:** los mensajes de error para el usuario que hoy están escritos en `providers/claude.ts` y `providers/runtime.ts` pasan a `strings.ts`. Hazlo junto con E4.
+
 ## Objetivo
 
 Los tres programas (Claude, GPT y Zen) dentro de la app, con:

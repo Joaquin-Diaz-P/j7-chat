@@ -3,12 +3,15 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   text: string;
+  thinking?: string;
   status: "streaming" | "complete" | "stopped" | "error";
 }
 export interface ChatSnapshot {
   chatId: string | null;
   messages: Message[];
   active: boolean;
+  providerLabel?: string;
+  warning?: string;
 }
 export interface ChatEnvelope {
   chatId: string;

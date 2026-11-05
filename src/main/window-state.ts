@@ -3,6 +3,16 @@ export interface Area extends Position {
   width: number;
   height: number;
 }
+// macOS emits "moved" repeatedly during a drag and also after setBounds.
+export class UserMoveTracker {
+  private moving = false;
+  private expected: Position | undefined;
+  willMove() { this.moving = true; }
+  programmatic(position: Position) { this.expected = { x: position.x, y: position.y }; }
+  isUserMove(position: Position) {
+    return this.moving && (position.x !== this.expected?.x || position.y !== this.expected?.y);
+  }
+}
 export function contentBounds(
   area: Area,
   position: Position,

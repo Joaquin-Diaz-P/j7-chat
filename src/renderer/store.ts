@@ -18,8 +18,9 @@ export const useChat = create<State>((set) => ({
             ? message
             : {
                 ...message,
+                thinking: event.type === "thinking-delta" ? (message.thinking ?? "") + event.text : (message.thinking ?? ""),
                 text:
-                  event.type === "text-delta" || event.type === "thinking-delta"
+                  event.type === "text-delta"
                     ? message.text + event.text
                     : event.type === "error"
                       ? event.message

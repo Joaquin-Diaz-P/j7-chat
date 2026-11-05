@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import type { ChatProvider, ChatEvent, TurnInput, ModelInfo } from "./types.js";
 export class MockProvider implements ChatProvider {
   readonly id = "mock" as const;
@@ -22,7 +23,7 @@ export class MockProvider implements ChatProvider {
       yield {
         type: "error",
         kind: error as "auth" | "quota" | "unsupported" | "other",
-        message: "Error de prueba: " + error,
+        message: s.mockError + error,
       };
       return;
     }
@@ -30,16 +31,16 @@ export class MockProvider implements ChatProvider {
       yield {
         type: "web-search",
         urls: ["https://example.com"],
-        query: "Búsqueda de prueba",
+        query: s.mockSearch,
       };
     const thinking = input.text.includes("/think");
     const text = input.text.includes("/md")
-      ? "# Prueba\n\n| A | B |\n|---|---|\n| Uno | Dos |\n\n```ts\nconst answer = 42;\n```\n\n$$E=mc^2$$"
+      ? s.mockMarkdown
       : thinking
-        ? "Este es un razonamiento de prueba emitido poco a poco."
+        ? s.mockReasoning
         : input.text.includes("/slow")
-          ? "Respuesta lenta de prueba. ".repeat(80)
-          : "Esta es una respuesta de prueba en vivo. Puedes seguir preguntando sin usar cuota.";
+          ? s.mockSlow.repeat(80)
+          : s.mockResponse;
     try {
       for (const chunk of text.match(/.{1,8}|\n/g) ?? []) {
         await wait(input.text.includes("/slow") ? 140 : 20, input.signal);
@@ -49,6 +50,7 @@ export class MockProvider implements ChatProvider {
       if (input.signal.aborted) return;
       throw new Error("Mock timer failed");
     }
+    if (thinking && !input.signal.aborted) yield { type: "text-delta", text: s.mockThoughtAnswer };
     if (!input.signal.aborted) yield { type: "done" };
   }
   async dispose() {}

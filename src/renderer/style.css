@@ -1,11 +1,12 @@
 @import "tailwindcss";
+@import "./styles/theme.css";
 :root {
-  font-family: system-ui, sans-serif;
-  color: #202020;
+  font-family: var(--font-sans);
+  color: var(--foreground);
   color-scheme: light;
 }
 :root.dark {
-  color: #eee;
+  color: var(--foreground);
   color-scheme: dark;
 }
 * {
@@ -18,15 +19,18 @@ body {
 }
 .panel {
   width: 680px;
-  border-radius: 12px;
-  background: rgb(245 245 245 / 0.75);
+  border-radius: var(--radius-panel);
+  background: var(--background);
+  box-shadow: var(--shadow-composer);
+  animation: appear 150ms ease-out;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 100vh;
 }
 .dark .panel {
-  background: rgb(30 30 30 / 0.78);
+  background: var(--background);
+  box-shadow: var(--shadow-composer-dark);
 }
 header {
   height: 28px;
@@ -49,7 +53,11 @@ button {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  padding: 4px 10px;
+  padding: 4px 6px;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
 }
 button:hover,
@@ -78,6 +86,7 @@ textarea {
   border: 0;
   resize: none;
   flex: 1;
+  min-width: 100px;
   line-height: 24px;
   max-height: 192px;
   padding: 0 4px;
@@ -91,14 +100,43 @@ textarea {
 }
 article {
   padding: 10px 0;
-  white-space: pre-wrap;
+
   overflow-wrap: anywhere;
 }
 small {
-  opacity: 0.65;
+  color: var(--secondary-label);
   font-size: 11px;
 }
 article div {
   font-size: 14px;
   line-height: 1.5;
 }
+
+.composer { flex-wrap: wrap; gap: 4px; }
+.composer textarea { flex-basis: calc(100% - 40px); }
+.composer-tools { display: flex; margin-left: auto; align-items: center; }
+.panel { position: relative; }
+.notice { padding: 6px 18px; font-size: 12px; color: var(--secondary-label); }
+.user-text { white-space: pre-wrap; }
+.markdown { user-select: text; }
+.markdown p, .markdown ul, .markdown ol, .markdown blockquote, .markdown pre { margin: 0.65rem 0; }
+.markdown ul { padding-left: 1.5rem; list-style: disc; }
+.markdown ol { padding-left: 1.5rem; list-style: decimal; }
+.markdown h1 { font-size: 1.25rem; font-weight: 600; }
+.markdown h2, .markdown h3 { font-size: 1.1rem; font-weight: 600; }
+.markdown a { color: var(--primary); text-decoration: underline; }
+.markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.markdown td, .markdown th { border: 1px solid var(--border); padding: 6px 10px; }
+.markdown blockquote { border-left: 2px solid var(--border); padding-left: 12px; }
+.markdown :not(pre) > code { background: var(--muted); border-radius: 4px; padding: 2px 4px; }
+.code-block { border: 1px solid var(--border); border-radius: var(--radius-panel); overflow: hidden; margin: 10px 0; }
+.code-toolbar { display: flex; justify-content: space-between; padding: 4px 10px; background: var(--muted); font-size: 12px; }
+.code-block pre { overflow-x: auto; padding: 10px; white-space: pre; background: transparent !important; }
+.code-block code { font-family: var(--font-mono); }
+.dark .shiki, .dark .shiki span { color: var(--shiki-dark) !important; }
+.katex-display { overflow-x: auto; overflow-y: hidden; }
+.katex-error { color: inherit !important; font-family: var(--font-mono); }
+.scroll-bottom { position: absolute; right: 20px; bottom: 100px; background: var(--muted); border: 1px solid var(--border); }
+summary { cursor: pointer; color: var(--secondary-label); }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .panel { animation: none; } }

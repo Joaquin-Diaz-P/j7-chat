@@ -5,15 +5,19 @@ import {
   contentBounds,
   displayPosition,
   VisibilityClock,
+  UserMoveTracker,
+  type Area,
 } from "./window-state.js";
 import type { SettingsStore } from "./settings.js";
 import type { ChatService } from "./chat/service.js";
+import type { Position } from "./settings.js";
 export class Panel {
   readonly window: BrowserWindow;
   suppressHide = false;
   private clock: VisibilityClock;
   private displayId: string | undefined;
-  private resizing = false;
+  private anchor: Position | undefined;
+  private userMoving = new UserMoveTracker();
   private ready = false;
   private pendingShow = false;
   constructor(
@@ -51,9 +55,11 @@ export class Panel {
     this.window.on("blur", () => {
       if (!settings.value.pinned && !this.suppressHide) this.hide();
     });
+    this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
-      if (this.resizing || !this.displayId) return;
       const { x, y } = this.window.getBounds();
+      if (!this.userMoving.isUserMove({ x, y }) || !this.displayId) return;
+      this.anchor = { x, y };
       this.displayId = String(
         screen.getDisplayMatching(this.window.getBounds()).id,
       );
@@ -118,20 +124,14 @@ export class Panel {
     this.displayId = String(display.id);
     const resume = this.clock.shouldResume(!!this.chat.snapshot().chatId);
     if (!resume) this.chat.newChat();
-    this.resizing = true;
-    this.window.setBounds(
+    this.anchor = displayPosition(display.workArea, this.displayId, this.settings.value.positions);
+    this.place(
       contentBounds(
         display.workArea,
-        displayPosition(
-          display.workArea,
-          this.displayId,
-          this.settings.value.positions,
-        ),
+        this.anchor,
         resume ? this.window.getBounds().height : 88,
       ),
-      false,
     );
-    this.resizing = false;
     this.window.show();
     this.window.focus();
     this.notify(resume);
@@ -149,12 +149,13 @@ export class Panel {
   setHeight(height: number) {
     if (!Number.isFinite(height) || height < 0) return;
     const display = screen.getDisplayMatching(this.window.getBounds());
-    this.resizing = true;
-    this.window.setBounds(
-      contentBounds(display.workArea, this.window.getBounds(), height),
-      false,
+    this.place(
+      contentBounds(display.workArea, this.anchor ?? this.window.getBounds(), height),
     );
-    this.resizing = false;
+  }
+  private place(bounds: Area) {
+    this.userMoving.programmatic(bounds);
+    this.window.setBounds(bounds, false);
   }
   setPinned(pinned: boolean) {
     this.settings.update({ pinned });

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ensurePaths } from "./paths.js";
 import { SettingsStore } from "./settings.js";
 import { createLogger } from "./logger.js";
-import { MockProvider } from "./providers/mock.js";
+import { selectChatProvider } from "./chat/provider.js";
 import { ChatService } from "./chat/service.js";
 import { Panel } from "./window.js";
 import { registerIpc } from "./ipc.js";
@@ -29,11 +29,12 @@ else {
       const log = createLogger(paths.data);
       log("startup");
       const settings = new SettingsStore(join(paths.data, "settings.json"));
-      // Stage 1a deliberately connects no real providers. Mock is also the fallback without J7_MOCK.
+      const selected = await selectChatProvider();
       chat = new ChatService(
-        new MockProvider(),
+        selected.provider,
         (event) => panel?.window.webContents.send("chat:event", event),
         (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
+        selected.model, selected.label, selected.warning,
       );
       panel = new Panel(settings, chat);
       registerIpc(panel, chat);
@@ -50,7 +51,7 @@ else {
         void chat?.dispose().finally(() => {
           log("shutdown");
           tray?.destroy();
-          app.quit();
+          app.exit(0);
         });
       });
       panel.show();

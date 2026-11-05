@@ -86,12 +86,12 @@ Está en `src/main/providers/types.ts` desde la etapa 0. La etapa 1a le agrega `
 |---|---|---|---|
 | **0** ✓ | Prueba técnica de los programas | Sol · alto | Adaptadores y `docs/etapa-0-resultados.md` |
 | **1a** | Ventana, atajo y chat básico con `mock` | Sol · medio | A1, A2, A3, A6 · B1–B7, B9, B10 (`⌘ N`, `⌘ .`), B11, B12 · C1, C2, C4 · E3 · M2, M3, M5 |
-| **1b** | Respuestas, estética y Claude real | Terra · medio | B10 (`⌘ ⇧ C`) · C3 · E1, E2, E5, E6, E7, E11 · L1–L4 · M1 |
+| **1b** | Respuestas, estética y Claude real | Sol · medio | B10 (`⌘ ⇧ C`) · C3 · E1, E2, E5, E6, E7, E11 · L1–L4 · M1 |
 | **2** | Todos los modelos y traspaso | Sol · alto | C5, C6 · D1–D7 · E4, E8, E9, E10 · F1–F7 |
-| **3** | Adjuntos | Terra · medio | G1–G9 · E12 |
+| **3** | Adjuntos | Sol · medio | G1–G9 · E12 |
 | **4** | Atajos de captura y voz | Sol · medio | H1–H7 |
-| **5** | Historial | Terra · medio | I1–I9 · B8 · B10 (`⌘ B`, `⌘ F`) |
-| **6** | Ajustes, empaquetado y cierre | Terra · medio | A4, A5 · B10 (`⌘ ,`) · J1–J7 · K1–K3 · M4 |
+| **5** | Historial | Sol · medio | I1–I9 · B8 · B10 (`⌘ B`, `⌘ F`) |
+| **6** | Ajustes, empaquetado y cierre | Sol · medio | A4, A5 · B10 (`⌘ ,`) · J1–J7 · K1–K3 · M4 |
 
 ## Reglas para los subagentes
 

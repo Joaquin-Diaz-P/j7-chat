@@ -6,6 +6,7 @@ import {
   contentBounds,
   displayPosition,
   VisibilityClock,
+  UserMoveTracker,
 } from "../src/main/window-state.js";
 import { SettingsStore, validateSettings } from "../src/main/settings.js";
 import { MockProvider } from "../src/main/providers/mock.js";
@@ -25,6 +26,20 @@ const input = (
 });
 const area = { x: 100, y: 40, width: 1440, height: 1000 };
 describe("panel geometry and clock", () => {
+  it("keeps every move of a drag and ignores programmatic moves", () => {
+    const tracker = new UserMoveTracker();
+    expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(false);
+    tracker.willMove();
+    expect(tracker.isUserMove({ x: 1, y: 1 })).toBe(true);
+    expect(tracker.isUserMove({ x: 5, y: 9 })).toBe(true);
+    tracker.programmatic({ x: 5, y: 20 });
+    expect(tracker.isUserMove({ x: 5, y: 20 })).toBe(false);
+  });
+  it("returns to the anchor after shrinking near the bottom", () => {
+    const anchor = { x: 200, y: 900 };
+    expect(contentBounds(area, anchor, 700).y).toBe(340);
+    expect(contentBounds(area, anchor, 88).y).toBe(900);
+  });
   it("keeps width and top, caps at 70%, moves up only as necessary", () => {
     expect(contentBounds(area, { x: 200, y: 100 }, 10)).toEqual({
       x: 200,
