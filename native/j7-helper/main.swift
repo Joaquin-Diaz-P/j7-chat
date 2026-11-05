@@ -16,10 +16,14 @@ final class Hold {
     var down = false
     var active = false
     var timer: Timer?
+    var pressedAt: Date?
+    var lastTap: Date?
+    var last = ""
+    func send(_ name: String) { last = name; emit(["event": name]) }
     func cancel() {
         timer?.invalidate(); timer = nil
-        if active { emit(["event": "holdCancel"]) }
-        down = false; active = false
+        if active { send("holdCancel") }
+        down = false; active = false; pressedAt = nil; lastTap = nil
     }
     func event(_ type: CGEventType, _ event: CGEvent) {
         let key = event.getIntegerValueField(.keyboardEventKeycode)
@@ -28,14 +32,20 @@ final class Hold {
         let masks: [Int64: UInt64] = [58:0x20,61:0x40,55:0x08,54:0x10,56:0x02,60:0x04,59:0x01,62:0x2000,63:0x800000]
         let pressed = event.flags.rawValue & (masks[code] ?? 0) != 0
         if pressed && !down {
-            down = true
+            down = true; pressedAt = Date()
             timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in
                 guard let self = self, self.down else { return }
-                self.active = true; emit(["event":"holdStart"])
+                self.active = true; self.lastTap = nil; self.send("holdStart")
             }
         } else if !pressed {
             timer?.invalidate(); down = false
-            if active { emit(["event":"holdEnd"]) }; active = false
+            if active { send("holdEnd") }
+            else if let start = pressedAt, Date().timeIntervalSince(start) < 0.2 {
+                // Two quick taps with nothing in between lock a recording, like Hex.
+                if let tap = lastTap, Date().timeIntervalSince(tap) < 0.35 { lastTap = nil; send("doubleTap") }
+                else { lastTap = Date(); send("tap") }
+            }
+            active = false; pressedAt = nil
         }
     }
 }
@@ -47,22 +57,39 @@ if CommandLine.arguments.contains("--self-test") {
         event.flags = CGEventFlags(rawValue:mask)
         return event
     }
+    func wait(_ seconds: Double) { RunLoop.main.run(until:Date(timeIntervalSinceNow:seconds)) }
     test.event(.flagsChanged, flags(61,0x40))
-    RunLoop.main.run(until:Date(timeIntervalSinceNow:0.1))
+    wait(0.1)
     precondition(!test.active)
     test.event(.keyDown,flags(18,0x40))
-    RunLoop.main.run(until:Date(timeIntervalSinceNow:0.15))
+    wait(0.15)
     precondition(!test.active)
     test.event(.flagsChanged,flags(61,0x40))
-    RunLoop.main.run(until:Date(timeIntervalSinceNow:0.25))
+    wait(0.25)
     precondition(test.active)
     test.event(.flagsChanged,flags(61,0))
     precondition(!test.active)
     test.event(.flagsChanged,flags(61,0x40))
-    RunLoop.main.run(until:Date(timeIntervalSinceNow:0.25))
+    wait(0.25)
     precondition(test.active)
     test.event(.keyDown,flags(18,0x40))
     precondition(!test.active)
+    test.event(.flagsChanged,flags(61,0)); test.cancel()
+    // Double tap.
+    test.event(.flagsChanged,flags(61,0x40)); wait(0.05); test.event(.flagsChanged,flags(61,0))
+    precondition(test.last == "tap")
+    wait(0.1)
+    test.event(.flagsChanged,flags(61,0x40)); wait(0.05); test.event(.flagsChanged,flags(61,0))
+    precondition(test.last == "doubleTap")
+    // A key between the taps (⌥ 2) breaks the double tap.
+    test.event(.flagsChanged,flags(61,0x40)); wait(0.05); test.event(.flagsChanged,flags(61,0))
+    test.event(.keyDown,flags(19,0))
+    test.event(.flagsChanged,flags(61,0x40)); wait(0.05); test.event(.flagsChanged,flags(61,0))
+    precondition(test.last == "tap")
+    // Taps too far apart are two single taps.
+    wait(0.4)
+    test.event(.flagsChanged,flags(61,0x40)); wait(0.05); test.event(.flagsChanged,flags(61,0))
+    precondition(test.last == "tap")
     print("hold self-test passed"); exit(0)
 }
 let hold = Hold()

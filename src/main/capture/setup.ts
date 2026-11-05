@@ -39,7 +39,10 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
     }
   },hex);
   // The tap only delivers events with input permission; begin synchronously so an early holdEnd is not lost.
-  helper.on('holdStart',()=>{ void flows.begin(); });
+  helper.on('holdStart',()=>{ if (!flows.locked) void flows.begin(); });
+  // Double tap locks the recording; a later tap (or Enter in the bar) finishes and sends it.
+  helper.on('doubleTap',()=>{ if (['idle','cancelled','empty','failed'].includes(flows.state.phase)) void flows.begin(true); });
+  helper.on('tap',()=>{ if (flows.locked) void flows.end(); });
   helper.on('holdEnd',()=>{void flows.end();});
   helper.on('holdCancel',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel(true);});
   // A crash while transcribing must not discard the dictated text.
@@ -48,6 +51,7 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   ipcMain.handle('capture:action',async(event,action: unknown)=>{
     if (!trusted(event)) return;
     if (action === 'cancel') await flows.cancel();
+    if (action === 'finish' && flows.locked) await flows.end();
     if (action === 'recover' && flows.state.phase === 'failed' && flows.state.recoverable) await flows.recover();
     if (action === 'idle' || action === 'queued' || action === 'failed') flows.acknowledge(action);
     if (action === 'screen' || action === 'input') {

@@ -65,6 +65,7 @@ function App() {
   const [capture, setCapture] = useState<import('../shared/capture.js').CaptureState>({phase:'idle',seconds:0});
   const pendingVoice = useRef(false);
   const voiceBusy = useRef(false);
+  const voiceLocked = useRef(false);
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentError, setAttachmentError] = useState("");
@@ -111,8 +112,9 @@ function App() {
     const disposers = [
       window.j7.onHiding(() => setHiding(true)),
       window.j7.onCapture(event => {
-        setCapture(previous => ({...previous,busy:false,recoverable:false,...event.state}));
+        setCapture(previous => ({...previous,busy:false,recoverable:false,locked:false,hexBusy:false,...event.state}));
         voiceBusy.current = ['transcribing','recovering','listening','capturing','opening'].includes(event.state.phase);
+        voiceLocked.current = event.state.phase === 'listening' && !!event.state.locked;
         if (event.attachment) setAttachments(files => [...files,event.attachment!]);
         if (event.removeId) setAttachments(files => files.filter(f => f.id !== event.removeId));
         if (event.text) { setDraft(text => [text,event.text].filter(Boolean).join('\n')); pendingVoice.current = !!event.autoSend; }
@@ -243,6 +245,7 @@ function App() {
   }
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && !event.defaultPrevented && voiceLocked.current) { event.preventDefault(); void window.j7.captureAction("finish"); return; }
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
         if (selector) { setSelector(null); input.current?.focus(); return; }
@@ -408,7 +411,10 @@ function App() {
           {capture.conflict && <p role="alert">{s.hexConflict}</p>}
           {capture.missingHex && <p role="alert">{s.hexMissing} <button onClick={() => void window.j7.openSettings()}>{s.settings}</button></p>}
           {capture.busy && <p role="status">{s.captureBusy}</p>}
-          {capture.phase === 'listening' && <p role="status">{s.captureListening}</p>}
+          {capture.phase === 'listening' && (capture.locked
+            ? <p role="status">{s.captureListeningLocked} <button onClick={() => void window.j7.captureAction('finish')}>{s.captureSend}</button> <button onClick={() => void window.j7.captureAction('cancel')}>{s.captureDiscard}</button></p>
+            : <p role="status">{s.captureListening}</p>)}
+          {capture.hexBusy && <p role="status">{s.hexBusy}</p>}
           {capture.phase === 'opening' && <p role="status">{s.captureOpening}</p>}
           {capture.phase === 'empty' && <p role="status">{s.captureEmpty}</p>}
           {capture.phase === 'queued' && <p role="status">{s.queued}</p>}
@@ -444,7 +450,7 @@ function App() {
               event.nativeEvent.keyCode !== 229
             ) {
               event.preventDefault();
-              void send();
+              if (voiceLocked.current) void window.j7.captureAction("finish"); else void send();
             }
           }}
         />

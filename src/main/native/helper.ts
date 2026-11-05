@@ -17,7 +17,7 @@ export class NativeHelper extends EventEmitter {
     createInterface({ input: child.stdout }).on('line', line => {
       try {
         const value = JSON.parse(line);
-        if (['holdStart','holdEnd','holdCancel'].includes(value.event)) this.emit(value.event);
+        if (['holdStart','holdEnd','holdCancel','tap','doubleTap'].includes(value.event)) this.emit(value.event);
         const pending = this.pending.get(value.id);
         if (pending) { clearTimeout(pending.timer); this.pending.delete(value.id); pending.resolve(value); }
       } catch { /* Ignore malformed protocol lines. */ }

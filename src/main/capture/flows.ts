@@ -17,18 +17,20 @@ export class CaptureFlows {
   private attachment: Attachment | undefined;
   private wasVisible = false;
   private released = false;
+  /** Started by a double tap: keeps recording until Enter or another tap. */
+  locked = false;
   constructor(private ports: FlowPorts, private hex: Pick<Hex,'begin'|'start'|'stop'|'recoverSince'>, private now = Date.now) {}
-  private phase(phase: CapturePhase) { this.state = { phase, seconds:0 }; this.ports.emit({state:this.state}); }
+  private phase(phase: CapturePhase) { this.state = phase === 'listening' && this.locked ? { phase, seconds:0, locked:true } : { phase, seconds:0 }; this.ports.emit({state:this.state}); }
   async question() {
     if (['capturing','opening','listening','transcribing','recovering','queued'].includes(this.state.phase)) return;
     this.phase('capturing');
     try { const attachment = await this.ports.capture(); this.ports.show(); this.phase('idle'); this.ports.emit({state:this.state,attachment}); }
     catch { this.ports.show(); this.phase('failed'); }
   }
-  async begin() {
+  async begin(locked = false) {
     if (this.stopping || ['capturing','opening','listening','transcribing','recovering','queued','sending'].includes(this.state.phase)) { this.ports.emit({state:{...this.state,busy:true}}); return; }
     this.attachment = undefined;
-    const token = ++this.generation; this.released = false; this.wasVisible = this.ports.visible();
+    const token = ++this.generation; this.released = false; this.locked = locked; this.wasVisible = this.ports.visible();
     this.phase('capturing'); this.ports.protect(true);
     try {
       const attachment = await this.ports.capture();
@@ -39,19 +41,20 @@ export class CaptureFlows {
       this.recording = true;
       let result = await (this.beginning = this.hex.begin().finally(()=>{this.beginning=undefined;}));
       if (result.code === 3 && token === this.generation) { this.phase('opening'); await this.hex.start(); if (token === this.generation) result = await (this.beginning = this.hex.begin().finally(()=>{this.beginning=undefined;})); }
-      if (token !== this.generation) { await this.hex.stop(); this.recording = false; return; }
+      if (token !== this.generation) { if (result.code !== 5) await this.hex.stop(); this.recording = false; return; }
+      if (result.code === 5) { this.recording = false; this.locked = false; this.phase('idle'); this.state = {...this.state,hexBusy:true}; this.ports.emit({state:this.state}); this.ports.protect(false); return; }
       if (result.code !== 0) throw new Error('Hex start');
       this.phase('listening');
       if (this.released) await this.end();
     } catch {
       if (this.recording) { await this.stop(); this.recording = false; }
-      if (token === this.generation) { this.phase('failed'); this.ports.protect(false); }
+      if (token === this.generation) { this.locked = false; this.phase('failed'); this.ports.protect(false); }
     }
   }
   async end() {
     if (this.state.phase === 'capturing' || this.state.phase === 'opening') { this.released = true; return; }
     if (this.state.phase !== 'listening') return;
-    const token = this.generation; this.phase('transcribing');
+    const token = this.generation; this.locked = false; this.phase('transcribing');
     const start = this.now();
     this.timer = setInterval(() => { this.state = {...this.state,seconds:Math.floor((this.now()-start)/1000)}; this.ports.emit({state:this.state}); }, 1000);
     const result = await this.stop(); this.recording = false; clearInterval(this.timer);
@@ -69,7 +72,7 @@ export class CaptureFlows {
   }
   acknowledge(phase: 'idle'|'queued'|'failed') { this.phase(phase); this.ports.protect(phase === 'queued'); }
   async cancel(chord = false) {
-    ++this.generation; clearInterval(this.timer); this.phase('cancelled'); this.ports.protect(false);
+    ++this.generation; this.locked = false; clearInterval(this.timer); this.phase('cancelled'); this.ports.protect(false);
     if (chord && this.attachment) { this.ports.emit({state:this.state,removeId:this.attachment.id!}); if (!this.wasVisible) this.ports.hide(); }
     if (this.recording) { await this.stop(); this.recording = false; }
   }

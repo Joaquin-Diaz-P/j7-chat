@@ -14,7 +14,12 @@ export class Hex {
   }
   status() { return this.run(['status','--json']); }
   start() { return this.run(['start']); }
-  begin() { return this.run(['dictation','start'], 1000); }
+  /** Code 5: Hex was already recording a dictation of its own, which J7 must leave alone. */
+  async begin() {
+    const result = await this.run(['dictation','start','--json'], 1000);
+    try { if (result.code === 0 && (JSON.parse(result.text) as { changed?: boolean }).changed === false) return { code: 5, text: '' }; } catch { /* Older Hex: plain reply. */ }
+    return result;
+  }
   stop() { return this.run(['dictation','stop','--print'], 120000); }
   async hotkey() { return (await this.run(['settings','get','dictation_hotkey'])).text; }
   async recoverSince(date: Date) {

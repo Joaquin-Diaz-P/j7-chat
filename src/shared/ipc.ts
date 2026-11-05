@@ -42,7 +42,7 @@ export interface J7Api {
  settingsPermission(kind:string):Promise<void>;
   history(query?: string, offset?: number): Promise<import('../main/chat/sqlite-store.js').HistoryChat[]>;
   historyAction(action: 'rename'|'pin'|'delete'|'open', id: string, value?: string|boolean): Promise<void>;
-  captureAction(action: 'cancel'|'recover'|'idle'|'queued'|'failed'|'screen'|'input'|'status'): Promise<void>;
+  captureAction(action: 'cancel'|'finish'|'recover'|'idle'|'queued'|'failed'|'screen'|'input'|'status'): Promise<void>;
   onCapture(callback: (event: import('./capture.js').CaptureEvent) => void): () => void;
   snapshot(): Promise<ChatSnapshot>;
   attachments(action: "files" | "data" | "paste" | "dialog" | "capture" | "preview", value?: unknown, count?: number): Promise<Attachment[]>;

@@ -12,6 +12,10 @@ export const strings = {
   confirmDelete: (title: string) => `¿Borrar «${title}»? No se puede deshacer`,
   captureUnavailable: "No se pudo completar la captura o iniciar Hex. Revisa los permisos y los programas en los ajustes.",
   captureListening: "● Escuchando… suelta la tecla de voz para enviar",
+  captureListeningLocked: "● Escuchando… Enter o un toque a la tecla de voz para enviar",
+  captureSend: "Enviar",
+  captureDiscard: "Descartar",
+  hexBusy: "Hex ya está grabando un dictado. Termínalo y vuelve a intentar",
   captureOpening: "Abriendo Hex…",
   captureTranscribing: "Transcribiendo…",
   captureRecovering: "Recuperando del historial de Hex…",
@@ -139,7 +143,7 @@ export const strings = {
   error: "No se pudo enviar el mensaje",
 };
 export const settingsStrings = {
- sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+ sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz (mantener o doble toque)'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
 };
 
 export const settingsCommands: Record<string,string[]> = {

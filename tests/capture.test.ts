@@ -33,6 +33,24 @@ describe('capture flows with fake Hex',()=>{
     expect(f.events.some(e=>e.text)).toBe(false); expect(f.events.some(e=>e.removeId)).toBe(false);
     void cancel;
   });
+  it('double tap keeps listening until finished, then sends',async()=>{
+    const f=fixture(); await f.flow.begin(true);
+    expect(f.flow.state).toMatchObject({phase:'listening',locked:true}); expect(f.flow.locked).toBe(true);
+    expect(f.hex.stop).not.toHaveBeenCalled();
+    await f.flow.end();
+    expect(f.flow.locked).toBe(false); expect(f.events.at(-1)).toMatchObject({text:'dictado',autoSend:true});
+  });
+  it('discarding a locked recording keeps the capture',async()=>{
+    const f=fixture(); await f.flow.begin(true); await f.flow.cancel();
+    expect(f.flow.locked).toBe(false); expect(f.hex.stop).toHaveBeenCalled();
+    expect(f.events.some(e=>e.text)).toBe(false); expect(f.events.some(e=>e.removeId)).toBe(false);
+  });
+  it('leaves a dictation that Hex was already recording alone',async()=>{
+    const f=fixture(); f.hex.begin.mockResolvedValueOnce({code:5,text:''});
+    await f.flow.begin(true);
+    expect(f.hex.stop).not.toHaveBeenCalled(); expect(f.flow.locked).toBe(false);
+    expect(f.flow.state).toMatchObject({phase:'idle',hexBusy:true});
+  });
   it('stops on shutdown and removes capture on chord cancellation',async()=>{
     const f=fixture(); await f.flow.begin(); await f.flow.cancel(true);
     expect(f.hex.stop).toHaveBeenCalled(); expect(f.events.at(-1)?.removeId).toBe('capture');
@@ -54,6 +72,13 @@ it('rejects environment files and tells model about truncated PDF',()=>{
   const result=prepareAttachments([{kind:'pdf',path:'x',name:'x.pdf',mime:'application/pdf',pages:20,sentPages:3,truncated:true,extractedText:'hello'}],{supportsPdf:false,supportsImages:true} as ModelInfo);
   expect(result[0]?.extractedText).toContain('recortado="páginas 1 a 3 de 20"');
   expect(result[0]?.extractedText).toContain('El resto del documento no se incluyó.');
+});
+it('reports a dictation Hex was already recording as code 5',async()=>{
+  const hex=new Hex(); const run=vi.spyOn(hex,'run');
+  run.mockResolvedValueOnce({code:0,text:JSON.stringify({version:4,status:'done',message:'Dictation is already recording',changed:false})});
+  expect((await hex.begin()).code).toBe(5);
+  run.mockResolvedValueOnce({code:0,text:JSON.stringify({version:4,status:'done',changed:true})});
+  expect((await hex.begin()).code).toBe(0);
 });
 it('matches observed Hex hotkey and validates history timestamp',async()=>{
   expect(hotkeyConflicts('right-command','right-command\n')).toBe(true);

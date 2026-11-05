@@ -407,6 +407,11 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
   1. Muestra "Transcribiendo…".
   2. Ejecuta `hex dictation stop --print`.
   3. Agrega el texto al campo y envía el mensaje automáticamente.
+- **Doble toque** (dos toques de menos de 200 ms cada uno, separados por menos de 350 ms, sin otra tecla entremedio), como el doble toque de Hex:
+  1. Captura y muestra J7 como al apretar, y ejecuta `hex dictation start`.
+  2. Queda grabando sin mantener la tecla, con "● Escuchando… Enter o un toque a la tecla de voz para enviar" y los botones Enviar y Descartar.
+  3. **Enter**, un toque a la tecla de voz o Enviar: sigue igual que al soltar (transcribe y envía).
+  4. **Esc** o Descartar: descarta la grabación y la captura queda adjunta.
 - **Casos especiales:**
 
 | Caso | Qué hace J7 |
@@ -415,6 +420,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 | Se aprieta otra tecla mientras se mantiene la modificadora (por ejemplo, `⌥ 2` para escribir `@`) | Si fue antes de los 200 ms, no pasa nada. Si fue después, detiene la grabación, descarta el texto, quita la captura y, si J7 estaba escondido, lo vuelve a esconder. |
 | Hex no está abierto (código 3) | Muestra "Abriendo Hex…", ejecuta `hex start` y luego empieza a grabar. |
 | Hex no está instalado | Muestra un aviso con un enlace a los ajustes. |
+| Hex ya está grabando un dictado propio (`dictation start --json` responde `changed: false`) | No lo toca ni lo detiene. Muestra "Hex ya está grabando un dictado. Termínalo y vuelve a intentar" y la captura queda adjunta. |
 
 - **Se comprueba:** cada caso de la tabla; además, escribir `@` con `⌥ 2` en otra app no activa nada.
 
