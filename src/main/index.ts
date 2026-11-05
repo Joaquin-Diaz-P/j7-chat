@@ -1,3 +1,5 @@
+import { setupSettings } from "./settings-window.js";
+import { strings as s } from "../renderer/strings.js";
 import { SqliteChatStore } from "./chat/sqlite-store.js";
 import { NativeHelper } from "./native/helper.js";
 import { generateTitle } from "./titles.js";
@@ -6,8 +8,8 @@ import { AttachmentStore } from "./attachments/index.js";
 import { registerAttachments } from "./attachments/ipc.js";
 import { app, protocol, globalShortcut, type Tray } from "electron";
 import { join } from "node:path";
-import { ensurePaths, getPaths } from "./paths.js";
-import { mkdirSync } from "node:fs";
+import { resolveBinary, ensurePaths, getPaths } from "./paths.js";
+import { existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { SettingsStore } from "./settings.js";
 import { createLogger } from "./logger.js";
 import { ModelCatalog } from "./chat/catalog.js";
@@ -59,6 +61,10 @@ else {
       const log = createLogger(paths.data);
       shutdownLog = log;
       log("startup");
+      if(process.env.J7_TEST === "1" && app.isPackaged) {
+        const binaries = Object.fromEntries(await Promise.all((["claude","codex","opencode"] as const).map(async id=>[id,await resolveBinary(id)])));
+        writeFileSync(join(paths.data,"packaged-paths.json"),JSON.stringify({...binaries,hex:existsSync("/Applications/Hex.app/Contents/MacOS/hex"),helper:existsSync(join(process.resourcesPath,"j7-helper")),PATH:process.env.PATH}));
+      }
       const settings = new SettingsStore(join(paths.data, "settings.json"));
       const catalog = new ModelCatalog(settings, undefined, () => chat?.notify());
       const store = new SqliteChatStore(join(paths.data,"j7.db"),join(paths.data,"attachments"));
@@ -67,24 +73,29 @@ else {
         catalog,
         (event) => panel?.window.webContents.send("chat:event", event),
         (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
-        undefined, undefined, undefined, store, settings,
+        undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun, store, settings,
       );
       chat.titleGenerator = text => generateTitle(text, async text => {
         const reply = await titleHelper.request("generateTitle",{text});
         return reply.ok && typeof reply.title === "string" ? reply.title : "";
       });
       panel = new Panel(settings, chat);
+      if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       const attachments = new AttachmentStore(join(paths.data, "attachments"),store)
       await attachments.cleanup();
       registerAttachments(panel, attachments);
       capture = setupCapture(panel, attachments, settings);
       registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);
+      setupSettings(settings,panel,chat,capture,()=>{tray?.destroy();tray=createTray(panel!,settings);});
       registerShortcut(settings.value.shortcut, () => panel?.toggle(), log);
       panel.window.webContents.on("render-process-gone", () =>
         log("renderer-failed"),
       );
-      panel.show();
+      if (!settings.value.firstRunDone) {
+        if (app.isPackaged) app.setLoginItemSettings({openAtLogin:true}); settings.update({firstRunDone:true,openAtLogin:true});
+        panel.show(); setTimeout(()=>chat?.dismissWelcome(),6500);
+      }
       chat.start();
     })
     .catch(() => {

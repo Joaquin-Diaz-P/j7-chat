@@ -37,7 +37,13 @@ export class ChatService {
       this.legacyModel = { id: model, label: label ?? s.mock, provider: source.id, supportsImages: false, supportsPdf: false, supportsEffort: true };
     }
   }
+  dismissWelcome() { if(this.warning===s.firstRun) {this.warning=undefined;this.notify();} }
   start() {
+    const history = this.store as ChatStore & {list?: (query:string, offset:number)=>{id:string;titleSource:string;title:string}[];rename?: (id:string,title:string,manual:boolean)=>void};
+    if(this.titleGenerator && history.list) for(let offset=0;;offset+=200) {
+      const rows=history.list("",offset); if(!rows.length)break;
+      for(const row of rows) if(!row.title.trim() && row.titleSource!=="manual") { const question=this.store.listMessages(row.id).find(m=>m.role==="user"); if(question)void this.titleGenerator(question.text).then(title=>history.rename?.(row.id,title,false)).catch(()=>{}); }
+    }
     void this.catalog.refresh().catch(() => {}).finally(() => this.notify());
     this.warmup = setTimeout(() => { void this.catalog.prewarm().catch(() => {}); }, 5_000);
     this.warmup.unref();

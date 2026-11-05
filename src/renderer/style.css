@@ -175,3 +175,5 @@ summary { cursor: pointer; color: var(--secondary-label); }
 .history-row span,.history-row small {display:block;overflow:hidden;text-overflow:ellipsis;}
 .history-row button[aria-current=true] {background:#8883;}
 .history-menu {display:flex;flex-wrap:wrap;background:var(--background);border:1px solid #8884;}
+.settings-view {display:flex; height:100vh; overflow:auto; padding:20px; background:var(--background,#202024);color:var(--foreground,#eee)}
+.settings-view nav {display:flex;flex-direction:column;gap:12px;width:150px;flex-shrink:0}.settings-view section {padding:0 24px;flex:1;overflow:auto}.settings-view textarea {width:100%;height:220px}.settings-view p {margin:14px 0}.settings-view select {max-width:300px}

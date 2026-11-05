@@ -14,7 +14,7 @@ export class Hex {
   }
   status() { return this.run(['status','--json']); }
   start() { return this.run(['start']); }
-  begin() { return this.run(['dictation','start']); }
+  begin() { return this.run(['dictation','start'], 1000); }
   stop() { return this.run(['dictation','stop','--print'], 120000); }
   async hotkey() { return (await this.run(['settings','get','dictation_hotkey'])).text; }
   async recoverSince(date: Date) {

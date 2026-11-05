@@ -105,3 +105,11 @@ it('requests oldest history first and detects installation independent of settin
  const start=new Date(0);await hex.recoverSince(start);
  expect(run).toHaveBeenLastCalledWith(['history','--since',start.toISOString(),'--oldest-first','--limit','1','--json']);
 });
+it('shutdown during an in-flight start executes the later stop within three seconds',async()=>{
+ vi.useFakeTimers(); const f=fixture();
+ f.hex.begin.mockImplementation(()=>new Promise(resolve=>setTimeout(()=>resolve({code:0,text:''}),900)));
+ const begin=f.flow.begin(); await Promise.resolve();
+ const closed=vi.fn();const shutdown=f.flow.dispose().then(closed);
+ await vi.advanceTimersByTimeAsync(901);await begin;await shutdown;
+ expect(closed).toHaveBeenCalledOnce();expect(f.hex.stop).toHaveBeenCalled();
+});

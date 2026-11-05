@@ -1,3 +1,4 @@
+import { isAccelerator } from "../shared/shortcut.js";
 import { mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 export interface Position {
@@ -5,6 +6,8 @@ export interface Position {
   y: number;
 }
 export interface Settings {
+  firstRunDone: boolean;
+  openAtLogin: boolean;
   shortcut: string;
   captureShortcut: string;
   voiceModifier: string;
@@ -33,14 +36,10 @@ export function validateSettings(value: unknown): Settings {
         positions[id] = { x: Math.round(p.x), y: Math.round(p.y) };
     }
   return {
-    shortcut:
-      typeof v.shortcut === "string" &&
-      /^(?:(?:Alt|Option|Command|Cmd|CommandOrControl|Control|Ctrl|Shift)\+)+[A-Za-z0-9]$/.test(
-        v.shortcut,
-      )
-        ? v.shortcut
-        : "Alt+J",
-    captureShortcut: typeof v.captureShortcut === "string" && /^(?:(?:Alt|Option|Command|Cmd|Control|Ctrl|Shift)\+)+[A-Za-z0-9]$/.test(v.captureShortcut) ? v.captureShortcut : "Alt+Shift+J",
+    firstRunDone: v.firstRunDone === true,
+    openAtLogin: v.openAtLogin !== false,
+    shortcut: isAccelerator(v.shortcut) ? v.shortcut : "Alt+J",
+    captureShortcut: isAccelerator(v.captureShortcut) ? v.captureShortcut : "Alt+Shift+J",
     voiceModifier: typeof v.voiceModifier === "string" && /^(?:(?:left|right)-(?:option|command|shift|control)|fn)$/.test(v.voiceModifier) ? v.voiceModifier : "right-option",
     historyOpen: v.historyOpen === true,
     pinned: typeof v.pinned === "boolean" ? v.pinned : false,
@@ -48,7 +47,7 @@ export function validateSettings(value: unknown): Settings {
     positions,
     favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
     defaultModel: typeof v.defaultModel === "string" ? v.defaultModel : null,
-    personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions : "",
+    personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions.slice(0,4000) : "",
   };
 }
 export class SettingsStore {

@@ -1,0 +1,24 @@
+appId: cl.j7.chat
+productName: J7 Chat
+directories:
+  output: release
+files:
+  - out/**/*
+  - assets/iconTemplate*.png
+  - THIRD_PARTY_NOTICES.md
+  - package.json
+asar: true
+extraResources:
+  - from: build/j7-helper
+    to: j7-helper
+mac:
+  identity: null
+  icon: assets/icon.icns
+  target:
+    - target: dmg
+      arch: arm64
+  extendInfo:
+    LSUIElement: true
+    NSScreenCaptureUsageDescription: J7 Chat captura la zona elegida de la pantalla para adjuntarla a tu pregunta.
+dmg:
+  sign: false

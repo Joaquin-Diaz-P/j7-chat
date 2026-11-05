@@ -1,4 +1,6 @@
 export const strings = {
+ attachmentMissing:"El adjunto ya no está disponible.",
+ settingsTitle:"Ajustes de J7 Chat", firstRun:"Aprieta ⌥ J para abrir J7 desde cualquier app", invalidShortcut:"Usa una combinación con modificador y letra o número", duplicateShortcut:"Ese atajo se repite en J7", shortcutUsed:"Ese atajo ya lo usa otra app",
   historySearch: "Buscar en el historial",
   historyGroups: ["Fijados","Hoy","Ayer","Últimos 7 días","Anteriores"],
   historyActions: "Acciones del chat",
@@ -17,7 +19,7 @@ export const strings = {
   captureScreen: "J7 necesita el permiso de Grabación de pantalla para capturar",
   captureInput: "J7 necesita el permiso de Monitoreo de entrada para detectar la tecla de voz",
   systemSettings: "Abrir Ajustes del Sistema",
-  hexConflict: "La tecla de voz de J7 coincide con el atajo de dictado de Hex. Cambia voiceModifier en settings.json.",
+  hexConflict: "La tecla de voz de J7 coincide con el atajo de dictado de Hex. Cambia la tecla de voz en Ajustes → Atajos.",
   hexMissing: "Hex no está instalado o no está disponible. Revisa Programas en los ajustes.",
 
   dropAttachments: "Suelta para adjuntar",
@@ -133,4 +135,14 @@ export const strings = {
   image: "Imagen",
   footnotes: "Notas",
   error: "No se pudo enviar el mensaje",
+};
+export const settingsStrings = {
+ sections:['General','Atajos','Modelos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Pulsa para grabar', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', default:'Modelo por defecto', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', automatic:'Automático', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+};
+
+export const settingsCommands: Record<string,string[]> = {
+ claude:['curl -fsSL https://claude.ai/install.sh | bash','claude auth login'],
+ codex:['npm install -g @openai/codex','codex login'],
+ opencode:['curl -fsSL https://opencode.ai/install | bash','opencode auth login'],
+ hex:['brew install --cask anomalyco/tap/hex','hex start']
 };

@@ -13,7 +13,9 @@
     "dev": "npm run build:helper && npm run icons && node scripts/dev.mjs",
     "build": "npm run icons && electron-vite build",
     "icons": "node scripts/icons.mjs",
-    "build:helper": "mkdir -p build && swiftc -O -target arm64-apple-macosx14.0 native/j7-helper/main.swift -o build/j7-helper"
+    "build:helper": "mkdir -p build && swiftc -O -target arm64-apple-macosx14.0 native/j7-helper/main.swift -o build/j7-helper",
+    "dist": "node scripts/dist.mjs",
+    "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "2.4.0",
@@ -31,12 +33,14 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/vite": "^4.3.4",
     "@types/node": "^24.10.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.2.1",
     "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.4",
@@ -44,12 +48,5 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.8"
   },
-  "main": "out/main/index.js",
-  "build": {
-    "mac": {
-      "extendInfo": {
-        "LSUIElement": true
-      }
-    }
-  }
+  "main": "out/main/index.js"
 }

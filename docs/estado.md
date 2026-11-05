@@ -39,6 +39,9 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | 5 | I1 I2 I3 I4 I5 I6 I7 I8 I9 · B8 · B10 (`⌘ B`, `⌘ F`) | ✅ | Con el mock, cuatro reinicios y un `kill -9`. B8 medido con CoreGraphics. El revisor corrigió I3: Apple Intelligence respondía la pregunta en vez de dar un título |
 | 5 | Adjuntos en SQLite y copias huérfanas · siete correcciones de voz | ✅ | Comprobados en la app y en el código |
 | 5 | Pendientes menores | ⬜ | Título en el idioma de la pregunta y sin comillas, títulos de chats interrumpidos, error ERR_FILE_NOT_FOUND sin capturar y `stop` al salir durante `start`. Se corrigen en la etapa 6 |
-| 6 | A4 A5 · B10 (`⌘ ,`) · J1 J2 J3 J4 J5 J6 J7 · K1 K2 K3 · M4 | ⬜ | |
+| 6 | A5 · B10 (`⌘ ,`) · J1 J2 J4 J5 J6 J7 · K1 K2 K3 · M4 · correcciones de la etapa 5 | ✅ | Con la app empaquetada y en desarrollo. El revisor corrigió el idioma de los títulos, el registro de ítems de inicio en desarrollo y siete detalles más |
+| 6 | A4 · J3 (el atajo viejo deja de funcionar) | 🔍 | Prueba física del usuario: docs/prueba-final.md, pasos 4 y 8 |
+| 4 | H1 H2 H4 H6 H7 | 🔍 | Prueba física del usuario con la app instalada: docs/prueba-final.md, paso 5 |
+| — | Pendientes técnicos | ⬜ | Están en docs/ideas-futuras.md, "Pendientes técnicos de la versión 1" |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.

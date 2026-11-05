@@ -1,0 +1,24 @@
+import {useEffect,useState,useRef} from 'react';
+import {settingsCommands as commands, settingsStrings as t, strings as s} from './strings.js';
+import type {SettingsData} from '../shared/ipc.js';
+import type {Settings} from '../main/settings.js';
+import {accelerator,voiceModifier,shortcutLabel} from '../shared/shortcut.js';
+export function SettingsView() {
+ const [data,setData]=useState<SettingsData>(); const [section,setSection]=useState(0);const [record,setRecord]=useState(-1);const [message,setMessage]=useState('');
+ const saveTimer=useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+ const load=()=>window.j7.settingsData().then(setData).catch(e=>setMessage(String(e)));
+ useEffect(()=>{document.title=s.settingsTitle;void load();},[]);
+ useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>document.documentElement.classList.toggle("dark",data?.settings.theme==="dark" || (data?.settings.theme!=="light" && media.matches));update();media.addEventListener("change",update);return ()=>media.removeEventListener("change",update);},[data?.settings.theme]);
+ async function save(value:Partial<Settings>) { try {await window.j7.saveSettings(value);setMessage(t.saved);await load();}catch(e){setMessage(String(e instanceof Error?e.message:e).replace(/^Error invoking remote method '[^']+': (?:Error: )?/,''));} }
+ if(!data)return <p>{t.loading}</p>;
+ const v=data.settings;
+
+ return <main className="settings-view"><nav>{t.sections.map((name,i)=><button key={name} aria-pressed={section===i} onClick={()=>setSection(i)}>{name}</button>)}</nav><section><h2>{t.sections[section]}</h2>
+ {section===0&&<><label>{t.theme} <select value={v.theme} onChange={e=>void save({theme:e.target.value as Settings['theme']})}>{['system','light','dark'].map((x,i)=><option key={x} value={x}>{t.themes[i]}</option>)}</select></label><p><label><input type="checkbox" checked={v.openAtLogin} onChange={e=>void save({openAtLogin:e.target.checked})}/>{t.login}</label></p></>}
+ {section===1&&<>{(['shortcut','captureShortcut','voiceModifier'] as const).map((key,i)=><p key={key}><label>{t.shortcuts[i]} <button onClick={()=>setRecord(i)} onKeyDown={e=>{if(record!==i)return;e.preventDefault();const value=i===2?voiceModifier(e.code):accelerator(e);if(value){setRecord(-1);void save({[key]:value});}else setMessage(s.invalidShortcut);}}>{record===i?t.record:shortcutLabel(v[key])}</button></label></p>)}<button onClick={()=>void save({shortcut:'Alt+J',captureShortcut:'Alt+Shift+J',voiceModifier:'right-option'})}>{t.restore}</button>{data.hex.conflict&&<p role="alert">{s.hexConflict}</p>}</>}
+ {section===2&&<><label>{t.default}<select value={v.defaultModel??''} onChange={async e=>{await window.j7.settingsModel(e.target.value,false);await load();}}><option value="">{t.automatic}</option>{data.catalog.models.map(m=><option key={m.provider+':'+m.id} value={m.provider+':'+m.id}>{m.label}</option>)}</select></label>{[...new Set(data.catalog.models.map(m=>m.provider))].map(provider=><div key={provider}><h3>{provider}</h3>{data.catalog.models.filter(m=>m.provider===provider).map(m=>{const key=m.provider+':'+m.id;return <p key={key}><button aria-label={t.favorite+' '+m.label} onClick={async()=>{await window.j7.settingsModel(key,true);await load();}}>{v.favorites.includes(key)?'★':'☆'}</button> {m.label}</p>;})}</div>)}</>}
+ {section===3&&<><textarea aria-label={t.instructions} maxLength={4000} onBlur={()=>{clearTimeout(saveTimer.current);void save({personalInstructions:v.personalInstructions});}} value={v.personalInstructions} onChange={e=>{const text=e.target.value;setData({...data,settings:{...v,personalInstructions:text}});clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>void save({personalInstructions:text}),400);}}/><p>{v.personalInstructions.length}/4000</p></>}
+ {section===4&&<>{['claude','codex','opencode','hex'].map(id=>{const state=id==='hex'?(data.hex.installed?(data.hex.status?.code===0?'ready':'error'):'not_installed'):data.catalog.statuses[id as keyof typeof data.catalog.statuses]?.state??'error';return <div key={id}><h3>{id} · {t.states[state]}</h3><p>{id!=='hex'&&data.catalog.statuses[id as keyof typeof data.catalog.statuses]?.detail}</p>{state!=='ready'&&commands[id]!.map(command=><p key={command}><code>{command}</code> <button onClick={()=>void navigator.clipboard.writeText(command)}>{t.copy}</button></p>)}</div>;})}<button onClick={async()=>{await window.j7.settingsRefresh();await load();}}>{t.refresh}</button></>}
+ {section===5&&<>{(['screen','input'] as const).map(kind=><p key={kind}>{t[kind]} · {data.permissions[kind]?t.granted:t.missing} <button onClick={()=>void window.j7.settingsPermission(kind)}>{t.system}</button></p>)}<button onClick={()=>void load()}>{t.refresh}</button></>}
+ <p role="status">{message}</p></section></main>;
+}

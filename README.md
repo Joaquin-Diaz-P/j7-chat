@@ -1,38 +1,27 @@
-<img src="assets/icon.svg" width="64" height="64" alt="">
-
 # J7 Chat
 
-Created in [T3 Code](https://t3.codes).
+Barra personal de consultas rápidas para macOS Apple Silicon (macOS 14 o posterior). Usa las sesiones de Claude, Codex y OpenCode instalados en el Mac. Hex se usa para dictado y se instala por separado: `brew install --cask anomalyco/tap/hex`, según su [README oficial](https://github.com/anomalyco/hex/blob/dev/README.md).
 
-## Etapa 0
+Abre el DMG de `release/` y copia **J7 Chat.app** a Aplicaciones para instalarla. La primera vez usa clic derecho → Abrir. La distribución es local, sin firma ni notarización. Durante el desarrollo también puedes abrir `release/J7 Chat.app` directamente.
 
-Base Node 24 y TypeScript, sin Electron. Usa las sesiones de los programas instalados; no necesita API keys.
+`⌥ J` abre la barra; `⌥ ⇧ J` captura y adjunta; mantener Opción derecha captura y dicta con Hex. `⌘ ,` o el menú de la barra abren Ajustes. Allí puedes cambiar tema, arranque al iniciar sesión, atajos, modelo y favoritos e instrucciones personales. Los cambios se guardan automáticamente.
 
-```sh
-npm ci
-npm run typecheck
-npm test
-npm run spike -- claude --no-web "Hola"
-npm run spike -- codex --list-models
-npm run spike -- gemini --status
-npm run spike -- opencode --list-models
-```
+En Ajustes → Permisos concede **Grabación de pantalla** y **Monitoreo de entrada** usando los botones para abrir Ajustes del Sistema. Si macOS lo pide, reinicia J7 después. Hex gestiona su propio permiso de micrófono. Ajustes → Programas muestra el estado y comandos de instalación y sesión. Evita usar la misma tecla para Hex y J7.
 
-Opciones del spike: `--model`, `--effort normal|high`, `--web`, `--no-web`, `--image`, `--pdf`, `--resume`, `--list-models`, `--status`. También admite `--binary /ruta/absoluta` y `--timeout milisegundos` para diagnóstico. Web viene encendida. El texto se imprime en vivo en stdout; los eventos y tiempos, en gris en stderr. `Ctrl+C` cancela el turno.
+Los datos están en `~/Library/Application Support/J7 Chat`: `settings.json`, `j7.db`, adjuntos y entornos privados de los proveedores. Para actualizar, cierra J7 y reemplaza la app con la versión nueva; los datos se conservan. No borres la carpeta de datos para actualizar.
 
-Los datos van en `~/Library/Application Support/J7 Chat`; `J7_DATA_DIR` permite cambiar la carpeta. `workspace/` queda vacía. La configuración aislada y las sesiones nativas de Codex, Gemini y OpenCode quedan en `providers/`. Claude conserva su sesión nativa en su propio almacén, bajo el proyecto vacío de J7. Solo se enlazan los archivos de autenticación existentes de Codex y Gemini; no se copian credenciales.
+## Desarrollo
 
-La verificación real es **opcional** y consume cuota:
+Requiere Node 24+, Xcode Command Line Tools y macOS arm64. Ejecuta `npm ci`, `npm run dev`. `npm run build:helper` compila el ayudante Swift; `npm run build` genera el bundle e iconos; `npm run dist` genera `release/J7 Chat.app` y el DMG arm64 sin firma. `npm run typecheck`, `npm test` y `npm run test:e2e` verifican tipos, unidades y un recorrido Electron con Playwright y proveedores mock. `J7_DATA_DIR` permite datos aislados, `J7_MOCK=1` evita inferencia real. El gancho de mostrar la barra solo existe con `J7_TEST=1`.
 
-```sh
-swift spikes/create-attachments.swift
-npx tsx spikes/verify.ts claude
-npx tsx spikes/verify.ts codex
-# Ejecutar estos cuando se resuelvan los bloqueos documentados:
-npx tsx spikes/verify.ts gemini
-npx tsx spikes/verify.ts opencode
-```
+## Comprobación manual después de instalar
 
-La matriz usa como máximo diez intentos por programa y se detiene ante errores de autenticación, cuota u opciones no disponibles. `npm test` usa fixtures y procesos simulados locales; no consulta servicios de IA.
+1. Abre la app con clic derecho → Abrir; comprueba que el aviso inicial aparece una sola vez.
+2. Concede ambos permisos, abre la barra desde otra app y prueba captura.
+3. Cambia cada atajo y verifica el nuevo y que el anterior se libere; comprueba aviso si Hex usa la misma tecla.
+4. Revisa programas y modelos; envía una pregunta breve, adjunta un archivo y vuelve al chat desde el historial.
+5. Prueba Hex con una frase, solo cuando quieras usar dictado.
+6. Cambia instrucciones personales y comprueba el siguiente turno del mismo chat.
+7. Cierra sesión y vuelve a entrar para comprobar el inicio automático; desactívalo en General y repite.
 
-Consulta [resultados y comandos de reproducción](docs/etapa-0-resultados.md) y [avisos de terceros](THIRD_PARTY_NOTICES.md). La etapa todavía requiere verificar Gemini con una sesión admitida y Zen con cuota disponible.
+Ver `THIRD_PARTY_NOTICES.md` para licencias y referencias.

@@ -9,6 +9,7 @@ export class CaptureFlows {
   state: CaptureState = { phase:'idle', seconds:0 };
   private generation = 0;
   private recording = false;
+  private beginning: Promise<{code:number;text:string}> | undefined;
   private stopping: ReturnType<Hex["stop"]> | undefined;
   private stop() { return this.stopping ??= this.hex.stop().finally(() => { this.stopping = undefined; }); }
   private started = new Date();
@@ -36,8 +37,8 @@ export class CaptureFlows {
       this.started = new Date(this.now());
       // Mark before awaiting: cancellation must stop even an in-flight start.
       this.recording = true;
-      let result = await this.hex.begin();
-      if (result.code === 3 && token === this.generation) { this.phase('opening'); await this.hex.start(); if (token === this.generation) result = await this.hex.begin(); }
+      let result = await (this.beginning = this.hex.begin().finally(()=>{this.beginning=undefined;}));
+      if (result.code === 3 && token === this.generation) { this.phase('opening'); await this.hex.start(); if (token === this.generation) result = await (this.beginning = this.hex.begin().finally(()=>{this.beginning=undefined;})); }
       if (token !== this.generation) { await this.hex.stop(); this.recording = false; return; }
       if (result.code !== 0) throw new Error('Hex start');
       this.phase('listening');
@@ -74,7 +75,7 @@ export class CaptureFlows {
   }
   async dispose() {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    await Promise.race([this.cancel(), new Promise<void>(resolve => { timer = setTimeout(resolve, 3000); })]);
+    await Promise.race([(async () => { const pending = this.beginning; await this.cancel(); if (pending) { await pending; await this.stop(); } })(), new Promise<void>(resolve => { timer = setTimeout(resolve, 3000); })]);
     clearTimeout(timer);
     (this.hex as { abort?: () => void }).abort?.();
   }

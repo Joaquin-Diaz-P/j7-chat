@@ -79,14 +79,14 @@ export class Panel {
       return { action: "deny" };
     });
     const url = process.env.ELECTRON_RENDERER_URL;
-    if (url) void this.window.loadURL(url);
+    if (url) void this.window.loadURL(url).catch(() => console.error("Renderer load failed"));
     else
       void this.window.loadFile(
         join(
           fileURLToPath(new URL(".", import.meta.url)),
           "../renderer/index.html",
         ),
-      );
+      ).catch(() => console.error("Renderer load failed"));
   }
   setHistory(open: boolean) {
     if (this.settings.value.historyOpen === open) return;

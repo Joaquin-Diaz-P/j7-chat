@@ -14,6 +14,11 @@ function subscribe<T>(channel: string, callback: (value: T) => void) {
   };
 }
 const api: J7Api = {
+ settingsData:()=>ipcRenderer.invoke("settings:data"),
+ saveSettings:value=>ipcRenderer.invoke("settings:save",value),
+ settingsModel:(key,favorite)=>ipcRenderer.invoke("settings:model",key,favorite),
+ settingsRefresh:()=>ipcRenderer.invoke("settings:refresh"),
+ settingsPermission:kind=>ipcRenderer.invoke("settings:permission",kind),
   history: (query,offset)=>ipcRenderer.invoke("history:list",query,offset),
   historyAction: (action,id,value)=>ipcRenderer.invoke("history:action",action,id,value),
   captureAction: action => ipcRenderer.invoke("capture:action", action),

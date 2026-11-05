@@ -1,5 +1,6 @@
 #if canImport(FoundationModels)
 import FoundationModels
+import NaturalLanguage
 #endif
 import Cocoa
 import ScreenCaptureKit
@@ -91,8 +92,13 @@ func command(_ message: [String: Any]) async {
                 guard case .available = SystemLanguageModel.default.availability else {
                     emit(["id":id,"ok":false,"reason":"unavailable"]); return
                 }
-                let session = LanguageModelSession(instructions:"Título de 3 a 6 palabras, en el idioma de la conversación, sin comillas ni punto final")
-                let result = try await session.respond(to:"No respondas la pregunta. Escribe solo el título de esta conversación:\n\n" + (message["text"] as? String ?? ""))
+                let text = message["text"] as? String ?? ""
+                let recognizer = NLLanguageRecognizer(); recognizer.languageHints = [.spanish: 0.5, .english: 0.5]; recognizer.processString(text)
+                // Short questions are ambiguous; fall back to Spanish unless the guess is confident.
+                let code = recognizer.languageHypotheses(withMaximum: 1).first.map { $0.value >= 0.6 ? $0.key.rawValue : "es" } ?? "es"
+                let language = Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "Spanish"
+                let session = LanguageModelSession(instructions:"You write short titles for chat conversations. The title is 3 to 6 words, written in \(language), with no quotation marks and no trailing period.")
+                let result = try await session.respond(to:"Do not answer the question. Write only the \(language) title for this question:\n\n" + text)
                 emit(["id":id,"ok":true,"title":result.content])
             } else { emit(["id":id,"ok":false,"reason":"unavailable"]) }
 #else

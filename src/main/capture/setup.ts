@@ -66,5 +66,5 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   helper.start();
   void helper.watch(modifierCodes[settings.value.voiceModifier]!).catch(()=>{});
   globalShortcut.register(settings.value.captureShortcut,()=>{void flows.question();});
-  return { dispose:async()=>{const stopped = flows.dispose(); helper.dispose(); await stopped;} };
+  return { question:()=>{void flows.question();}, rebind:async()=>{await helper.watch(modifierCodes[settings.value.voiceModifier]!);}, dispose:async()=>{const stopped = flows.dispose(); helper.dispose(); await stopped;} };
 }

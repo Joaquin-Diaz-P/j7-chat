@@ -1,3 +1,4 @@
+import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
 import { Menu, Paperclip, Scissors, Globe, ArrowUp, Square, Plus, Pin, ArrowDown } from "lucide-react";
@@ -163,6 +164,9 @@ function App() {
       if (event.metaKey && ['b','f'].includes(event.key.toLowerCase())) {
         event.preventDefault();toggleHistory(event.key.toLowerCase()==='f'?true:!historyRef.current);
         if(event.key.toLowerCase()==='f')setSearchFocus(n=>n+1);
+      }
+      if (event.metaKey && (event.code === "Comma" || event.key === ",")) {
+        event.preventDefault(); void window.j7.openSettings();
       }
       if (event.metaKey && event.key.toLowerCase() === "n") {
         event.preventDefault();
@@ -348,4 +352,4 @@ function App() {
     </div></div>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(location.hash === "#/settings" ? <SettingsView/> : <App />);

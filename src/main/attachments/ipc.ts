@@ -1,3 +1,4 @@
+import { strings as s } from "../../renderer/strings.js";
 import { clipboard, dialog, ipcMain, net, protocol, nativeImage } from 'electron';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -10,7 +11,7 @@ import { AttachmentStore, TEXT_EXTENSIONS } from './index.js';
 export function registerAttachments(panel: Panel, store: AttachmentStore) {
   protocol.handle('j7-file', async request => {
     try {
-      return net.fetch(pathToFileURL(await store.resolveUrl(request.url)).href);
+      return await net.fetch(pathToFileURL(await store.resolveUrl(request.url)).href);
     } catch { return new Response(null, { status: 404 }); }
   });
   let busy = false;
@@ -20,7 +21,7 @@ export function registerAttachments(panel: Panel, store: AttachmentStore) {
     busy = true;
     let temporary: string | undefined;
     try {
-      if (action === 'preview' && typeof value === 'string') { panel.window.previewFile(await store.resolve(value)); return []; }
+      if (action === 'preview' && typeof value === 'string') { try { const path=await store.resolve(value); await access(path); panel.window.previewFile(path); } catch { await dialog.showMessageBox(panel.window,{type:'error',message:s.attachmentMissing}); } return []; }
       let paths: string[] = [];
       if (action === 'files' && Array.isArray(value)) {
         if (count + value.length > 10) throw new Error('Hasta 10 adjuntos por mensaje');
