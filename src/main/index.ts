@@ -5,7 +5,7 @@ import { NativeHelper } from "./native/helper.js";
 import { generateTitle } from "./titles.js";
 import { setupCapture } from "./capture/setup.js";
 import { AttachmentStore } from "./attachments/index.js";
-import { registerAttachments } from "./attachments/ipc.js";
+import { registerAttachments, registerAttachmentProtocol } from "./attachments/ipc.js";
 import { app, protocol, globalShortcut, type Tray } from "electron";
 import { join } from "node:path";
 import { resolveBinary, ensurePaths, getPaths } from "./paths.js";
@@ -80,10 +80,11 @@ else {
         const reply = await titleHelper.request("generateTitle",{text});
         return reply.ok && typeof reply.title === "string" ? reply.title : "";
       });
-      panel = new Panel(settings, chat);
-      if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       const attachments = new AttachmentStore(join(paths.data, "attachments"),store)
       await attachments.cleanup();
+      registerAttachmentProtocol(attachments);
+      panel = new Panel(settings, chat);
+      if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       registerAttachments(panel, attachments);
       capture = setupCapture(panel, attachments, settings);
       registerIpc(panel, chat, attachments);

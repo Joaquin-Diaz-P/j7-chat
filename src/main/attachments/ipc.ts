@@ -8,12 +8,15 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Panel } from '../window.js';
 import { AttachmentStore, TEXT_EXTENSIONS } from './index.js';
-export function registerAttachments(panel: Panel, store: AttachmentStore) {
+// A page only sees the schemes handled when it loads, so this must run before the panel is created.
+export function registerAttachmentProtocol(store: AttachmentStore) {
   protocol.handle('j7-file', async request => {
     try {
       return await net.fetch(pathToFileURL(await store.resolveUrl(request.url)).href);
     } catch { return new Response(null, { status: 404 }); }
   });
+}
+export function registerAttachments(panel: Panel, store: AttachmentStore) {
   let busy = false;
   ipcMain.handle('attachments:action', async (event, action: unknown, value: unknown, count: unknown) => {
     if (event.sender !== panel.window.webContents || event.senderFrame !== panel.window.webContents.mainFrame || busy) return [];
