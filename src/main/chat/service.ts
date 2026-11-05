@@ -1,3 +1,4 @@
+import { canonicalModelKey } from "../../shared/model-key.js";
 import { initialEffort, resolveEffort } from "../../shared/effort.js";
 import { prepareAttachments } from "../attachments/policy.js";
 import type { Attachment } from "../providers/types.js";
@@ -6,7 +7,7 @@ import { strings as s } from "../../renderer/strings.js";
 import { buildChatInstructions } from "./instructions.js";
 import { buildRecap } from "./recap.js";
 import { MemoryChatStore } from "./memory-store.js";
-import { ModelCatalog, chooseDefaultModel, modelKey } from "./catalog.js";
+import { ModelCatalog, chooseInitialModel, modelKey } from "./catalog.js";
 import { classifyError } from "../providers/runtime.js";
 import type { ChatProvider, ChatEvent, ModelInfo, ProviderId } from "../providers/types.js";
 import type { SettingsStore } from "../settings.js";
@@ -51,7 +52,7 @@ export class ChatService {
   }
   private models() { const models = this.catalog.snapshot().models; return models.length ? models : this.legacyModel ? [this.legacyModel] : []; }
   private selectedModel(chat = this.currentChat()) {
-    return chat ? this.models().find(m => modelKey(m) === chat.model) : chooseDefaultModel(this.models(), this.catalog.snapshot().defaultModel);
+    return chat ? this.models().find(m => modelKey(m) === canonicalModelKey(chat.model)) : chooseInitialModel(this.models(), this.catalog.snapshot().lastModel, this.catalog.snapshot().favorites);
   }
   private currentChat() { return this.chatId ? this.store.getChat(this.chatId) : this.draftChat; }
   private ensureChat(): Chat | undefined {
@@ -85,13 +86,14 @@ export class ChatService {
     const update = (changes: Partial<Omit<Chat,"id">>) => { if(this.chatId)this.store.updateChat(chat.id,changes); else Object.assign(chat,changes); };
     if (options.model) {
       const model = this.models().find(m => modelKey(m) === options.model);
+      if (model) this.settings?.update({ lastModel: modelKey(model) });
       if (model && chat.model !== options.model) {
         update({ model: modelKey(model), provider: model.provider, effort: initialEffort(model, this.settings?.value.effortByModel) });
         if (this.store.listMessages(chat.id).length) this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.switched(model.label), status: "complete" });
       }
     }
     if (options.effort) {
-      const model = this.models().find(m => modelKey(m) === chat.model);
+      const model = this.selectedModel(chat);
       if (model) {
         const effort = resolveEffort(model, options.effort);
         update({ effort });
@@ -116,6 +118,7 @@ export class ChatService {
     this.launch(chat, model, question);
   }
   private launch(chat: Chat, model: ModelInfo, question: Message) {
+    this.settings?.update({ lastModel: modelKey(model) });
     const message: Message = { id: randomUUID(), role: "assistant", text: "", status: "queued", model: modelKey(model), modelLabel: model.label, provider: model.provider, effort: resolveEffort(model, chat.effort) };
     this.store.appendMessage(chat.id, message);
     const turn: ActiveTurn = { controller: new AbortController(), message, queued: true };
@@ -223,7 +226,7 @@ export class ChatService {
     const messages = this.store.listMessages(chat.id);
     const answer = messages.findLast(m => m.role === "assistant");
     const question = this.lastQuestion();
-    const model = this.models().find(m => modelKey(m) === answer?.model);
+    const model = this.models().find(m => modelKey(m) === (answer?.model && canonicalModelKey(answer.model)));
     if (!answer || !question || !model) return;
     this.store.deleteMessagesFrom(chat.id, answer.id);
     this.launch(chat, model, question);

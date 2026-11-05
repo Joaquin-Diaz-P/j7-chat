@@ -62,7 +62,6 @@ export function freeZenModels(models: ZenModel[]): ModelInfo[] {
       supportsImages: model.capabilities.input.includes("image"),
       supportsPdf: false,
       reasoningEfforts: model.variants.map(v => v.id),
-      defaultReasoningEffort: model.defaultVariant,
       supportsEffort: model.variants.some((variant) => variant.id === "high"),
       free: true,
     }));

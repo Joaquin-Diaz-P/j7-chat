@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ModelCatalog, chooseDefaultModel, MODEL_CACHE_MS } from "../../src/main/chat/catalog.js";
+import { ModelCatalog, chooseInitialModel, MODEL_CACHE_MS } from "../../src/main/chat/catalog.js";
 import { SettingsStore } from "../../src/main/settings.js";
 import { REGISTERED_PROVIDERS } from "../../src/main/providers/registry.js";
 import type { ChatProvider, ModelInfo, ProviderId } from "../../src/main/providers/types.js";
@@ -36,10 +36,10 @@ describe("D1–D5 model catalog", () => {
     expect(catalog.snapshot().models[0]?.label).toBe("claude");
     await catalog.dispose();
   });
-  it("hides unavailable models and falls back from an unavailable default without changing settings", async () => {
+  it("hides unavailable models and falls back from an unavailable last model without changing settings", async () => {
     const dir = mkdtempSync(join(tmpdir(), "j7-catalog-"));
     const settings = new SettingsStore(join(dir, "settings.json"));
-    settings.update({ defaultModel: "claude:claude" });
+    settings.update({ lastModel: "claude:claude" });
     const claude = provider("claude"), codex = provider("codex");
     claude.getStatus = async () => ({ state: "not_installed" });
     const catalog = new ModelCatalog(settings, [claude, codex]);
@@ -48,11 +48,11 @@ describe("D1–D5 model catalog", () => {
       const snapshot = catalog.snapshot();
       expect(snapshot.statuses.claude?.state).toBe("not_installed");
       expect(claude.listModels).not.toHaveBeenCalled();
-      expect(chooseDefaultModel(snapshot.models, snapshot.defaultModel)?.provider).toBe("codex");
-      catalog.favorite("codex:codex"); catalog.setDefault("codex:codex");
-      expect(new SettingsStore(join(dir, "settings.json")).value).toMatchObject({ favorites: ["codex:codex"], defaultModel: "codex:codex" });
+      expect(chooseInitialModel(snapshot.models, snapshot.lastModel)?.provider).toBe("codex");
+      catalog.favorite("codex:codex"); settings.update({lastModel:"codex:codex"});
+      expect(new SettingsStore(join(dir, "settings.json")).value).toMatchObject({ favorites: ["codex:codex"], lastModel: "codex:codex" });
       catalog.favorite("codex:codex"); expect(catalog.snapshot().favorites).toEqual([]);
-      expect(chooseDefaultModel([], null)).toBeUndefined();
+      expect(chooseInitialModel([], null)).toBeUndefined();
     } finally { await catalog.dispose(); rmSync(dir, { recursive: true, force: true }); }
   });
   it("shuts down a program even while startup is pending", async () => {
@@ -98,4 +98,10 @@ it('times out a hung status, publishes error and releases its queue', async () =
   expect(catalog.busy('claude')).toBe(false);
   expect(await catalog.exclusive('claude', async () => 42)).toBe(42);
   await catalog.dispose();
+});
+it("prefers the last model, then the first available favorite, then the catalog", () => {
+ const models = [model("claude"), model("codex")];
+ expect(chooseInitialModel(models,"claude:claude",["codex:codex"])).toBe(models[0]);
+ expect(chooseInitialModel(models,"missing",["missing","codex:codex"])).toBe(models[1]);
+ expect(chooseInitialModel(models,null,["missing"])).toBe(models[0]);
 });

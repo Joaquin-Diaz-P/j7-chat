@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { selectorModels } from "../../src/renderer/components/ModelSelector.js";
 import type { CatalogSnapshot } from "../../src/shared/ipc.js";
 const models = ["claude", "codex"].map(provider=>({provider, id:provider, label:`Model ${provider}`, supportsImages:false, supportsPdf:false, supportsEffort:false})) as CatalogSnapshot["models"];
-const catalog: CatalogSnapshot = {models, favorites:["gemini:missing"], statuses:{}, defaultModel:null};
+const catalog: CatalogSnapshot = {models, favorites:["gemini:missing"], statuses:{}, lastModel:null};
 it("falls back to all models when favorites are unavailable",()=>{
  expect(selectorModels(catalog,"favorites","")).toEqual(models);
  expect(selectorModels({...catalog,favorites:["codex:codex"]},"favorites","")).toEqual([models[1]]);

@@ -224,8 +224,8 @@ textarea::placeholder { color:var(--text-muted);opacity:1; }
 .model-row svg { flex-shrink:0; }
 .model-row small,.model-reasoning small { color:var(--text-muted); font-size:10px; }
 .model-row kbd { font-size:10px; background:var(--surface); padding:2px 3px; border-radius:4px; }
-.model-favorite,.model-default { opacity:0; padding:1px; }
-.model-row:hover .model-favorite,.model-row:focus-within .model-favorite,.model-row:hover .model-default,.model-row:focus-within .model-default { opacity:1; }
+.model-favorite { opacity:0; padding:1px; }
+.model-row:hover .model-favorite,.model-row:focus-within .model-favorite { opacity:1; }
 .model-reasoning { width:174px; flex-shrink:0; border-left:1px solid var(--border); padding:10px; }
 .model-reasoning header { display:flex; justify-content:space-between; gap:6px; padding-bottom:12px; margin-bottom:8px; border-bottom:1px solid var(--border); font-size:12px; }
 .model-reasoning header small { max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

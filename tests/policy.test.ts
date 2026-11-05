@@ -33,7 +33,6 @@ describe("only free Zen models", () => {
         supportsPdf: false,
         supportsEffort: true,
         reasoningEfforts: ["high"],
-        defaultReasoningEffort: undefined,
       },
     ]));
   it.each([

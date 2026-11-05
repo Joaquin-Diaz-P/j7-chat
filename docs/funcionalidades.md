@@ -182,10 +182,12 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Si no hay ningún favorito, se muestran todos los modelos.
 - **Se comprueba:** al marcar una estrella, el modelo aparece entre los favoritos.
 
-**D4 · Modelo por defecto**
-- Se elige en los ajustes y lo usan los chats nuevos.
-- Si no hay ninguno elegido o no está disponible, J7 usa el primero disponible en el orden Claude, GPT, Zen.
-- **Se comprueba:** si se desinstala o se cambia de nombre el binario del modelo por defecto, J7 cae al siguiente sin errores.
+**D4 · Último modelo usado**
+- Todo chat nuevo parte con el último modelo elegido o usado en un turno, con su nivel de razonamiento recordado.
+- Si no está disponible, J7 usa el primer favorito disponible o el primer modelo disponible.
+- Los ajustes antiguos migran `defaultModel` a `lastModel` y eliminan el campo anterior.
+- Los chats guardados con `claude:default` se resuelven como `claude:opus` al usarlos, sin alterar su historial. El alias no aparece en el catálogo.
+- **Se comprueba:** al elegir otro modelo, el siguiente chat lo usa; si deja de estar disponible, se aplica el respaldo.
 
 **D5 · Programas no disponibles**
 - Sus modelos no aparecen en el selector.
@@ -550,7 +552,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Se comprueba:** un nuevo atajo funciona apenas se guarda, y el anterior deja de funcionar.
 
 **J4 · Modelos**
-- El modelo por defecto y la lista completa de modelos, agrupados por programa y con su estrella de favorito.
+- La lista completa de modelos, agrupados por programa y con su estrella de favorito.
 
 **J5 · Instrucciones personales**
 - Un campo de texto de hasta 4.000 caracteres, con contador. Se guarda solo y muestra "Guardado".

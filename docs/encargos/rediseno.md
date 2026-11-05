@@ -113,11 +113,11 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
      - Al hacer clic en un ícono, la lista se filtra a ese grupo.
   2. **Lista:**
      - Arriba, un buscador ("Buscar modelos…", con lupa) y una línea inferior de acento cuando tiene foco.
-     - Cada fila tiene el ícono de la marca, el nombre, una ✓ junto al modelo actual, una etiqueta tenue "Por defecto" en el modelo por defecto y, a la derecha, la tecla `⌘1`…`⌘9` en una píldora gris solo para los primeros 9 de la vista actual.
+     - Cada fila tiene el ícono de la marca, el nombre, una ✓ junto al modelo actual y, a la derecha, la tecla `⌘1`…`⌘9` en una píldora gris solo para los primeros 9 de la vista actual.
      - Los nombres largos se cortan con "…".
   3. **Columna de razonamiento** (~200 px), separada por una línea fina:
      - Arriba, el título "Razonamiento" y, a la derecha y en tenue, el nombre corto del modelo enfocado.
-     - Debajo, los niveles del modelo **enfocado o bajo el mouse**, con "Por defecto" tenue en el nivel por defecto del programa y ✓ en el nivel elegido para ese modelo.
+     - Debajo, los niveles del modelo **enfocado o bajo el mouse**, con ✓ en el nivel elegido para ese modelo.
      - Si el modelo no tiene niveles, la columna no aparece y el popover se angosta.
 - **Teclado:**
   - Al abrir, el foco va al buscador.
@@ -125,9 +125,9 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
   - `⌘1`…`⌘9` eligen directamente.
   - Esc cierra.
   - Al hacer clic afuera, se cierra.
-- **Favoritos y por defecto:**
+- **Favoritos y último modelo:**
   - Al pasar el mouse por una fila aparece una ☆ para marcarla como favorita.
-  - El modelo por defecto se elige en los ajustes (etapa 7d) y también con un clic derecho o menú "…" en la fila, como prefiera la implementación, siempre que sea accesible.
+  - Todo chat nuevo parte con el último modelo usado; si no está disponible, usa el primer favorito disponible o el primer modelo disponible.
 - "Preguntar a otro modelo…" (de las respuestas) usa este mismo selector.
 - Los programas no listos (D5) aparecen al pie de la lista como hoy, en tenue y con un enlace a los ajustes.
 - **Se comprueba:**
@@ -147,8 +147,8 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
 
 **N10 · Niveles de razonamiento**
 - `effort` deja de ser `"normal" | "high"` y pasa a ser un nivel con nombre: `"low" | "medium" | "high" | "xhigh" | "max"`, más los que expongan los programas.
-- **Cada modelo del catálogo trae su lista de niveles y su nivel por defecto**, leídos del programa (por ejemplo, Opus 5.5 trae Low, Medium, High, Extra High, Max y Ultracode, y su "Default" es Medium):
-  - **Codex:** `supportedReasoningEfforts` y `defaultReasoningEffort` de `model/list`.
+- **Cada modelo del catálogo trae su lista de niveles**, leídos del programa. El nivel inicial es low (o el más bajo disponible); después se recuerda el último elegido para ese modelo:
+  - **Codex:** `supportedReasoningEfforts` de `model/list`.
   - **Claude:** los niveles que acepta el SDK y los que el modelo informe. Si no hay forma de leerlos, usa una tabla fija por familia, documentada.
   - **OpenCode:** sus `variants`.
   - **Mock:** niveles de prueba en `mock-a`, y ninguno en `mock-b`.
@@ -180,6 +180,11 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
 
 ## Etapa 7c · Conversación e historial
 
+**Correcciones de la prueba del usuario (primero):**
+- **Historial con la ventana compacta:** hoy, abrir el historial con la ventana compacta ensancha una ventana de 360 de alto. Junto a la caja quedan zonas transparentes donde se ve el escritorio. El usuario dijo que se ve "malísimo". La regla es que **nunca debe verse una zona transparente dentro de la ventana**: desde compacta, primero pasa a grande (N4) y después el historial sale de detrás (N12).
+- **Contorno del textarea:** el textarea de la caja muestra un contorno de foco azul verdoso de 2 px. La caja ya es el campo, así que el textarea no lleva contorno. El foco se indica solo con el borde de la caja, que pasa a `--text-muted` al 40 %, como en la referencia.
+
+
 **N11 · Mensajes**
 - **Pregunta del usuario:** alineada a la derecha, en una burbuja `--surface-raised` con radio de 16 px, un padding de unos 8 × 12 px y un ancho máximo del 80 %. Sin etiqueta "Tú". Sus adjuntos van como miniaturas o chips arriba de la burbuja.
 - **Respuesta:** alineada a la izquierda, a todo el ancho, sin fondo, sin borde y sin etiqueta "Asistente".
@@ -196,25 +201,34 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
   - No existen los textos "Tú" ni "Asistente".
   - La fila de acciones de la última respuesta tiene los 3 botones con `aria-label`. Copiar deja el texto en el portapapeles.
 
-**N12 · Historial como panel**
-- **☰ abre un panel encima** del chat, dentro de la ventana:
-  - Se desliza desde la izquierda en 150 ms (la animación L3 ya existente).
-  - Ancho de 280 px o del 60 % de la ventana, lo que sea menor.
-  - Fondo `--surface` y borde derecho de 1 px `--border`. El resto del chat queda atenuado por una capa `rgba(0,0,0,.25)`, y un clic en ella cierra el panel.
-- Si la ventana estaba compacta, pasa a grande (N4) para mostrarlo. Al cerrar sin elegir un chat, vuelve a compacta si el chat sigue vacío.
-- La ventana ya **no se ensancha** para el historial. Se quita la lógica de 940 px de `window.ts`.
+**N12 · Historial que sale de detrás del chat**
+Decidido por el usuario al ver el historial provisorio: no le gustó la unión recta entre la columna y la tarjeta curva del chat. Reemplaza la idea del panel encima.
+- **Dos piezas superpuestas en la misma ventana transparente:**
+  - **La tarjeta del chat queda adelante, intacta:** sus 4 esquinas redondeadas, su borde y su sombra, en la misma posición de pantalla.
+  - **El historial es otra tarjeta, detrás:** `z-index` menor, ancho de 260 px, el mismo fondo `--surface`, borde de 1 px `--border` y radio de 12 px. Es unos 16 px más baja que el chat (8 px de margen arriba y 8 abajo), y su borde derecho se mete ~16 px bajo la tarjeta del chat, de modo que nunca se ve una unión recta: se ve una tarjeta asomando por detrás de la otra. La sombra del chat cae sobre el historial.
+- **Para abrirlo:**
+  1. La ventana se ensancha hacia la izquierda en 260 − 16 px más un margen. El borde derecho y la tarjeta del chat no se mueven en pantalla. Reutiliza o rehace la lógica de ensanchar de `window.ts`, con la geometría en `window-geometry.ts` y sus tests.
+  2. Después, el historial se desliza de derecha a izquierda desde detrás del chat (`transform: translateX`, 150 ms; es la animación L3).
+- **Para cerrarlo:** al revés. Primero se desliza de vuelta y después la ventana vuelve a su ancho.
+- Si no cabe a la izquierda en la pantalla, la ventana completa se corre lo justo a la derecha, y la caja mantiene su borde inferior.
+- Si la ventana estaba compacta, pasa a grande (N4) para mostrarlo. Al cerrarlo sin elegir un chat, vuelve a compacta si el chat sigue vacío.
 - **Contenido:**
   - Arriba, el buscador con lupa, igual al del selector.
-  - Los grupos Hoy, Ayer, Últimos 7 días y Anteriores, con un título tenue de 11 px en mayúsculas pequeñas.
+  - Los grupos Hoy, Ayer, Últimos 7 días y Anteriores, con un título tenue de 11 px.
   - Los fijados van arriba.
-  - Cada fila es de una línea, con el título cortado con "…"; la fila activa tiene fondo `--surface-raised`.
-  - Fijar, renombrar y borrar aparecen como íconos al pasar el mouse, o en un menú "…". La confirmación de borrado es en línea, con el estilo nuevo.
-- Se cierra con ☰, con Esc, con el clic en la capa o al elegir un chat.
-- **Atajos:** `⌘ B` abre o cierra el panel, y `⌘ F` lo abre con foco en el buscador, como hoy.
+  - Cada fila es de una línea, sin ícono de proveedor encima del título, con el título cortado con "…". La fila activa tiene fondo `--surface-raised`.
+  - Fijar, renombrar y borrar aparecen en un menú "…" que solo se ve al pasar el mouse o con foco. La confirmación de borrado es en línea, con el estilo nuevo.
+- **Para cerrarlo:** ☰ o Esc. Elegir un chat lo carga y cierra el historial.
+- **Atajos:** `⌘ B` abre o cierra el historial, y `⌘ F` lo abre con foco en el buscador, como hoy.
 - **Se comprueba:**
-  - Con `windows.swift`, abrir el historial en grande no cambia el ancho (520) ni la posición.
+  - Con `windows.swift`, al abrir el historial en grande, el borde derecho de la ventana (`x + width`) y su `y`/`height` no cambian, y el ancho crece en lo calculado.
   - Desde compacta, pasa a 680 de alto con el borde inferior igual.
-  - Con CDP, el panel tiene 280 px o menos, Esc lo cierra, y elegir un chat lo carga y cierra el panel.
+  - Con CDP:
+    - la tarjeta del historial tiene un `z-index` menor que la del chat;
+    - su `getBoundingClientRect().right` es mayor que el `left` del chat (se mete debajo);
+    - su `top` es mayor y su `bottom` menor que los del chat;
+    - Esc la cierra, y elegir un chat lo carga.
+  - El usuario confirma que no se ve ningún corte.
 
 ---
 
@@ -237,7 +251,7 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
   - Botones secundarios con borde.
 - **Modelos:**
   - La lista agrupada por programa, con el ícono de marca (N9) en cada fila.
-  - En cada fila, ☆/★ de favorito, un radio o botón "Por defecto" y el nivel recordado (N10) en un menú pequeño.
+  - En cada fila, ☆/★ de favorito, el nivel recordado (N10) en un menú pequeño.
 - **Instrucciones:** un textarea con estilo y el contador `n/4000` abajo a la derecha.
 - **Programas y Permisos:**
   - Cada programa en una fila con un punto de estado: verde (listo), ámbar (sin sesión) o rojo (sin instalar).
@@ -247,7 +261,7 @@ Referencia de código: `.reference/t3code/apps/web/src/components/chat/` (`Provi
 - Se marca resuelta la línea de la ventana de ajustes en `docs/ideas-futuras.md`.
 - **Se comprueba:**
   - Con CDP sobre la ventana de ajustes, existen la barra lateral con 6 secciones con ícono y el logo.
-  - Cada control funciona como antes: tema, arranque al iniciar sesión, grabar un atajo, favorito, por defecto, nivel e instrucciones con guardado.
+  - Cada control funciona como antes: tema, arranque al iniciar sesión, grabar un atajo, favorito, nivel e instrucciones con guardado.
   - No queda ningún `<select>` ni `<input type=checkbox>` sin estilo, salvo que estén ocultos tras el control con estilo.
 
 ---

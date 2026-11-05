@@ -42,7 +42,7 @@ export function setupSettings(settings: SettingsStore, panel: Panel, chat: ChatS
   settings.update({...value,...next}); nativeTheme.themeSource=settings.value.theme;
   if(app.isPackaged)app.setLoginItemSettings({openAtLogin:settings.value.openAtLogin}); await capture.rebind();updateTray();chat.notify();return settings.value;
  });
- ipcMain.handle('settings:model',(e,key:string,favorite:boolean)=>{if(trusted(e))favorite?chat.catalog.favorite(key):chat.catalog.setDefault(key);});
+ ipcMain.handle('settings:model',(e,key:string,favorite:boolean)=>{if(trusted(e))favorite && chat.catalog.favorite(key);});
  ipcMain.handle('settings:refresh',async e=>{if(trusted(e))await chat.catalog.refresh(true);});
  ipcMain.handle('settings:permission',async(e,kind:unknown)=>{if(trusted(e)&&['screen','input'].includes(String(kind)))await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_'+(kind==='screen'?'ScreenCapture':'ListenEvent'));});
 }

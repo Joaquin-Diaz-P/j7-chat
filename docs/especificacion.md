@@ -35,7 +35,7 @@ J7 no usa API keys. Habla con los programas que ya están instalados en el Mac:
 
 - J7 lee automáticamente la lista de modelos de cada programa.
 - El usuario marca sus favoritos. El selector muestra solo esos, con "Ver todos" abajo.
-- El modelo por defecto se elige en los ajustes, y todo chat nuevo parte con él.
+- Todo chat nuevo parte con el último modelo usado. Si no está disponible, usa el primer favorito disponible o el primer modelo disponible.
 - Se puede cambiar de modelo a mitad de un chat. En la conversación aparece una línea fina, como "→ ahora con GPT".
 - El botón "Pensar más" aparece solo en los modelos que permiten elegir el nivel de razonamiento.
 - Todas las respuestas tienen el botón **Copiar**. La última tiene además **Reintentar** (con el mismo modelo) y **Preguntar a otro modelo…**. En las anteriores no van, porque crearían ramas en la conversación.
@@ -95,7 +95,7 @@ Además del atajo para abrir la barra hay dos atajos más, ambos configurables:
 ## Ajustes
 
 - Atajo de teclado.
-- Modelo por defecto y favoritos.
+- Favoritos y último modelo usado.
 - Instrucciones personales.
 - Tema.
 - Arrancar al iniciar sesión.

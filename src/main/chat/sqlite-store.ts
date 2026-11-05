@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { statSync, unlinkSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { migrate } from '../db/migrations.js';
+import { canonicalModelKey } from '../../shared/model-key.js';
 import type { Chat, ChatStore, ProviderSession } from './store.js';
 import type { Message } from '../../shared/ipc.js';
 import type { ProviderId, Attachment } from '../providers/types.js';
@@ -15,7 +16,7 @@ export class SqliteChatStore implements ChatStore {
  createChat(c: Chat) { this.db.prepare('INSERT INTO chats(id,model,provider,web_search,effort,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').run(c.id,c.model,c.provider,+c.webSearch,c.effort,this.now(),this.now()); }
  getChat(id: string): HistoryChat | undefined {
   const r=this.db.prepare('SELECT * FROM chats WHERE id=?').get(id);
-  return r ? {id:String(r.id),model:String(r.model),provider:r.provider as ProviderId,webSearch:!!r.web_search,effort:r.effort as Chat['effort'],title:String(r.title),titleSource:String(r.title_source),createdAt:Number(r.created_at),updatedAt:Number(r.updated_at),pinned:!!r.pinned} : undefined;
+  return r ? {id:String(r.id),model:canonicalModelKey(String(r.model)),provider:r.provider as ProviderId,webSearch:!!r.web_search,effort:r.effort as Chat['effort'],title:String(r.title),titleSource:String(r.title_source),createdAt:Number(r.created_at),updatedAt:Number(r.updated_at),pinned:!!r.pinned} : undefined;
  }
  updateChat(id: string, changes: Partial<Omit<Chat,'id'>>) { const c=this.getChat(id); if(!c) throw new Error('Unknown chat'); Object.assign(c,changes); this.db.prepare('UPDATE chats SET model=?,provider=?,web_search=?,effort=? WHERE id=?').run(c.model,c.provider,+c.webSearch,c.effort,id); }
  listMessages(id: string): Message[] { return this.db.prepare('SELECT meta FROM messages WHERE chat_id=? ORDER BY rowid').all(id).map(r=>JSON.parse(String(r.meta)) as Message); }

@@ -62,9 +62,6 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.handle("models:favorite", (event, key: unknown) => {
     if (trusted(event) && typeof key === "string") chat.catalog.favorite(key);
   });
-  ipcMain.handle("models:default", (event, key: unknown) => {
-    if (trusted(event) && typeof key === "string") chat.catalog.setDefault(key);
-  });
   ipcMain.handle("chat:retry", (event) => { if (trusted(event)) chat.retry(); });
   ipcMain.handle("chat:edit", (event, text: unknown) => {
     if (trusted(event) && typeof text === "string" && text.length <= 100_000) chat.edit(text);

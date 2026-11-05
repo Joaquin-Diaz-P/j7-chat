@@ -34,7 +34,6 @@ const api: J7Api = {
   openSettings: () => ipcRenderer.invoke("settings:open"),
   refreshModels: () => ipcRenderer.invoke("models:refresh"),
   favorite: (model) => ipcRenderer.invoke("models:favorite", model),
-  setDefaultModel: (model) => ipcRenderer.invoke("models:default", model),
   retry: () => ipcRenderer.invoke("chat:retry"),
   edit: (text) => ipcRenderer.invoke("chat:edit", text),
   askOther: (model, effort) => ipcRenderer.invoke("chat:other", model, effort),

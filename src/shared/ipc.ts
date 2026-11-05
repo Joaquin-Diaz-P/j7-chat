@@ -17,7 +17,7 @@ export interface CatalogSnapshot {
   models: ModelInfo[];
   statuses: Partial<Record<ProviderId, ProviderStatus>>;
   favorites: string[];
-  defaultModel: string | null;
+  lastModel: string | null;
   effortByModel?: Record<string,string>;
 }
 export interface ChatSnapshot {
@@ -55,7 +55,6 @@ export interface J7Api {
   refreshModels(): Promise<void>;
   openSettings(): Promise<void>;
   favorite(model: string): Promise<void>;
-  setDefaultModel(model: string): Promise<void>;
   retry(): Promise<void>;
   edit(text: string): Promise<void>;
   askOther(model: string, effort?: string): Promise<void>;

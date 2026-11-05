@@ -242,7 +242,6 @@ export class CodexProvider extends BaseProvider {
           supportsImages: model.inputModalities.includes("image"),
           supportsPdf: false,
           reasoningEfforts: model.supportedReasoningEfforts.map(e => e.reasoningEffort),
-          defaultReasoningEffort: model.defaultReasoningEffort,
           supportsEffort: model.supportedReasoningEfforts.some(
             (e) => e.reasoningEffort === "high",
           ),

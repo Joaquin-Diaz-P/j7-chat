@@ -1,6 +1,5 @@
 export const strings = {
   programs: "Programas",
-  programDefault: "Por defecto",
   favorites: "Favoritos",
   effortLabels: {low:"Bajo", medium:"Medio", high:"Alto", xhigh:"Muy alto", max:"Máximo", ultracode:"Ultracode"} as Record<string,string>,
  attachmentMissing:"El adjunto ya no está disponible.",
@@ -73,8 +72,6 @@ export const strings = {
   allModels: "Ver todos",
   searchModels: "Buscar modelos…",
   favorite: "Marcar como favorito",
-  defaultModel: "Usar por defecto",
-  defaultSelected: "Modelo por defecto",
   unavailable: (name: string) => `${name} no está disponible · Ver ajustes`,
   switched: (name: string) => `→ ahora con ${name}`,
   sameQuestion: (name: string) => `→ ${name} responde la misma pregunta`,
@@ -141,7 +138,7 @@ export const strings = {
   error: "No se pudo enviar el mensaje",
 };
 export const settingsStrings = {
- sections:['General','Atajos','Modelos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Pulsa para grabar', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', default:'Modelo por defecto', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', automatic:'Automático', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+ sections:['General','Atajos','Modelos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Pulsa para grabar', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
 };
 
 export const settingsCommands: Record<string,string[]> = {

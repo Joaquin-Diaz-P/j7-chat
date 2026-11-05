@@ -241,18 +241,15 @@ export class ClaudeProvider extends BaseProvider {
       );
   }
   async listModels(): Promise<ModelInfo[]> {
-    return (await (await this.connect()).supportedModels()).map((model) => ({
+    return (await (await this.connect()).supportedModels()).filter(model => model.value !== "default").map((model) => ({
       id: model.value,
       label: model.displayName,
       provider: this.id,
       supportsImages: true,
       supportsPdf: true,
       // Prefer SDK metadata. Fallback for older SDK catalogs: Opus gets all SDK
-      // levels, other effort-capable families low/medium/high; default medium.
+      // levels, other effort-capable families low/medium/high.
       reasoningEfforts: claudeEfforts(model),
-      // supportedModels in SDK 0.3.318 exposes no per-model default; medium
-      // is our documented fallback, only for models that have effort levels.
-      ...((claudeEfforts(model).length) ? {defaultReasoningEffort: "medium"} : {}),
       supportsEffort: model.supportsEffort ?? false,
     }));
   }

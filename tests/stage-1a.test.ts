@@ -62,7 +62,7 @@ describe("settings", () => {
       positions: {},
       favorites: [],
       effortByModel: {},
-      defaultModel: null,
+      lastModel: null,
       personalInstructions: "",
     });
     expect(
@@ -96,7 +96,7 @@ describe("settings", () => {
       positions: { a: { x: 342, y: 91 } },
       favorites: [],
       effortByModel: {},
-      defaultModel: null,
+      lastModel: null,
       personalInstructions: "",
     });
   });

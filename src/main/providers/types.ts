@@ -9,7 +9,6 @@ export type Effort = string;
 
 export interface ModelInfo {
   reasoningEfforts?: string[];
-  defaultReasoningEffort?: string | undefined;
   id: string;
   label: string;
   provider: ProviderId;

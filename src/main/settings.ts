@@ -1,4 +1,5 @@
 import { isAccelerator } from "../shared/shortcut.js";
+import { canonicalModelKey } from "../shared/model-key.js";
 import { mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 export interface Position {
@@ -18,7 +19,7 @@ export interface Settings {
   positions: Record<string, Position>;
   favorites: string[];
   effortByModel: Record<string, string>;
-  defaultModel: string | null;
+  lastModel: string | null;
   personalInstructions: string;
 }
 export function validateSettings(value: unknown): Settings {
@@ -38,7 +39,7 @@ export function validateSettings(value: unknown): Settings {
         positions[id] = { x: Math.round(p.x) + (v.positionsVersion === 2 ? 0 : 340), y: Math.round(p.y) + (v.positionsVersion === 2 ? 0 : 88) };
     }
   return {
-    effortByModel: Object.fromEntries(Object.entries(v.effortByModel && typeof v.effortByModel === "object" ? v.effortByModel : {}).filter((entry): entry is [string,string] => typeof entry[1] === "string" && /^[a-z0-9_-]{1,40}$/i.test(entry[1]))),
+    effortByModel: Object.fromEntries(Object.entries(v.effortByModel && typeof v.effortByModel === "object" ? v.effortByModel : {}).filter((entry): entry is [string,string] => typeof entry[1] === "string" && /^[a-z0-9_-]{1,40}$/i.test(entry[1])).map(([key, value]) => [canonicalModelKey(key), value])),
     firstRunDone: v.firstRunDone === true,
     openAtLogin: v.openAtLogin !== false,
     shortcut: isAccelerator(v.shortcut) ? v.shortcut : "Alt+J",
@@ -50,7 +51,7 @@ export function validateSettings(value: unknown): Settings {
     positionsVersion: 2,
     positions,
     favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
-    defaultModel: typeof v.defaultModel === "string" ? v.defaultModel : null,
+    lastModel: typeof v.lastModel === "string" ? canonicalModelKey(v.lastModel) : !("lastModel" in v) && typeof v.defaultModel === "string" ? canonicalModelKey(v.defaultModel) : null,
     personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions.slice(0,4000) : "",
   };
 }
