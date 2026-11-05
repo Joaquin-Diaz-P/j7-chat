@@ -394,7 +394,7 @@ function App() {
                       {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={s.retry} aria-label={s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
                       {(!message.errorKind || message.errorKind === "quota" || message.errorKind === "unsupported") && <button title={s.askOther} aria-label={s.askOther} onClick={() => setSelector("other")}><ArrowLeftRight size={14}/></button>}
                     </>}
-                    <small className="model-label">{message.modelLabel ?? message.model}{message.effort && chat.catalog?.models.some(m => `${m.provider}:${m.id}` === message.model && levels(m).length > 0) ? ` · ${effortLabel(message.effort)}` : ""}</small>
+                    <small className="model-label">{message.modelLabel ?? message.model}{message.effort && chat.catalog?.models.some(m => `${m.provider}:${m.id}` === message.model && levels(m).length > 0) && <span className="effort-label"> · {effortLabel(message.effort)}</span>}</small>
                   </div>
                 </>}
                 {message.role === "user" && message.id === lastQuestion && !chat.active && editing !== message.id && <button className="edit-question" title={s.edit} aria-label={s.edit} onClick={() => { setEditing(message.id); setEditDraft(message.text); }}><Pencil size={14}/></button>}
@@ -462,7 +462,7 @@ function App() {
             <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
             <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
           </div>}
-          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort ? ` ${effortLabel(chat.effort)}` : ""}</button>
+          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</button>
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
       </div>
