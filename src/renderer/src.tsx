@@ -4,7 +4,7 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed } from "lucide-react";
+import { Mic, LoaderCircle, ArrowUp, Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -65,7 +65,6 @@ function App() {
   const [capture, setCapture] = useState<import('../shared/capture.js').CaptureState>({phase:'idle',seconds:0});
   const pendingVoice = useRef(false);
   const voiceBusy = useRef(false);
-  const voiceLocked = useRef(false);
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentError, setAttachmentError] = useState("");
@@ -114,7 +113,6 @@ function App() {
       window.j7.onCapture(event => {
         setCapture(previous => ({...previous,busy:false,recoverable:false,locked:false,hexBusy:false,...event.state}));
         voiceBusy.current = ['transcribing','recovering','listening','capturing','opening'].includes(event.state.phase);
-        voiceLocked.current = event.state.phase === 'listening' && !!event.state.locked;
         if (event.attachment) setAttachments(files => [...files,event.attachment!]);
         if (event.removeId) setAttachments(files => files.filter(f => f.id !== event.removeId));
         if (event.text) { setDraft(text => [text,event.text].filter(Boolean).join('\n')); pendingVoice.current = !!event.autoSend; }
@@ -229,6 +227,17 @@ function App() {
     const el = conversation.current;
     if (el && following.current) el.scrollTop = el.scrollHeight;
   }, [chat.messages]);
+  const dictating = ['capturing', 'opening', 'listening'].includes(capture.phase);
+  const transcribing = ['transcribing', 'recovering'].includes(capture.phase);
+  async function submit() {
+    if (voiceBusy.current) { await window.j7.captureAction("finish"); return; }
+    if (pendingVoice.current) return;
+    await send();
+  }
+  async function toggleDictation() {
+    input.current?.focus();
+    await window.j7.captureAction(dictating ? "transcribe" : "dictate");
+  }
   async function send() {
     if (sending.current || chat.active || (!draft.trim() && !attachments.length) || !chat.model || imageBlocked || loadingAttachments) return;
     sending.current = true;
@@ -245,7 +254,7 @@ function App() {
   }
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if (event.key === "Enter" && !event.defaultPrevented && voiceLocked.current) { event.preventDefault(); void window.j7.captureAction("finish"); return; }
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing && !event.defaultPrevented && voiceBusy.current) { event.preventDefault(); void window.j7.captureAction("finish"); return; }
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
         if (selector) { setSelector(null); input.current?.focus(); return; }
@@ -450,7 +459,7 @@ function App() {
               event.nativeEvent.keyCode !== 229
             ) {
               event.preventDefault();
-              if (voiceLocked.current) void window.j7.captureAction("finish"); else void send();
+              void submit();
             }
           }}
         />
@@ -463,6 +472,10 @@ function App() {
             <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
           </div>}
           <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</button>
+          <button className={`dictation-button ${dictating ? "recording" : ""}`} title={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-label={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-pressed={dictating} disabled={transcribing || pendingVoice.current || capture.phase === 'queued' || capture.phase === 'sending'} onClick={() => void toggleDictation()}>
+            {transcribing ? <LoaderCircle size={15} className="dictation-spinner"/> : dictating ? <Square size={12} fill="currentColor"/> : <Mic size={16}/>}
+          </button>
+          {!chat.active && <button className="send-button" title={dictating || transcribing ? s.sendDictation : s.captureSend} aria-label={dictating || transcribing ? s.sendDictation : s.captureSend} disabled={!chat.model || imageBlocked || loadingAttachments || (!dictating && !transcribing && !draft.trim() && !attachments.length)} onClick={() => void submit()}><ArrowUp size={16}/></button>}
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
       </div>

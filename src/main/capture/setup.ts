@@ -51,7 +51,9 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   ipcMain.handle('capture:action',async(event,action: unknown)=>{
     if (!trusted(event)) return;
     if (action === 'cancel') await flows.cancel();
-    if (action === 'finish' && flows.locked) await flows.end();
+    if (action === 'dictate') await flows.begin(true, false);
+    if (action === 'transcribe' && flows.locked) await flows.end(false);
+    if (action === 'finish') await flows.end(true);
     if (action === 'recover' && flows.state.phase === 'failed' && flows.state.recoverable) await flows.recover();
     if (action === 'idle' || action === 'queued' || action === 'failed') flows.acknowledge(action);
     if (action === 'screen' || action === 'input') {

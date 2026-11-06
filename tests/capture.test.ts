@@ -13,6 +13,41 @@ function fixture(stop = vi.fn(async()=>({code:0,text:'dictado'}))) {
 }
 afterEach(()=>vi.useRealTimers());
 describe('capture flows with fake Hex',()=>{
+  it('microphone dictation skips screen capture and leaves text for review',async()=>{
+    const f=fixture(); await f.flow.begin(true,false);
+    expect(f.ports.capture).not.toHaveBeenCalled();
+    expect(f.flow.state).toMatchObject({phase:'listening',locked:true});
+    expect(f.flow.state.permission).toBeUndefined();
+    await f.flow.end(false);
+    expect(f.events.at(-1)).toMatchObject({state:{phase:'idle'},text:'dictado',autoSend:false});
+    expect(f.ports.protect).toHaveBeenLastCalledWith(false);
+  });
+  it('send finishes microphone dictation and sends the transcript',async()=>{
+    const f=fixture(); await f.flow.begin(true,false); await f.flow.end(true);
+    expect(f.events.at(-1)).toMatchObject({text:'dictado',autoSend:true});
+    expect(f.hex.stop).toHaveBeenCalledOnce();
+  });
+  it('send during transcription promotes delivery without stopping Hex twice',async()=>{
+    let release!:(v:{code:number;text:string})=>void;
+    const f=fixture(vi.fn(()=>new Promise(r=>{release=r;})));
+    await f.flow.begin(true,false); const end=f.flow.end(false);
+    await f.flow.end(true); release({code:0,text:'dictado'}); await end;
+    expect(f.hex.stop).toHaveBeenCalledOnce();
+    expect(f.events.at(-1)).toMatchObject({text:'dictado',autoSend:true});
+  });
+  it('send while Hex is opening waits for recording before stopping',async()=>{
+    let release!:(v:{code:number;text:string})=>void;
+    const f=fixture();f.hex.begin.mockImplementation(()=>new Promise(r=>{release=r;}));
+    const begin=f.flow.begin(true,false); await f.flow.end(true);
+    expect(f.hex.stop).not.toHaveBeenCalled();
+    release({code:0,text:''});await begin;
+    expect(f.events.at(-1)).toMatchObject({text:'dictado',autoSend:true});
+  });
+  it('history recovery preserves transcription-only intent',async()=>{
+    const f=fixture(vi.fn(async()=>({code:1,text:''})));
+    await f.flow.begin(true,false);await f.flow.end(false);
+    expect(f.events.at(-1)).toMatchObject({state:{phase:'idle'},text:'recuperado',autoSend:false});
+  });
   it('waits forty seconds and emits elapsed time and text',async()=>{
     vi.useFakeTimers(); const f=fixture(vi.fn(()=>new Promise(resolve=>setTimeout(()=>resolve({code:0,text:'largo'}),40000))));
     await f.flow.begin(); const end=f.flow.end();

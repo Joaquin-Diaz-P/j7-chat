@@ -18,9 +18,10 @@ export class CaptureFlows {
   private attachment: Attachment | undefined;
   private wasVisible = false;
   private released = false;
+  private autoSend = true;
   // Without screen recording, voice still works; the notice stays up while the flow runs.
   private screenMissing = false;
-  /** Started by a double tap: keeps recording until Enter or another tap. */
+  /** Double tap or microphone button: keeps recording until explicitly finished. */
   locked = false;
   constructor(private ports: FlowPorts, private hex: Pick<Hex,'begin'|'start'|'stop'|'recoverSince'>, private now = Date.now) {}
   private phase(phase: CapturePhase) { this.state = { phase, seconds:0, ...(phase === 'listening' && this.locked ? {locked:true} : {}), ...(this.screenMissing ? {permission:'screen' as const} : {}) }; this.ports.emit({state:this.state}); }
@@ -30,16 +31,16 @@ export class CaptureFlows {
     try { const attachment = await this.ports.capture(); this.screenMissing = !attachment; this.ports.show(); this.phase('idle'); if (attachment) this.ports.emit({state:this.state,attachment}); }
     catch { this.ports.show(); this.phase('failed'); }
   }
-  async begin(locked = false) {
+  async begin(locked = false, captureScreen = true) {
     if (this.stopping || ['capturing','opening','listening','transcribing','recovering','queued','sending'].includes(this.state.phase)) { this.ports.emit({state:{...this.state,busy:true}}); return; }
     this.attachment = undefined; this.screenMissing = false;
-    const token = ++this.generation; this.released = false; this.locked = locked; this.wasVisible = this.ports.visible();
+    const token = ++this.generation; this.released = false; this.autoSend = captureScreen; this.locked = locked; this.wasVisible = this.ports.visible();
     this.phase('capturing'); this.ports.protect(true);
     try {
-      const attachment = await this.ports.capture();
+      const attachment = captureScreen ? await this.ports.capture() : undefined;
       if (token !== this.generation) return;
-      this.attachment = attachment; this.screenMissing = !attachment; this.ports.show();
-      this.state = {...this.state, ...(attachment ? {} : {permission:'screen' as const})}; this.ports.emit({state:this.state, ...(attachment ? {attachment} : {})});
+      this.attachment = attachment; this.screenMissing = captureScreen && !attachment; this.ports.show();
+      this.state = {...this.state, ...(!this.screenMissing ? {} : {permission:'screen' as const})}; this.ports.emit({state:this.state, ...(attachment ? {attachment} : {})});
       this.started = new Date(this.now());
       // Mark before awaiting: cancellation must stop even an in-flight start.
       this.recording = true;
@@ -55,7 +56,9 @@ export class CaptureFlows {
       if (token === this.generation) { this.locked = false; this.phase('failed'); this.ports.protect(false); }
     }
   }
-  async end() {
+  async end(autoSend = this.autoSend) {
+    // Sending may be requested while Hex is already producing the transcript.
+    if (['capturing','opening','listening','transcribing','recovering'].includes(this.state.phase)) this.autoSend = autoSend;
     if (this.state.phase === 'capturing' || this.state.phase === 'opening') { this.released = true; return; }
     if (this.state.phase !== 'listening') return;
     const token = this.generation; this.locked = false; this.phase('transcribing');
@@ -67,7 +70,11 @@ export class CaptureFlows {
     if (result.code !== 0 || !result.text) { await this.recover(); return; }
     this.deliver(result.text);
   }
-  private deliver(text: string) { this.phase('sending'); this.ports.emit({state:this.state,text,autoSend:true}); }
+  private deliver(text: string) {
+    this.phase(this.autoSend ? 'sending' : 'idle');
+    this.ports.emit({state:this.state,text,autoSend:this.autoSend});
+    if (!this.autoSend) this.ports.protect(false);
+  }
   async recover() {
     const token = this.generation; this.phase('recovering');
     const text = await this.hex.recoverSince(this.started);

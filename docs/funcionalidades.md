@@ -147,7 +147,8 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Se comprueba:** cada control tiene su tooltip y funciona con el teclado (`Tab` y `Space`).
 
 **C4 · Enviar y detener**
-- El botón de enviar está desactivado si no hay texto ni adjuntos.
+- El botón de enviar (flecha hacia arriba) está junto al modelo y al micrófono. Está desactivado si no hay texto ni adjuntos, salvo durante un dictado o una transcripción.
+- Si se pulsa Enviar durante un dictado, detiene Hex, espera la transcripción y envía el texto junto al borrador. Si ya está transcribiendo, espera el resultado sin detener Hex otra vez.
 - Mientras se genera una respuesta, el botón cambia a ■ Detener, que también funciona con `⌘ .`.
 - Mientras se genera, se puede escribir el siguiente mensaje, pero no se puede enviar hasta que la respuesta termine o se detenga.
 - **Se comprueba:** no se pueden mandar dos mensajes seguidos mientras uno está en curso.
@@ -412,6 +413,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
   2. Queda grabando sin mantener la tecla, con "● Escuchando… Enter o un toque a la tecla de voz para enviar" y los botones Enviar y Descartar.
   3. **Enter**, un toque a la tecla de voz o Enviar: sigue igual que al soltar (transcribe y envía).
   4. **Esc** o Descartar: descarta la grabación y la captura queda adjunta.
+- **Botón de micrófono:** inicia Hex directamente, sin captura de pantalla ni permisos de captura. La grabación queda abierta; el icono cambia a un cuadrado. Otro clic termina el dictado y deja el texto en el campo para revisar, sin enviarlo. Mientras transcribe muestra un indicador de progreso. Enviar o `Enter` transcribe y envía junto al borrador.
 - **Casos especiales:**
 
 | Caso | Qué hace J7 |
