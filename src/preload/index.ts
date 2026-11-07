@@ -14,6 +14,11 @@ function subscribe<T>(channel: string, callback: (value: T) => void) {
   };
 }
 const api: J7Api = {
+ settingsOpenUrl:id=>ipcRenderer.invoke("settings:open-url",id),
+ settingsOpenTerminal:()=>ipcRenderer.invoke("settings:open-terminal"),
+ settingsStartHex:()=>ipcRenderer.invoke("settings:start-hex"),
+ settingsRelaunch:()=>ipcRenderer.invoke("settings:relaunch"),
+ onSettingsSection:callback=>subscribe("settings:section",callback),
  settingsData:()=>ipcRenderer.invoke("settings:data"),
  saveSettings:value=>ipcRenderer.invoke("settings:save",value),
  settingsModel:(key,favorite)=>ipcRenderer.invoke("settings:model",key,favorite),

@@ -567,13 +567,35 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Se aplica según F5.
 
 **J6 · Programas**
-- Cada uno de `claude`, `codex`, `opencode` y Hex muestra su estado: Listo, Sin instalar, Sin sesión o Error, con el detalle.
-- Cuando el estado no es "Listo", muestra el comando exacto para instalarlo o iniciar sesión, con un botón para copiarlo.
-- Tiene un botón "Volver a comprobar".
-- **Se comprueba:** con una ruta falsa aparece "Sin instalar" y su comando.
+- Arriba dice: "Necesitas al menos uno: Claude Code o Codex. Hex es opcional y sirve para la voz."
+- Muestra **Claude Code**, **Codex** y **Hex**, con su nombre visible (no el id), para qué sirve y su estado: Listo, Sin instalar, Sin sesión o Error, con el detalle. OpenCode solo aparece si ya está instalado.
+- **Sin instalar:** botón "Descargar", que abre la página oficial en el navegador. Debajo, el comando de Terminal para instalarlo, con botón "Copiar".
+  - Claude Code: página `https://code.claude.com/docs/en/setup` · comando `curl -fsSL https://claude.ai/install.sh | bash`.
+  - Codex: página `https://developers.openai.com/codex/cli` · comando `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (no necesita Node).
+  - Hex: el botón descarga el DMG de `https://anoma.ly/hex/download/macos-arm64-dmg`. Sin comando. Aclara: "Requiere un Mac con Apple silicon y macOS 15 o posterior. Ábrelo una vez y sigue sus pasos."
+- **Sin sesión:** el comando para iniciar sesión (`claude auth login` o `codex login`) con "Copiar", y un botón "Abrir Terminal". Aclara: "Pégalo en la Terminal y sigue los pasos del navegador. J7 usará esa misma cuenta."
+- **Hex instalado pero cerrado:** botón "Abrir Hex".
+- Solo se abren las direcciones de esta lista; J7 no abre ninguna otra.
+- Tiene un botón "Volver a comprobar", y también vuelve a comprobar solo cuando la ventana de ajustes recupera el foco.
+- **Se comprueba:** con una ruta falsa aparece "Sin instalar", su botón "Descargar" y su comando.
 
 **J7 · Permisos**
-- Grabación de pantalla y Monitoreo de entrada, cada uno con su estado y el botón "Abrir Ajustes del Sistema".
+- **J7 Chat:** Grabación de pantalla ("para las capturas") y Monitoreo de entrada ("para la tecla de voz"). Cada uno con su estado y el botón "Abrir Ajustes del Sistema", que abre esa página exacta. Debajo: "Busca J7 Chat en la lista y actívalo. Si no aparece, usa + y elígelo en Aplicaciones."
+- Botón "Reiniciar J7", porque macOS a veces pide reiniciar la app para aplicar la Grabación de pantalla.
+- **Hex (para la voz):** Micrófono y Accesibilidad, con el estado que informa `hex status --json` (`permissions.microphone` y `permissions.accessibility`, "ready" es concedido) y el botón que abre esa página. Aclara: "Estos permisos son de Hex, no de J7: en la lista, activa Hex."
+  - Si Hex no está instalado: "La voz necesita Hex", con el botón "Descargar" de J6.
+  - Si está instalado pero cerrado: "Abre Hex para ver sus permisos", con el botón "Abrir Hex".
+- Una línea final: "Claude Code y Codex no necesitan permisos."
+- Los estados se actualizan solos al volver a la ventana de ajustes.
+- **Se comprueba:** cada botón abre la página correcta de Ajustes del Sistema, y al conceder un permiso y volver, su estado cambia sin tocar nada.
+
+**J8 · Primeros pasos**
+- Al arrancar, cuando termina la primera comprobación de programas:
+  - Si ningún programa de chat está Listo, se abren los ajustes en **Programas**. Pasa en cada arranque hasta que haya uno listo, porque sin eso J7 no sirve.
+  - Si no, y es el primer arranque, y a J7 le falta Grabación de pantalla o Monitoreo de entrada, se abren en **Permisos**.
+  - Hex nunca abre los ajustes solo.
+- Si todo está listo, no se abre nada.
+- **Se comprueba:** con todos los programas en ruta falsa, la app abre los ajustes en Programas; con todo listo, no abre nada.
 
 ---
 

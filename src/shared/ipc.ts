@@ -34,12 +34,19 @@ export interface ChatSnapshot {
 }
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
 export interface PanelState { offset?: {x:number;y:number}; historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
+export type SettingsSection = 'programs' | 'permissions';
+export type PermissionKind = 'screen' | 'input' | 'microphone' | 'accessibility';
 export interface J7Api {
  settingsData(): Promise<SettingsData>;
  saveSettings(value: Partial<import("../main/settings.js").Settings>): Promise<void>;
  settingsModel(key:string,favorite:boolean):Promise<void>;
  settingsRefresh():Promise<void>;
- settingsPermission(kind:string):Promise<void>;
+ settingsPermission(kind:PermissionKind):Promise<void>;
+ settingsOpenUrl(id:string):Promise<void>;
+ settingsOpenTerminal():Promise<void>;
+ settingsStartHex():Promise<void>;
+ settingsRelaunch():Promise<void>;
+ onSettingsSection(callback:(section:SettingsSection)=>void):()=>void;
   history(query?: string, offset?: number): Promise<import('../main/chat/sqlite-store.js').HistoryChat[]>;
   historyAction(action: 'rename'|'pin'|'delete'|'open', id: string, value?: string|boolean): Promise<void>;
   captureAction(action: 'dictate'|'transcribe'|'cancel'|'finish'|'recover'|'idle'|'queued'|'failed'|'screen'|'input'|'status'): Promise<void>;
@@ -72,4 +79,4 @@ export interface J7Api {
 }
 declare global { interface Window { j7: J7Api } }
 
-export interface SettingsData { settings: import("../main/settings.js").Settings; catalog: CatalogSnapshot; permissions: {screen?:boolean;input?:boolean}; hex:{installed:boolean;status?:{code:number;text:string};conflict:boolean} }
+export interface SettingsData { settings: import("../main/settings.js").Settings; catalog: CatalogSnapshot; permissions: {screen?:boolean;input?:boolean}; hex:{installed:boolean;running:boolean;permissions?:{microphone:boolean;accessibility:boolean};status?:{code:number;text:string};conflict:boolean} }

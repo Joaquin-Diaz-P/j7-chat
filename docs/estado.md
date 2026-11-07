@@ -43,6 +43,7 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | 6 | A4 · J3 (el atajo viejo deja de funcionar) | 🔍 | Prueba física del usuario: docs/prueba-final.md, pasos 4 y 8 |
 | 4 | H1 H2 H4 H6 H7 | 🔍 | Prueba física del usuario con la app instalada: docs/prueba-final.md, paso 5 |
 | — | Pendientes técnicos | ⬜ | Están en docs/ideas-futuras.md, "Pendientes técnicos de la versión 1" |
+| 8 | J6 J7 J8 | ✅ | Comprobados con la app real (CDP): sin programas abre en Programas con "Descargar" y comandos; con programas listos y sin Grabación de pantalla abre en Permisos; permisos de Hex leídos de `hex status`. El revisor corrigió la sección inicial y que un fallo del chequeo cerrara J7. Pendiente a mano: conceder un permiso y ver que cambia solo al volver |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.
 

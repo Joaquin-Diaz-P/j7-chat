@@ -482,4 +482,4 @@ function App() {
     </div></div></div>
   );
 }
-createRoot(document.getElementById("root")!).render(location.hash === "#/settings" ? <SettingsView/> : <App />);
+createRoot(document.getElementById("root")!).render(location.hash.split("?")[0] === "#/settings" ? <SettingsView/> : <App />);

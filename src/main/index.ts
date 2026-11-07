@@ -1,4 +1,5 @@
-import { setupSettings } from "./settings-window.js";
+import { setupSection } from "./setup.js";
+import { openSettings, setupSettings } from "./settings-window.js";
 import { strings as s } from "../renderer/strings.js";
 import { SqliteChatStore } from "./chat/sqlite-store.js";
 import { NativeHelper } from "./native/helper.js";
@@ -89,7 +90,8 @@ else {
       capture = setupCapture(panel, attachments, settings);
       registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);
-      setupSettings(settings,panel,chat,capture,()=>{tray?.destroy();tray=createTray(panel!,settings);});
+      const firstRun = !settings.value.firstRunDone;
+      const settingsAccess = setupSettings(settings,panel,chat,capture,()=>{tray?.destroy();tray=createTray(panel!,settings);});
       registerShortcut(settings.value.shortcut, () => panel?.toggle(), log);
       panel.window.webContents.on("render-process-gone", () =>
         log("renderer-failed"),
@@ -99,6 +101,7 @@ else {
         panel.show(); setTimeout(()=>chat?.dismissWelcome(),6500);
       }
       chat.start();
+      void chat.catalog.refresh().then(async()=>{if(exiting||!chat)return;const section=setupSection({statuses:chat.catalog.snapshot().statuses,permissions:await settingsAccess.permissions(),firstRun});if(section && !exiting)openSettings(section);}).catch(()=>console.error("Setup check failed"));
     })
     .catch(() => {
       console.error("J7 startup failed");

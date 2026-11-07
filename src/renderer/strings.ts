@@ -146,12 +146,13 @@ export const strings = {
   error: "No se pudo enviar el mensaje",
 };
 export const settingsStrings = {
- sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz (mantener o doble toque)'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+ programsIntro:'Necesitas al menos uno: Claude Code o Codex. Hex es opcional y sirve para la voz.', download:'Descargar', terminal:'Abrir Terminal', openHex:'Abrir Hex', hexRequirements:'Requiere un Mac con Apple silicon y macOS 15 o posterior. Ábrelo una vez y sigue sus pasos.', loginHelp:'Pégalo en la Terminal y sigue los pasos del navegador. J7 usará esa misma cuenta.', hexClosed:'Abre Hex para ver sus permisos', hexClosedProgram:'Hex está cerrado. Ábrelo para usar la voz.', hexNeeded:'La voz necesita Hex', hexPermissions:'Hex (para la voz)', hexPermissionHelp:'Estos permisos son de Hex, no de J7: en la lista, activa Hex.', permissionHelp:'Busca J7 Chat en la lista y actívalo. Si no aparece, usa + y elígelo en Aplicaciones.', relaunch:'Reiniciar J7', screenPurpose:'para las capturas', inputPurpose:'para la tecla de voz', microphone:'Micrófono', accessibility:'Accesibilidad', noPermissions:'Claude Code y Codex no necesitan permisos.', unknown:'No disponible', hexError:'No se pudo consultar el estado de Hex.',
+ sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz (mantener o doble toque)'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',closed:'Cerrado',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
 };
 
-export const settingsCommands: Record<string,string[]> = {
- claude:['curl -fsSL https://claude.ai/install.sh | bash','claude auth login'],
- codex:['npm install -g @openai/codex','codex login'],
- opencode:['curl -fsSL https://opencode.ai/install | bash','opencode auth login'],
- hex:['brew install --cask anomalyco/tap/hex','hex start']
+export const settingsPrograms: Record<string,{label:string;purpose:string;downloadUrl:string | undefined;installCommand?:string;loginCommand?:string}> = {
+ claude:{label:'Claude Code',purpose:'Para conversar con los modelos de Claude.',downloadUrl:'https://code.claude.com/docs/en/setup',installCommand:'curl -fsSL https://claude.ai/install.sh | bash',loginCommand:'claude auth login'},
+ codex:{label:'Codex',purpose:'Para conversar con los modelos de OpenAI.',downloadUrl:'https://developers.openai.com/codex/cli',installCommand:'curl -fsSL https://chatgpt.com/codex/install.sh | sh',loginCommand:'codex login'},
+ opencode:{label:'OpenCode',purpose:'Para conversar con los modelos gratis de Zen.',downloadUrl:undefined,loginCommand:'opencode auth login'},
+ hex:{label:'Hex',purpose:'Para dictar con la voz.',downloadUrl:'https://anoma.ly/hex/download/macos-arm64-dmg'}
 };

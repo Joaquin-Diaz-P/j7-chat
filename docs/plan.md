@@ -92,6 +92,7 @@ Está en `src/main/providers/types.ts` desde la etapa 0. La etapa 1a le agrega `
 | **4** | Atajos de captura y voz | Sol · medio | H1–H7 |
 | **5** | Historial | Sol · medio | I1–I9 · B8 · B10 (`⌘ B`, `⌘ F`) |
 | **6** | Ajustes, empaquetado y cierre | Sol · medio | A4, A5 · B10 (`⌘ ,`) · J1–J7 · K1–K3 · M4 |
+| **8** | Primeros pasos para quien instala J7 | Sol · medio | J6, J7, J8 |
 
 ## Reglas para los subagentes
 

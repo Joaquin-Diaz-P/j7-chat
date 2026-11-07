@@ -23,34 +23,57 @@
   </picture>
 </p>
 
-J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes instalados y con sesión iniciada en tu Mac (Claude Code, Codex u OpenCode), así que responde con tu suscripción y no pide claves de API.
+J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes instalados y con sesión iniciada en tu Mac (Claude Code o Codex), así que responde con tu suscripción y no pide claves de API.
 
 > Requiere un Mac con Apple Silicon (M1 o posterior) y macOS 14 o más nuevo.
 
 ## Funciona mejor con
 
-J7 funciona con cualquiera de estos programas y aprovecha todos los que encuentre:
-
-| Programa | Para qué | Cómo instalarlo |
+| Programa | Para qué | Descarga |
 | --- | --- | --- |
-| [Claude Code](https://claude.com/claude-code) | Modelos de Claude (Opus, Sonnet, Haiku…) | `curl -fsSL https://claude.ai/install.sh \| bash`, luego `claude auth login` |
-| [Codex](https://github.com/openai/codex) | Modelos de OpenAI con tu cuenta de ChatGPT | `npm install -g @openai/codex`, luego `codex login` |
-| [OpenCode](https://opencode.ai) | Otros modelos, incluidos algunos gratis | `curl -fsSL https://opencode.ai/install \| bash`, luego `opencode auth login` |
-| [Hex](https://github.com/anomalyco/hex) | Dictado por voz, local y privado | `brew install --cask anomalyco/tap/hex` |
+| [Claude Code](https://code.claude.com/docs/en/setup) | Modelos de Claude (Opus, Sonnet, Haiku…) con tu cuenta de Claude | `curl -fsSL https://claude.ai/install.sh \| bash` |
+| [Codex](https://developers.openai.com/codex/cli) | Modelos de OpenAI con tu cuenta de ChatGPT | `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
+| [Hex](https://github.com/anomalyco/hex) | Dictado por voz, local y privado (opcional) | [Descargar DMG](https://anoma.ly/hex/download/macos-arm64-dmg) · requiere macOS 15 |
 
-Necesitas al menos uno de los tres primeros. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz. En **Ajustes → Programas** ves cuáles detectó J7 y qué comando falta.
+Necesitas al menos uno: Claude Code o Codex. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz. J7 también aprovecha [OpenCode](https://opencode.ai) si ya lo tienes.
 
-## Instalar
+## Instalar paso a paso
 
-1. Descarga el DMG de la última versión en [Releases](../../releases).
+**1. Instala J7**
+
+1. Descarga el DMG de la última versión en [Releases](../../releases/latest).
 2. Ábrelo y arrastra **J7 Chat** a Aplicaciones.
 3. La primera vez, macOS la bloquea porque no está notarizada por Apple. Ábrela una vez y luego ve a **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**. También puedes quitarle la marca de descarga desde la Terminal:
    ```sh
    xattr -dr com.apple.quarantine "/Applications/J7 Chat.app"
    ```
-4. En **Ajustes de J7 → Permisos**, concede **Grabación de pantalla** (para las capturas) y **Monitoreo de entrada** (para la tecla de voz). Si macOS lo pide, reinicia J7.
 
 J7 vive en la barra de menús, no en el Dock.
+
+**2. Conecta tu cuenta de Claude o de ChatGPT**
+
+Si a J7 le falta algo, al abrirla se abre sola en **Ajustes → Programas**. Ahí cada programa tiene su botón **Descargar** y los comandos para copiar.
+
+1. Abre la app **Terminal**, pega el comando de instalación de la tabla de arriba y presiona Enter.
+2. Inicia sesión con `claude auth login` (Claude Code) o `codex login` (Codex). Se abre el navegador para que entres con tu cuenta.
+3. Vuelve a J7: detecta el programa solo y usa esa misma cuenta. No pide claves ni contraseñas.
+
+**3. Da los permisos**
+
+En **Ajustes → Permisos**, cada permiso tiene un botón que abre la página exacta de Ajustes del Sistema:
+
+| A quién | Permiso | Para qué |
+| --- | --- | --- |
+| J7 Chat | Grabación de pantalla | Las capturas |
+| J7 Chat | Monitoreo de entrada | La tecla de voz |
+| Hex | Micrófono | Escucharte |
+| Hex | Accesibilidad | Dictar |
+
+Los de Hex se le dan a **Hex**, no a J7: en la lista de Ajustes del Sistema, activa Hex. Claude Code y Codex no necesitan permisos. Si macOS lo pide, usa **Reiniciar J7**.
+
+**4. Voz (opcional)**
+
+Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y sigue sus pasos (descarga el modelo de voz). Después, mantén `⌥` derecho en cualquier app para dictarle a J7.
 
 ## Cómo se usa
 
