@@ -61,3 +61,20 @@ esac
  await expect(composer).toHaveValue('');
  }finally{await app.close();await rm(data,{recursive:true,force:true});}
 });
+
+test('sin Hex instalado no hay micrófono ni avisos de voz', async () => {
+ const data = await mkdtemp(join(tmpdir(), 'j7-nohex-e2e-'));
+ const env: Record<string,string> = {...Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string,string] => typeof entry[1] === 'string')), J7_MOCK:'1', J7_TEST:'1', J7_DATA_DIR:data, J7_HEX_BINARY:join(data,'missing-hex')}; delete env.ELECTRON_RUN_AS_NODE;
+ const app = await electron.launch({args:['.'], env});
+ try {
+  await app.evaluate(() => { (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show?.(); });
+  const page = await app.firstWindow();
+  await page.evaluate(() => window.j7.setPinned(true));
+  await expect(page.locator('.composer textarea')).toBeVisible();
+  await expect(page.locator('.dictation-button')).toHaveCount(0);
+  await expect(page.locator('.composer [role="alert"]')).toHaveCount(0);
+  await page.locator('.composer textarea').fill('Hola');
+  await page.getByRole('button', {name:'Enviar', exact:true}).click();
+  await expect.poll(() => page.evaluate(async () => (await window.j7.snapshot()).messages.some(m => m.role === 'assistant' && m.status === 'complete'))).toBe(true);
+ } finally { await app.close(); }
+});

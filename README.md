@@ -36,7 +36,7 @@ J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes in
 | [Antigravity CLI](https://antigravity.google/docs/getting-started) | Modelos de Gemini con tu cuenta de Google | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` |
 | [Hex](https://github.com/anomalyco/hex) | Dictado por voz, local y privado (opcional) | [Descargar DMG](https://anoma.ly/hex/download/macos-arm64-dmg) · requiere macOS 15 |
 
-Necesitas al menos uno: Claude Code, Codex o Antigravity CLI. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz. J7 también aprovecha [OpenCode](https://opencode.ai) si ya lo tienes.
+Necesitas al menos uno: Claude Code, Codex o Antigravity CLI. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz (no aparece el botón del micrófono y `⌥` derecho no hace nada en J7). Si lo instalas después, la voz se activa sola. J7 también aprovecha [OpenCode](https://opencode.ai) si ya lo tienes.
 
 ## Instalar paso a paso
 

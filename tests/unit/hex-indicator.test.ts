@@ -56,3 +56,13 @@ it('never touches the HUD without somewhere to remember it', async () => {
   await new Hex(join(f.root, 'hex')).begin();
   expect(await f.position()).toBe('bottom');
 });
+
+it('does nothing to the HUD when Hex is not installed', async () => {
+  let saved: 'top' | 'bottom' | null = 'top';
+  const hex = new Hex('/nonexistent/Hex.app/Contents/MacOS/hex', { get: () => saved, set: value => { saved = value; } });
+  await hex.restoreIndicator();
+  expect(saved).toBe('top');
+  saved = null;
+  expect((await hex.begin()).code).not.toBe(0);
+  expect(saved).toBeNull();
+});

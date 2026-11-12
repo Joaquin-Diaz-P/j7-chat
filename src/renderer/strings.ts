@@ -36,7 +36,6 @@ export const strings = {
   captureInput: "J7 necesita el permiso de Monitoreo de entrada para detectar la tecla de voz",
   systemSettings: "Abrir Ajustes del Sistema",
   hexConflict: "La tecla de voz de J7 coincide con el atajo de dictado de Hex. Cambia la tecla de voz en Ajustes → Atajos.",
-  hexMissing: "Hex no está instalado o no está disponible. Revisa Conexiones en los ajustes.",
 
   dropAttachments: "Suelta para adjuntar",
   removeAttachment: "Quitar adjunto",

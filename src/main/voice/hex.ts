@@ -43,7 +43,7 @@ export class Hex {
   // J7's bar shows its own wave while dictating, so Hex's HUD would be a duplicate. The original
   // position is saved before hiding, so a crash mid-dictation is undone at the next launch.
   private async hideIndicator() {
-    if (!this.indicator || this.indicator.get()) return;
+    if (!this.indicator || this.indicator.get() || !this.installed()) return;
     const current = await this.run(['settings','get','indicator_position']);
     const position = current.text.trim();
     if (current.code !== 0 || (position !== 'top' && position !== 'bottom')) return;
@@ -52,7 +52,7 @@ export class Hex {
   }
   async restoreIndicator() {
     const position = this.indicator?.get();
-    if (!position) return;
+    if (!position || !this.installed()) return;
     if ((await this.run(['settings','set','indicator_position',position])).code === 0) this.indicator!.set(null);
   }
   async hotkey() { return (await this.run(['settings','get','dictation_hotkey'])).text; }

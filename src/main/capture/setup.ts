@@ -14,7 +14,9 @@ import type { CaptureEvent } from '../../shared/capture.js';
 export function setupCapture(panel: Panel, attachments: AttachmentStore, settings: SettingsStore, helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,'j7-helper') : join(app.getAppPath(),'build/j7-helper'))) {
   const hex = new Hex(process.env.J7_HEX_BINARY, { get: () => settings.value.hexIndicatorRestore, set: position => settings.update({ hexIndicatorRestore: position }) });
   void hex.restoreIndicator();
-  const emit = (event: CaptureEvent) => { if (!panel.window.isDestroyed()) panel.window.webContents.send('capture:event',event); };
+  // Hex is optional: without it voice is simply unavailable, so every update says whether it is installed
+  // (checked each time, so installing Hex later enables the microphone without restarting J7).
+  const emit = (event: CaptureEvent) => { if (!panel.window.isDestroyed()) panel.window.webContents.send('capture:event',{...event,state:{...event.state,missingHex:!hex.installed()}}); };
   let permission: 'screen'|'input'|undefined;
   const check = async (kind: 'screen'|'input') => {
     const reply = await helper.request('permissions');
@@ -45,9 +47,9 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   });
   helper.on('spaceChanged',()=>panel.spaceChanged());
   helper.on('shortcutReleased',()=>panel.endShortcut());
-  helper.on('holdStart',()=>{ if (!flows.locked) void flows.begin(); });
+  helper.on('holdStart',()=>{ if (!flows.locked && hex.installed()) void flows.begin(); });
   // Double tap locks the recording; a later tap (or Enter in the bar) finishes and sends it.
-  helper.on('doubleTap',()=>{ if (['idle','cancelled','empty','failed'].includes(flows.state.phase)) void flows.begin(true); });
+  helper.on('doubleTap',()=>{ if (hex.installed() && ['idle','cancelled','empty','failed'].includes(flows.state.phase)) void flows.begin(true); });
   helper.on('tap',()=>{ if (flows.locked) void flows.end(); });
   helper.on('holdEnd',()=>{void flows.end();});
   helper.on('holdCancel',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel(true);});
@@ -57,7 +59,7 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   ipcMain.handle('capture:action',async(event,action: unknown)=>{
     if (!trusted(event)) return;
     if (action === 'cancel') await flows.cancel();
-    if (action === 'dictate') await flows.begin(true, false);
+    if (action === 'dictate' && hex.installed()) await flows.begin(true, false);
     if (action === 'transcribe' && flows.locked) await flows.end(false);
     if (action === 'finish') await flows.end(true);
     if (action === 'recover' && flows.state.phase === 'failed' && flows.state.recoverable) await flows.recover();
@@ -69,8 +71,10 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
     }
     if (action === 'status') {
       if (permission) emit({state:{phase:'idle',seconds:0,permission}});
+      if (!hex.installed()) { emit({state:{phase:flows.state.phase,seconds:0,conflict:false}}); return; }
       const hotkey = await hex.hotkey();
-      emit({state:{phase:flows.state.phase,seconds:0,conflict:hotkeyConflicts(settings.value.voiceModifier,hotkey),missingHex:!hex.installed()}});
+      emit({state:{phase:flows.state.phase,seconds:0,conflict:hotkeyConflicts(settings.value.voiceModifier,hotkey)}});
+      // The voice key needs Input Monitoring only for Hex, so J7 asks for it only when Hex is installed.
       if (!await check('input')) return;
       await helper.watch(modifierCodes[settings.value.voiceModifier]!);
     }

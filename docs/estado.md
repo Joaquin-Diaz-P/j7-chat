@@ -118,3 +118,10 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Al empezar un dictado desde J7, J7 guarda la posición del visor de Hex (`indicator_position`, arriba o abajo) en su `settings.json` y lo oculta, porque la barra ya muestra la onda. Lo devuelve a su lugar al terminar, cancelar o fallar. Si J7 se cierra a mitad de un dictado, lo restaura al abrirse otra vez. Los dictados hechos con Hex fuera de J7 siguen mostrando su visor.
 - Si Hex ya estaba dictando por su cuenta, J7 no toca el visor.
 - Verificación: `npm test` (335 pruebas, 4 nuevas con un Hex falso) y `npx playwright test` (3 recorridos) aprobados. La sintaxis de `hex settings set indicator_position` se comprobó con el Hex instalado (3.4.0) sin cambiar su valor.
+
+### J7 sin Hex instalado (11 de noviembre)
+
+- Sin Hex, la voz queda desactivada sin dar errores: no aparece el botón del micrófono, `⌥` derecho mantenido o con doble toque no inicia nada (antes sacaba una captura y fallaba), J7 no pide el permiso de Monitoreo de entrada y desaparece el aviso rojo permanente «Hex no está instalado». La tarjeta Voz de Conexiones sigue ofreciendo descargarlo.
+- Cada actualización de estado de la voz vuelve a comprobar si Hex está instalado, así que instalarlo activa el micrófono sin reiniciar J7.
+- El ocultamiento del visor de Hex no hace nada si Hex no está instalado.
+- Verificación: `npm test` (336 pruebas) y `npx playwright test` (4 recorridos, uno nuevo sin Hex) aprobados.

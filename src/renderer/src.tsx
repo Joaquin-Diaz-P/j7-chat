@@ -429,7 +429,6 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           {chat.warning && <div className="notice" role="status">{chat.warning}</div>}
           {capture.permission && <p role="alert">{capture.permission === 'screen' ? s.captureScreen : s.captureInput} <button onClick={() => void window.j7.captureAction(capture.permission!)}>{s.systemSettings}</button></p>}
           {capture.conflict && <p role="alert">{s.hexConflict}</p>}
-          {capture.missingHex && <p role="alert">{s.hexMissing} <button onClick={() => void window.j7.openSettings()}>{s.settings}</button></p>}
           {capture.busy && <p role="status">{s.captureBusy}</p>}
           {capture.phase === 'listening' && (capture.locked
             ? <p role="status">{s.captureListeningLocked} <button onClick={() => void window.j7.captureAction('finish')}>{s.captureSend}</button> <button onClick={() => void window.j7.captureAction('cancel')}>{s.captureDiscard}</button></p>
@@ -483,9 +482,9 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
           </div>
           <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</button>
-          <button className={`dictation-button ${dictating ? "recording" : ""}`} title={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-label={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-pressed={dictating} disabled={transcribing || pendingVoice.current || capture.phase === 'queued' || capture.phase === 'sending'} onClick={() => void toggleDictation()}>
+          {!capture.missingHex && <button className={`dictation-button ${dictating ? "recording" : ""}`} title={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-label={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-pressed={dictating} disabled={transcribing || pendingVoice.current || capture.phase === 'queued' || capture.phase === 'sending'} onClick={() => void toggleDictation()}>
             {transcribing ? <LoaderCircle size={15} className="dictation-spinner"/> : dictating ? <Square size={12} fill="currentColor"/> : <Mic size={16}/>}
-          </button>
+          </button>}
           {!chat.active && <button className="send-button" title={dictating || transcribing ? s.sendDictation : s.captureSend} aria-label={dictating || transcribing ? s.sendDictation : s.captureSend} disabled={!chat.model || imageBlocked || loadingAttachments || (!dictating && !transcribing && !draft.trim() && !attachments.length)} onClick={() => void submit()}><ArrowUp size={16}/></button>}
           {chat.active && <button className="stop" title={s.stop} aria-label={s.stop} onClick={() => void window.j7.stop()}><Square size={12} fill="currentColor"/></button>}
         </div>
