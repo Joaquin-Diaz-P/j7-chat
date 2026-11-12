@@ -12,13 +12,30 @@ export function shortcutIdentity(value: string) { return value.split('+').map(x=
 export function isAccelerator(value: unknown): value is string {
  return typeof value==='string' && !/(?:^|\+)Tab$/i.test(value) && /^(?:(?:Alt|Option|Command|Cmd|CommandOrControl|Control|Ctrl|Shift)\+)+(?:[A-Z0-9]|F(?:[1-9]|1[0-9]|2[0-4])|Space|Tab|Enter|Escape|Backspace|Delete|Up|Down|Left|Right|Home|End|PageUp|PageDown|[;,./\[\]'=\-\\])$/i.test(value);
 }
-export function replaceShortcuts(changes: {previous:string;next:string;activate:()=>boolean}[], unregister:(key:string)=>void, failure:string) {
+export function resolveShortcutBindings(previous: {shortcut:string;captureShortcut:string}, requested: Partial<{shortcut:string;captureShortcut:string}>) {
+ const next={shortcut:requested.shortcut??previous.shortcut,captureShortcut:requested.captureShortcut??previous.captureShortcut};
+ // Recording the other J7 binding exchanges the pair in one settings transaction.
+ if(requested.shortcut!==undefined && requested.captureShortcut===undefined && shortcutIdentity(next.shortcut)===shortcutIdentity(previous.captureShortcut))next.captureShortcut=previous.shortcut;
+ if(requested.captureShortcut!==undefined && requested.shortcut===undefined && shortcutIdentity(next.captureShortcut)===shortcutIdentity(previous.shortcut))next.shortcut=previous.captureShortcut;
+ return next;
+}
+export function replaceShortcuts(changes: {previous:string;next:string;activate:(key:string)=>boolean}[], unregister:(key:string)=>void, failure:string) {
+ const changed=changes.filter(change=>shortcutIdentity(change.next)!==shortcutIdentity(change.previous));
+ if(!changed.length)return;
  const installed:string[]=[];
- try { for(const change of changes) if(change.next!==change.previous) {
-   if(!change.activate())throw new Error(failure);
+ // Release the complete changed set first, so two J7 bindings can exchange keys.
+ changed.forEach(change=>unregister(change.previous));
+ try {
+  for(const change of changed) {
+   if(!change.activate(change.next))throw new Error(failure);
    installed.push(change.next);
- }} catch(error) { installed.forEach(unregister);throw error; }
- for(const change of changes) if(change.next!==change.previous)unregister(change.previous);
+  }
+ } catch(error) {
+  installed.forEach(unregister);
+  // Restore each original callback as well as its key after a partial failure.
+  for(const change of changed)change.activate(change.previous);
+  throw error;
+ }
 }
 export function shortcutLabel(value: string) {
  const side = /^(left|right)-(option|command|control|shift)$/.exec(value);

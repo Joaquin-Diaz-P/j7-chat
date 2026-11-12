@@ -4,14 +4,14 @@ import { tmpdir } from 'node:os';
 import { unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { NativeHelper } from '../native/helper.js';
+import { fromMainFrame } from '../ipc-trust.js';
 import { Hex, hotkeyConflicts, modifierCodes } from '../voice/hex.js';
 import { CaptureFlows } from './flows.js';
 import type { Panel } from '../window.js';
 import type { AttachmentStore } from '../attachments/index.js';
 import type { SettingsStore } from '../settings.js';
 import type { CaptureEvent } from '../../shared/capture.js';
-export function setupCapture(panel: Panel, attachments: AttachmentStore, settings: SettingsStore) {
-  const helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,'j7-helper') : join(app.getAppPath(),'build/j7-helper'));
+export function setupCapture(panel: Panel, attachments: AttachmentStore, settings: SettingsStore, helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,'j7-helper') : join(app.getAppPath(),'build/j7-helper'))) {
   const hex = new Hex(process.env.J7_HEX_BINARY);
   const emit = (event: CaptureEvent) => { if (!panel.window.isDestroyed()) panel.window.webContents.send('capture:event',event); };
   let permission: 'screen'|'input'|undefined;
@@ -39,6 +39,11 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
     }
   },hex);
   // The tap only delivers events with input permission; begin synchronously so an early holdEnd is not lost.
+  helper.on('pointerDown',event=>{
+    if (Number.isFinite(event.x) && Number.isFinite(event.y)) panel.pointerDown({x:event.x,y:event.y});
+  });
+  helper.on('spaceChanged',()=>panel.spaceChanged());
+  helper.on('shortcutReleased',()=>panel.endShortcut());
   helper.on('holdStart',()=>{ if (!flows.locked) void flows.begin(); });
   // Double tap locks the recording; a later tap (or Enter in the bar) finishes and sends it.
   helper.on('doubleTap',()=>{ if (['idle','cancelled','empty','failed'].includes(flows.state.phase)) void flows.begin(true); });
@@ -46,8 +51,8 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   helper.on('holdEnd',()=>{void flows.end();});
   helper.on('holdCancel',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel(true);});
   // A crash while transcribing must not discard the dictated text.
-  helper.on('disconnect',()=>{if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel();});
-  const trusted = (event: Electron.IpcMainInvokeEvent) => event.sender === panel.window.webContents && event.senderFrame === panel.window.webContents.mainFrame;
+  helper.on('disconnect',()=>{panel.endShortcut(true);if (['capturing','opening','listening'].includes(flows.state.phase)) void flows.cancel();});
+  const trusted = (event: Electron.IpcMainInvokeEvent) => fromMainFrame(panel.window, event);
   ipcMain.handle('capture:action',async(event,action: unknown)=>{
     if (!trusted(event)) return;
     if (action === 'cancel') await flows.cancel();
@@ -72,5 +77,11 @@ export function setupCapture(panel: Panel, attachments: AttachmentStore, setting
   helper.start();
   void helper.watch(modifierCodes[settings.value.voiceModifier]!).catch(()=>{});
   globalShortcut.register(settings.value.captureShortcut,()=>{void flows.question();});
-  return { question:()=>{void flows.question();}, rebind:async()=>{await helper.watch(modifierCodes[settings.value.voiceModifier]!);}, dispose:async()=>{const stopped = flows.dispose(); helper.dispose(); await stopped;} };
+  const activatePanel = () => {
+    if (!panel.beginShortcut()) return;
+    void helper.request('watchShortcutRelease', { modifiers: settings.value.shortcut.split('+').slice(0,-1) })
+      .then(reply => { if (!reply.ok) panel.endShortcut(true); })
+      .catch(()=>panel.endShortcut(true));
+  };
+  return { activatePanel, question:()=>{void flows.question();}, rebind:async()=>{await helper.watch(modifierCodes[settings.value.voiceModifier]!);}, dispose:async()=>{const stopped = flows.dispose(); helper.dispose(); await stopped;} };
 }

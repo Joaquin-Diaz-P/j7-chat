@@ -50,6 +50,7 @@ describe("panel geometry and clock", () => {
 describe("settings", () => {
   it("validates each field independently", () => {
     expect(validateSettings(null)).toEqual({
+      disabledProviders: [],
       firstRunDone: false,
       openAtLogin: true,
       historyOpen: false,
@@ -84,6 +85,7 @@ describe("settings", () => {
         positions: { a: { x: 2, y: 3 } },
       }),
     ).toEqual({
+      disabledProviders: [],
       firstRunDone: false,
       openAtLogin: true,
       historyOpen: false,

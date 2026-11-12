@@ -23,7 +23,7 @@
   </picture>
 </p>
 
-J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes instalados y con sesión iniciada en tu Mac (Claude Code o Codex), así que responde con tu suscripción y no pide claves de API.
+J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes instalados y con sesión iniciada en tu Mac (Claude Code, Codex o Antigravity CLI), así que responde con tu suscripción y no pide claves de API.
 
 > Requiere un Mac con Apple Silicon (M1 o posterior) y macOS 14 o más nuevo.
 
@@ -33,9 +33,10 @@ J7 no tiene modelos ni cuentas propias. Usa los programas de IA que ya tienes in
 | --- | --- | --- |
 | [Claude Code](https://code.claude.com/docs/en/setup) | Modelos de Claude (Opus, Sonnet, Haiku…) con tu cuenta de Claude | `curl -fsSL https://claude.ai/install.sh \| bash` |
 | [Codex](https://developers.openai.com/codex/cli) | Modelos de OpenAI con tu cuenta de ChatGPT | `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
+| [Antigravity CLI](https://antigravity.google/docs/getting-started) | Modelos de Gemini con tu cuenta de Google | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` |
 | [Hex](https://github.com/anomalyco/hex) | Dictado por voz, local y privado (opcional) | [Descargar DMG](https://anoma.ly/hex/download/macos-arm64-dmg) · requiere macOS 15 |
 
-Necesitas al menos uno: Claude Code o Codex. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz. J7 también aprovecha [OpenCode](https://opencode.ai) si ya lo tienes.
+Necesitas al menos uno: Claude Code, Codex o Antigravity CLI. Hex es opcional: sin Hex, J7 funciona igual, pero sin voz. J7 también aprovecha [OpenCode](https://opencode.ai) si ya lo tienes.
 
 ## Instalar paso a paso
 
@@ -48,15 +49,17 @@ Necesitas al menos uno: Claude Code o Codex. Hex es opcional: sin Hex, J7 funcio
    xattr -dr com.apple.quarantine "/Applications/J7 Chat.app"
    ```
 
-J7 vive en la barra de menús, no en el Dock.
+J7 tiene un ícono en la barra de menús y también aparece en el Dock.
 
-**2. Conecta tu cuenta de Claude o de ChatGPT**
+**2. Conecta tu cuenta de Claude, ChatGPT o Google**
 
-Si a J7 le falta algo, al abrirla se abre sola en **Ajustes → Programas**. Ahí cada programa tiene su botón **Descargar** y los comandos para copiar.
+Si falta una conexión, J7 abre **Ajustes → Conexiones**. Cada tarjeta muestra el estado, la versión y, cuando el servicio los proporciona, la cuenta y el plan.
 
-1. Abre la app **Terminal**, pega el comando de instalación de la tabla de arriba y presiona Enter.
-2. Inicia sesión con `claude auth login` (Claude Code) o `codex login` (Codex). Se abre el navegador para que entres con tu cuenta.
-3. Vuelve a J7: detecta el programa solo y usa esa misma cuenta. No pide claves ni contraseñas.
+1. Si falta el programa, pulsa **Descargar** para abrir su página oficial. También puedes desplegar **Instalar desde la Terminal** y copiar el comando. El enlace **Sitio oficial** está siempre disponible.
+2. Pulsa **Iniciar sesión** en J7: Claude, ChatGPT y Gemini abren el navegador con el programa oficial. Vuelve al terminar; J7 detecta la sesión automáticamente. Puedes reabrir el enlace, cancelar o enviar un código si Claude lo solicita. OpenCode abre su login en Terminal; Gemini también usa Terminal si la versión instalada no ofrece login de Google por ACP.
+3. Usa **Ver modelos** para consultar el catálogo o el interruptor para ocultar un servicio. Siempre debe quedar al menos un servicio activo con sesión. **Cerrar sesión**, disponible para Claude y Codex, pide confirmación porque afecta también al programa oficial y a las otras apps que comparten su sesión.
+
+Para Gemini necesitas Antigravity CLI; la app de Antigravity por sí sola no instala `agy`. J7 reutiliza la sesión local y no activa créditos de pago al agotar la cuota. Hex se encuentra en **Voz**, al final de Conexiones.
 
 **3. Da los permisos**
 
@@ -87,9 +90,11 @@ Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y
 
 Los atajos se cambian en **Ajustes → Atajos**. Si Hex usa la misma tecla que J7, el ajuste te avisa.
 
-Para adjuntar archivos, arrástralos a la barra o usa el clip. J7 lee imágenes, PDF y texto.
+Para adjuntar archivos, arrástralos a la barra o usa el clip. J7 lee imágenes, PDF, texto, Word (`.docx`) y PowerPoint (`.pptx`). En Word y PowerPoint envía el texto, los datos de los gráficos como tablas y las imágenes incrustadas (a los modelos que ven imágenes); no reproduce el diseño.
 
-Tus chats, ajustes y adjuntos se guardan solo en tu Mac, en `~/Library/Application Support/J7 Chat`. Para actualizar, cierra J7 y reemplaza la app por la nueva; tus datos se conservan.
+Con **Comparar** (en el selector de modelos, bajo la estrella de favoritos) puedes elegir dos o tres modelos para responder la misma pregunta y ver sus respuestas lado a lado. Las respuestas quedan guardadas en el historial. Cada modelo usa un turno de su cuota; los modelos de un mismo programa responden según su cola.
+
+Tus chats, ajustes y adjuntos se guardan en tu Mac, en `~/Library/Application Support/J7 Chat`: el historial está en `j7.db` y las copias de archivos, en `attachments/`. Un chat nuevo no recibe contexto de otros chats. [Dónde se guarda cada dato y cómo respaldarlo](docs/datos-locales.md). Para actualizar, cierra J7 y reemplaza la app por la nueva; tus datos se conservan.
 
 ## Compilarla tú
 

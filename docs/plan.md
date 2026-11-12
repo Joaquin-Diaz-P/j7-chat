@@ -2,6 +2,14 @@
 
 El qué está en [especificacion.md](especificacion.md); el detalle de cada funcionalidad, con su código y cómo se comprueba, en [funcionalidades.md](funcionalidades.md). Este documento cubre el cómo y el orden. El avance de cada código se lleva en [estado.md](estado.md).
 
+## Ampliación del 11 de noviembre de 2026
+
+Trabajo autorizado: G10 (adjuntos Word/PowerPoint), E13 (modo comparar), parche de pendientes técnicos y actualización de documentación. Implementación repartida entre subagentes, integración y verificación final a cargo de la sesión principal. Las reglas históricas que reservaban `estado.md` exclusivamente a Claude no impiden esta actualización solicitada por el usuario.
+
+OpenRouter queda como primera prioridad posterior, sin claves ni implementación ahora. Carpetas con contexto compartido quedan como idea futura; no se implementan importación ni memoria automática global. Ver [ideas-futuras.md](ideas-futuras.md) y [datos-locales.md](datos-locales.md).
+
+Las etapas de abajo describen el proceso histórico de la versión 1; no son una obligación de repetir encargos ya completados.
+
 ## Forma de trabajo
 
 1. **Encargo.** Cada etapa tiene un encargo en `docs/encargos/etapa-N.md` con los códigos que debe implementar, los archivos y el enfoque técnico.

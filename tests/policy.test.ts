@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CODEX_SAFE_CONFIG } from "../src/main/providers/codex.js";
-import { geminiSettings } from "../src/main/providers/gemini.js";
+import { geminiSettings, geminiAgent } from "../src/main/providers/gemini.js";
 import {
   freeZenModels,
   openCodePermissions,
@@ -92,23 +92,15 @@ describe("isolation policies", () => {
       );
     expect(CODEX_SAFE_CONFIG.project_doc_max_bytes).toBe(0);
   });
-  it("Gemini uses an empty or web-only core allowlist", () => {
-    expect(
-      geminiSettings(false, "gemini-2.5-flash", "normal").tools.core,
-    ).toEqual([]);
-    expect(geminiSettings(true, "gemini-2.5-flash", "high").tools.core).toEqual(
-      ["google_web_search", "web_fetch"],
-    );
-  });
-  it("sets and resets Gemini thinking independently from web", () => {
-    expect(
-      geminiSettings(false, "gemini-2.5-flash", "normal").modelConfigs
-        .customOverrides[0]?.modelConfig.generateContentConfig.thinkingConfig,
-    ).toEqual({ thinkingBudget: 0 });
-    expect(
-      geminiSettings(false, "gemini-3-flash-preview", "high").modelConfigs
-        .customOverrides[0]?.modelConfig.generateContentConfig.thinkingConfig,
-    ).toEqual({ thinkingLevel: "HIGH" });
+  it("Antigravity exposes only chat or web tools and denies local execution", () => {
+    expect(geminiAgent("instructions", false)).toContain("tools: []");
+    expect(geminiAgent("instructions", true)).toContain('tools: ["search_web","read_url_content"]');
+    expect(geminiAgent("instructions", true)).toContain("subagent: false");
+    expect(geminiSettings(false).permissions.deny).toEqual([
+      "command(*)", "read_file(*)", "write_file(*)", "execute_url(*)", "mcp(*)", "read_url(*)",
+    ]);
+    expect(geminiSettings(true).permissions.deny).not.toContain("read_url(*)");
+    expect(geminiSettings(true)).toMatchObject({ toolPermission: "strict", useG1Credits: false, disableSlashCommands: true });
   });
   it("OpenCode asks for every action and only grants web actions", () => {
     expect(openCodePermissions(false)).toEqual([

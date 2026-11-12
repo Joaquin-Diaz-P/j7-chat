@@ -52,33 +52,36 @@ if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on("second-instance", () => panel?.show());
   app.on("window-all-closed", () => {});
-  app.on("activate", () => panel?.show());
+  app.on("activate", (_event, hasVisibleWindows) => {
+    if (!hasVisibleWindows) panel?.show();
+  });
   void app
     .whenReady()
     .then(async () => {
       if (exiting) return;
-      app.dock?.hide();
+      await app.dock?.show();
       const paths = await ensurePaths();
       if (exiting) return;
       const log = createLogger(paths.data);
       shutdownLog = log;
       log("startup");
       if(process.env.J7_TEST === "1" && app.isPackaged) {
-        const binaries = Object.fromEntries(await Promise.all((["claude","codex","opencode"] as const).map(async id=>[id,await resolveBinary(id)])));
+        const binaries = Object.fromEntries(await Promise.all((["claude","codex","gemini","opencode"] as const).map(async id=>[id,await resolveBinary(id)])));
         writeFileSync(join(paths.data,"packaged-paths.json"),JSON.stringify({...binaries,hex:existsSync("/Applications/Hex.app/Contents/MacOS/hex"),helper:existsSync(join(process.resourcesPath,"j7-helper")),PATH:process.env.PATH}));
       }
       const settings = new SettingsStore(join(paths.data, "settings.json"));
       const catalog = new ModelCatalog(settings, undefined, () => chat?.notify());
       const store = new SqliteChatStore(join(paths.data,"j7.db"),join(paths.data,"attachments"));
-      const titleHelper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,"j7-helper") : join(app.getAppPath(),"build/j7-helper"));
+      // One helper process serves titles, capture, voice and Settings.
+      const helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,"j7-helper") : join(app.getAppPath(),"build/j7-helper"));
       chat = new ChatService(
         catalog,
-        (event) => panel?.window.webContents.send("chat:event", event),
-        (snapshot) => panel?.window.webContents.send("chat:snapshot", snapshot),
+        (event) => { if (panel && !panel.window.isDestroyed()) panel.window.webContents.send("chat:event", event); },
+        (snapshot) => { if (panel && !panel.window.isDestroyed()) panel.window.webContents.send("chat:snapshot", snapshot); },
         undefined, undefined, settings.value.firstRunDone ? undefined : s.firstRun(shortcutLabel(settings.value.shortcut)), store, settings, log,
       );
       chat.titleGenerator = text => generateTitle(text, async text => {
-        const reply = await titleHelper.request("generateTitle",{text});
+        const reply = await helper.request("generateTitle",{text});
         return reply.ok && typeof reply.title === "string" ? reply.title : "";
       });
       const attachments = new AttachmentStore(join(paths.data, "attachments"),store)
@@ -87,12 +90,13 @@ else {
       panel = new Panel(settings, chat);
       if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       registerAttachments(panel, attachments);
-      capture = setupCapture(panel, attachments, settings);
+      capture = setupCapture(panel, attachments, settings, helper);
       registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);
       const firstRun = !settings.value.firstRunDone;
-      const settingsAccess = setupSettings(settings,panel,chat,capture,()=>{tray?.destroy();tray=createTray(panel!,settings);});
-      registerShortcut(settings.value.shortcut, () => panel?.toggle(), log);
+      const settingsAccess = setupSettings(settings,panel,chat,capture,()=>{tray?.destroy();tray=createTray(panel!,settings);},helper);
+      panel.setActivatePreviousApp(settingsAccess.activatePreviousApp);
+      registerShortcut(settings.value.shortcut, () => capture?.activatePanel(), log);
       panel.window.webContents.on("render-process-gone", () =>
         log("renderer-failed"),
       );

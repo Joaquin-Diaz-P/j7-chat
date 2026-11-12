@@ -29,4 +29,7 @@ export function createTray(panel: Panel, settings: SettingsStore) {
   return tray;
 }
 
-export const showSettingsNotice = (_panel: Panel) => openSettings();
+export const showSettingsNotice = (panel: Panel) => {
+  openSettings();
+  if (panel.window.isVisible() && !panel.settings.value.pinned) panel.hide();
+};

@@ -13,7 +13,8 @@ async function directory() { const dir = await mkdtemp(join(tmpdir(), 'j7-attach
 afterEach(async () => { for (const dir of dirs.splice(0)) await rm(dir, { recursive: true, force: true }); });
 describe('attachment ingestion', () => {
   it('enforces extensions, sizes and count before processing', async () => {
-    expect(() => validateFile('x.docx', 1)).toThrow('.docx');
+    expect(validateFile('x.docx', 1).kind).toBe('text');
+    expect(() => validateFile('x.doc', 1)).toThrow('.doc');
     expect(() => validateFile('x.png', 25 * 1024 * 1024)).toThrow('20 MB');
     expect(() => validateFile('x.pdf', 51 * 1024 * 1024)).toThrow('50 MB');
     expect(() => validateFile('x.txt', 3 * 1024 * 1024)).toThrow('2 MB');

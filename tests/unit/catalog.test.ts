@@ -10,7 +10,7 @@ const model = (provider: ProviderId): ModelInfo => ({ id: provider, label: provi
 const provider = (id: ProviderId): ChatProvider => ({ id, getStatus: vi.fn(async () => ({ state: "ready" as const })), listModels: vi.fn(async () => [model(id)]), async *runTurn() {}, dispose: vi.fn(async () => {}) });
 afterEach(() => vi.useRealTimers());
 describe("D1–D5 model catalog", () => {
-  it("registers exactly Claude, GPT and Zen in production", () => { expect(REGISTERED_PROVIDERS).toEqual(["claude", "codex", "opencode"]); });
+  it("registers Claude, GPT, Gemini and Zen in production", () => { expect(REGISTERED_PROVIDERS).toEqual(["claude", "codex", "gemini", "opencode"]); });
   it("publishes fast programs while a slow one is still connecting", async () => {
     let release!: () => void;
     const slow = provider("claude"), fast = provider("codex");

@@ -1,18 +1,19 @@
-import { copyFile, mkdir, stat, realpath, unlink, readdir } from 'node:fs/promises';
+import { copyFile, mkdir, stat, realpath, unlink, readdir, rm } from 'node:fs/promises';
 import { basename, extname, join, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Attachment } from '../providers/types.js';
 import { normalizeImage } from './image.js';
 import { readUtf8 } from './text.js';
 import { extractPdfText } from './pdf.js';
+import { extractOfficeText, OFFICE_EXTENSIONS } from './office.js';
 const images = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic']);
 export const TEXT_EXTENSIONS = ['txt','md','csv','json','js','ts','tsx','py','html','css','xml','yaml','yml','sh','sql','jsx','mjs','cjs','c','h','cpp','rs','go','swift','rb','toml','log','ini'];
 export function validateFile(name: string, size: number) {
   if (/^\.env(?:\.|$)/i.test(basename(name))) throw new Error('Archivo de entorno no permitido');
   const extension = extname(name).slice(1).toLowerCase();
-  const kind = images.has(extension) ? 'image' : extension === 'pdf' ? 'pdf' : TEXT_EXTENSIONS.includes(extension) ? 'text' : undefined;
+  const kind = images.has(extension) ? 'image' : extension === 'pdf' ? 'pdf' : TEXT_EXTENSIONS.includes(extension) || OFFICE_EXTENSIONS.includes(extension) ? 'text' : undefined;
   if (!kind) throw new Error(`J7 todavía no puede leer archivos .${extension}`);
-  const maximum = kind === 'image' ? 20 : kind === 'pdf' ? 50 : 2;
+  const maximum = kind === 'image' ? 20 : kind === 'pdf' || OFFICE_EXTENSIONS.includes(extension) ? 50 : 2;
   if (size > maximum * 1024 * 1024) throw new Error(`El tamaño máximo es ${maximum} MB`);
   return { kind, extension } as const;
 }
@@ -27,6 +28,8 @@ export class AttachmentStore {
     for (const name of await readdir(this.directory)) {
       const path=join(this.directory,name), info=await stat(path);
       if(info.isFile() && !known.has(path) && now-info.mtimeMs>86400000) await unlink(path);
+      // Cached Office images (see office-media.ts) go when their original is gone.
+      else if(info.isDirectory() && /\.media(?:\.\d+\.\d+\.tmp)?$/.test(name) && !known.has(path.replace(/\.media(?:\.\d+\.\d+\.tmp)?$/,'')) && now-info.mtimeMs>86400000) await rm(path,{recursive:true,force:true});
     }
   }
   async ingest(paths: string[], existing = 0) {
@@ -51,7 +54,11 @@ export class AttachmentStore {
     try {
       const file: Attachment = { id, kind, path, name: basename(source), mime: kind === 'pdf' ? 'application/pdf' : kind === 'text' ? 'text/plain' : `image/${['jpg','jpeg','heic'].includes(extension) ? 'jpeg' : extension}` };
       if (kind === 'image') { const normalized = await normalizeImage(path, extension === 'heic'); if (normalized !== path) await unlink(path); path = normalized; file.path = path; }
-      if (kind === 'text') file.extractedText = await readUtf8(path);
+      if (kind === 'text' && OFFICE_EXTENSIONS.includes(extension)) {
+        const extracted = await extractOfficeText(path, extension);
+        file.extractedText = extracted.text; file.truncated = extracted.truncated;
+        file.mime = extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      } else if (kind === 'text') file.extractedText = await readUtf8(path);
       if (kind === 'pdf') { const pdf = await extractPdfText(path, 400_000); file.extractedText = pdf.text; file.pages = pdf.pages; file.sentPages = pdf.sentPages; file.hasText = pdf.hasText; file.truncated = pdf.truncated; }
       this.files.set(id, file); return file;
     } catch (error) { await unlink(path).catch(() => {}); throw error; }

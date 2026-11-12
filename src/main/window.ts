@@ -28,8 +28,15 @@ export class Panel {
   private bounds: Area = { x: 0, y: 0, width: 828, height: 728 };
   private ready = false;
   private pendingShow = false;
+  private shortcutDownAt: number | undefined;
+  private shortcutShouldToggle = false;
+  private hasAttachments = false;
+  private outsideInteraction = false;
+  private spaceFocusTimer: ReturnType<typeof setTimeout> | undefined;
+  private previousWindow: BrowserWindow | undefined;
+  private activatePreviousApp: (() => Promise<boolean>) | undefined;
   constructor(
-    private settings: SettingsStore,
+    readonly settings: SettingsStore,
     private chat: ChatService,
     now: () => number = Date.now,
   ) {
@@ -44,7 +51,6 @@ export class Panel {
       hasShadow: false,
       resizable: false,
       fullscreenable: false,
-      skipTaskbar: true,
       show: false,
       webPreferences: {
         preload: join(
@@ -59,9 +65,9 @@ export class Panel {
     this.window.setIgnoreMouseEvents(true, { forward: true });
     this.window.setAlwaysOnTop(true, "floating");
     this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.window.on("blur", () => {
-      if (!settings.value.pinned && !this.suppressHide) this.hide();
-    });
+    // A Space transition also blurs panels. Only an actual outside click dismisses
+    // this window; the native helper observes clicks even when another app is active.
+    this.window.on("focus", () => { this.outsideInteraction = false; });
     this.window.on("will-move", () => { this.userMoving.willMove(); });
     this.window.on("moved", () => {
       const bounds = this.window.getBounds();
@@ -77,7 +83,10 @@ export class Panel {
         positions: { ...settings.value.positions, [this.displayId]: { x, y } },
       });
     });
-    this.window.on("closed", () => clearInterval(this.captureTimer));
+    this.window.on("closed", () => {
+      clearInterval(this.captureTimer);
+      clearTimeout(this.spaceFocusTimer);
+    });
     nativeTheme.themeSource = settings.value.theme;
     nativeTheme.on("updated", () => this.notify(true));
     this.window.webContents.on("will-navigate", (event) =>
@@ -104,6 +113,9 @@ export class Panel {
   }
 
   get voiceModifier() { return this.settings.value.voiceModifier; }
+  setActivatePreviousApp(activate: () => Promise<boolean>) {
+    this.activatePreviousApp = activate;
+  }
   private async openExternal(url: string) {
     if (/^https?:\/\//.test(url)) {
       const { shell } = await import("electron");
@@ -130,6 +142,7 @@ export class Panel {
       });
   }
   show() {
+    this.outsideInteraction = false;
     const interruptedHide = !!this.hideTimer;
     clearTimeout(this.hideTimer);
     this.hideTimer = undefined;
@@ -137,6 +150,8 @@ export class Panel {
       this.pendingShow = true;
       return;
     }
+    const focused = BrowserWindow.getFocusedWindow();
+    this.previousWindow = focused && focused !== this.window ? focused : undefined;
     if (this.window.isVisible()) {
       this.updateCapture();
       this.window.focus();
@@ -166,12 +181,49 @@ export class Panel {
     this.window.focus();
     this.notify(resume, true);
   }
+  beginShortcut() {
+    // macOS repeats global shortcut callbacks while the key remains down.
+    if (this.shortcutDownAt !== undefined) return false;
+    this.shortcutDownAt = Date.now();
+    this.shortcutShouldToggle = !this.hideTimer && this.window.isVisible() && this.window.isFocused();
+    if (!this.shortcutShouldToggle) this.show();
+    return true;
+  }
+  endShortcut(cancelled = false) {
+    if (this.shortcutDownAt === undefined) return;
+    const tapped = Date.now() - this.shortcutDownAt < 200;
+    this.shortcutDownAt = undefined;
+    if (!this.window.isDestroyed() && !this.suppressHide &&
+        ((!cancelled && tapped && this.shortcutShouldToggle) ||
+         (!this.settings.value.pinned && !this.hasAttachments && this.outsideInteraction))) this.hide();
+    this.shortcutShouldToggle = false;
+  }
+  pointerDown(point: Position) {
+    if (this.window.isDestroyed() || !this.window.isVisible()) return;
+    this.outsideInteraction = !capturesScreenPoint(point, this.bounds, this.regions);
+    if (this.outsideInteraction) {
+      clearTimeout(this.spaceFocusTimer);
+      if (!this.settings.value.pinned && this.shortcutDownAt === undefined && !this.suppressHide) this.hide();
+    }
+  }
+  spaceChanged() {
+    clearTimeout(this.spaceFocusTimer);
+    if (this.window.isDestroyed() || !this.window.isVisible() || this.hideTimer || this.outsideInteraction || this.suppressHide) return;
+    // Let macOS finish activating the destination Space before making the panel key.
+    this.spaceFocusTimer = setTimeout(() => {
+      this.spaceFocusTimer = undefined;
+      if (this.window.isDestroyed() || !this.window.isVisible() || this.hideTimer || this.outsideInteraction || this.suppressHide) return;
+      this.window.focus();
+      this.window.webContents.focus();
+    }, 100);
+  }
   toggle() {
     if (this.hideTimer) { this.show(); return; }
     if (this.window.isVisible() && this.window.isFocused()) this.hide();
     else this.show();
   }
   hide() {
+    clearTimeout(this.spaceFocusTimer);
     if (!this.window.isVisible()) return;
     if (this.hideTimer) return;
     this.window.webContents.send("window:hiding");
@@ -179,8 +231,21 @@ export class Panel {
       this.hideTimer = undefined;
       this.clock.hide();
       clearInterval(this.captureTimer);
+      // Read focus before hiding: once the bar hides, macOS may hand focus to Settings on its own.
+      // Settings opened from the bar already took focus; handing it back to the previous app would cover it.
+      const focused = BrowserWindow.getFocusedWindow();
+      const focusMovedToJ7 = !!focused && focused !== this.window && !focused.isDestroyed();
       this.window.hide();
-      app.hide();
+      if (focusMovedToJ7) return;
+      const otherVisibleWindow = BrowserWindow.getAllWindows().some(
+        window => window !== this.window && !window.isDestroyed() && window.isVisible(),
+      );
+      if (!otherVisibleWindow) app.hide();
+      else if (this.previousWindow && !this.previousWindow.isDestroyed() && this.previousWindow.isVisible()) {
+        this.previousWindow.focus();
+      } else {
+        void this.activatePreviousApp?.().catch(() => {});
+      }
     }, 150);
   }
   moveCard(dx: number, dy: number) {
@@ -197,7 +262,11 @@ export class Panel {
   }
   layout(height: number, history: boolean) {
     this.cardHeight = height;
-    if (height < 680 && !history) this.compactHeight = height;
+    if (height < 680 && !history) {
+      this.compactHeight = height;
+      // Manual pinning belongs to the expanded view, where its button is visible.
+      if (this.settings.value.pinned) this.settings.update({ pinned: false });
+    }
     if (!this.anchor) return;
     const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
     const layout = cardLayout(area, this.anchor, height, history);
@@ -221,6 +290,16 @@ export class Panel {
     this.bounds = bounds;
     this.userMoving.programmatic(bounds);
     this.window.setBounds(bounds, false);
+  }
+  setAttachmentState(present: boolean) {
+    const added = present && !this.hasAttachments;
+    this.hasAttachments = present;
+    // Only a new drop can cancel dismissal; later import updates cannot undo an outside click.
+    if (added && this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = undefined;
+      this.notify(true, true);
+    }
   }
   setPinned(pinned: boolean) {
     this.settings.update({ pinned });

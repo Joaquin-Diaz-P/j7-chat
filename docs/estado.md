@@ -1,6 +1,6 @@
 # J7 Chat: estado de cada código
 
-Solo lo actualiza Claude, al revisar cada etapa.
+Registro histórico de las etapas y verificación actual. Actualizado por la sesión principal a petición del usuario el 11 de noviembre de 2026.
 
 | Símbolo | Significado |
 |---|---|
@@ -14,7 +14,7 @@ Solo lo actualiza Claude, al revisar cada etapa.
 |---|---|---|---|
 | 0 | Adaptador de Claude | ✅ | Bloqueo, instrucciones, imagen, PDF nativo, retomar, esfuerzo y web comprobados |
 | 0 | Adaptador de Codex | ✅ | Igual que Claude, salvo PDF: va como texto extraído. Shell desactivado |
-| 0 | Adaptador de Gemini | — | Fuera de la versión 1: Google rechaza Gemini CLI con cuenta individual. Ver ideas a futuro |
+| 0 | Adaptador de Gemini | ✓ | Conectado mediante Antigravity CLI 1.5.6; Flash, imágenes, PDF como texto, continuidad y web validados. Ver [Antigravity](antigravity.md) |
 | 0 | Adaptador de OpenCode Zen | ⏸ | Código listo. El límite gratis seguía agotado el 5 de noviembre (error de cuota en 1,4 s). El catálogo sí lista 8 modelos gratis |
 | 1a | A1 A3 A6 · B1 B3 B4 B5 B6 B7 B9 B10 (`⌘ N`, `⌘ .`) B11 · C1 C2 C4 · E3 · M2 M3 M5 | ✅ | Comprobados con la app real (CDP y CoreGraphics). El revisor corrigió B4 |
 | 1a | A2 | ⏸ | "Ajustes…" muestra un aviso provisional hasta la etapa 6 (esperado) |
@@ -42,8 +42,8 @@ Solo lo actualiza Claude, al revisar cada etapa.
 | 6 | A5 · B10 (`⌘ ,`) · J1 J2 J4 J5 J6 J7 · K1 K2 K3 · M4 · correcciones de la etapa 5 | ✅ | Con la app empaquetada y en desarrollo. El revisor corrigió el idioma de los títulos, el registro de ítems de inicio en desarrollo y siete detalles más |
 | 6 | A4 · J3 (el atajo viejo deja de funcionar) | 🔍 | Prueba física del usuario: docs/prueba-final.md, pasos 4 y 8 |
 | 4 | H1 H2 H4 H6 H7 | 🔍 | Prueba física del usuario con la app instalada: docs/prueba-final.md, paso 5 |
-| — | Pendientes técnicos | ⬜ | Están en docs/ideas-futuras.md, "Pendientes técnicos de la versión 1" |
-| 8 | J6 J7 J8 | ✅ | Comprobados con la app real (CDP): sin programas abre en Programas con "Descargar" y comandos; con programas listos y sin Grabación de pantalla abre en Permisos; permisos de Hex leídos de `hex status`. El revisor corrigió la sección inicial y que un fallo del chequeo cerrara J7. Pendiente a mano: conceder un permiso y ver que cambia solo al volver |
+| — | Pendientes técnicos | ✅ / 🔍 | Parche automático cerrado el 11 de noviembre; pendientes externos y físicos en `ideas-futuras.md`. Ver ampliación al final. |
+| 8 | J6 J7 J8 | ✅ | Comprobados con la app real (CDP): sin programas abre en Conexiones con "Descargar" y comandos; con programas listos y sin Grabación de pantalla abre en Permisos; permisos de Hex leídos de `hex status`. El revisor corrigió la sección inicial y que un fallo del chequeo cerrara J7. Pendiente a mano: conceder un permiso y ver que cambia solo al volver |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.
 
@@ -55,3 +55,53 @@ Al revisar cada etapa, su fila se divide en una línea por código, con su resul
 | Zen gratis | ✅ | Funciona a través del servicio de OpenCode, con las herramientas en "ask" y rechazadas |
 | H.1 (salir con ⌘ Q mientras transcribe) | ⏸ | En pausa, a pedido del usuario |
 | B10 (`⌘ ,` en la barra) | ❌ | No funciona con el teclado real. Al usuario no le importa: usa el menú de la barra de menús |
+
+## Ampliación del 11 de noviembre de 2026
+
+| Código / alcance | Estado | Evidencia y límites |
+|---|---|---|
+| G10 · Word y PowerPoint | ✅ | 11 pruebas Office nuevas: Word/tablas, orden PPT, UTF-16, CRC/XML, límites, copia local, reinicio SQLite y texto enviado al modelo. Avisos de recorte en interfaz. Ampliado: imágenes incrustadas enviadas a modelos con visión y gráficos convertidos en tablas (2 pruebas nuevas, 13 en total). |
+| E13 · Modo comparar | ✅ | Servicio probado con tres modelos, aislamiento, cola, cancelación, error aislado y reinicio SQLite. Recorrido Electron con dos columnas, reinicio y cancelación aprobado. Agrupación de mensajes en un recorrido. Movido al selector de modelos (ícono bajo la estrella); el recorrido lo comprueba. |
+| Parche técnico | ✅ | Inicio Hex de 5 s normal/cierre acotado; intercambio de atajos con rollback; Conexiones/mock; plist sin permiso de micrófono sobrante. Tests automáticos aprobados. ⌘ , usa además un interceptor nativo con prueba unitaria; falta teclado físico. |
+| Documentación y persistencia | ✅ | Ubicaciones verificadas en código y presencia de base/adjuntos en el Mac, sin leer contenidos personales. Ver `datos-locales.md`. |
+| OpenRouter | ⬜ | Primera prioridad después; sin API keys en este trabajo. |
+| Carpetas con contexto compartido | — | Solo idea futura; no se construye ahora. |
+| Importar historial / memoria global | — | Fuera del alcance por decisión del usuario. |
+
+Las filas anteriores son el registro de cada etapa; una corrección posterior no reescribe el resultado histórico. Zen gratis ya está probado (5 de noviembre). Notarización, prueba física H.1 pausada y comprobaciones manuales de permisos siguen pendientes como se detalla en `ideas-futuras.md`.
+
+### Verificación del parche 0.1.2
+
+- `npm run typecheck`: aprobado.
+- `npm test`: 277 pruebas aprobadas en 36 archivos.
+- `npm run build:helper` y `npm run build`: aprobados.
+- `npx playwright test`: cuatro recorridos Electron aprobados (chat/adjuntos/historial, voz simulada, comparación con reinicio y controles de ventana).
+- Pruebas con `J7_MOCK=1` y `J7_DATA_DIR` temporal, sin consumir cuotas reales ni modificar el historial personal.
+- El paquete 0.1.2 se compiló antes de los cambios concurrentes de conexión Antigravity. Esa integración sigue en otro hilo y su validación no se atribuye a este parche.
+
+- `npm run dist`: aprobado; versión 0.1.2, DMG de 120.140.101 bytes, firma local verificada con `codesign --verify --deep --strict`.
+- Prueba de la app empaquetada con datos temporales: adjuntó un `.docx` y un `.pptx`, extrajo ambos textos y completó dos respuestas de comparación con esos contenidos. Aviso «Solo texto» visible.
+- `Info.plist`: versión e identificador correctos, permiso de captura conservado y descripción de micrófono sobrante eliminada.
+- Instalador generado en `release/J7 Chat-0.1.2-arm64.dmg`; SHA-256 `04ada915c0cc392ae8b0a513a89caf739363ffc2c6b3371fc5eaada767a38d6b`.
+- No se reemplazó la app de `/Applications`, no se publicó una release y no se hicieron commits ni push.
+
+### Conexión Antigravity completada (11 de noviembre)
+
+Gemini ya se conecta por `agy acp` con la sesión local de Google. Se instaló Antigravity CLI 1.5.6, se validaron respuestas reales de Flash, imágenes, PDF como texto, continuidad y búsqueda web, y se recompiló e instaló J7 0.1.2 incluyendo esta integración. Typecheck y 278 pruebas pasaron. Detalles y límites de la comprobación del paquete: [Antigravity](antigravity.md).
+
+### Ajustes posteriores al 0.1.2 (sin empaquetar)
+
+- Word y PowerPoint: imágenes incrustadas marcadas como «[Imagen N]» y enviadas a los modelos con visión (hasta 20, caché en `<adjunto>.media/`); gráficos nativos convertidos en tablas de datos. Adjuntos antiguos se releen desde la copia local al enviarlos.
+- Comparar: el botón fijo del compositor se reemplazó por un ícono en la barra lateral del selector, bajo la estrella de favoritos; el botón del modelo muestra «Comparar · N» mientras está activo.
+- Verificación: `npm run typecheck`, `npm test` (299 pruebas) y `npx playwright test` (4 recorridos) aprobados. No se generó un nuevo DMG porque la integración de Gemini sigue en curso en el mismo árbol de trabajo.
+
+### Versión 0.2.0 (11 de noviembre)
+
+Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comparar en el selector, la pestaña Conexiones y el arreglo de la barra y Ajustes que se abrían juntas. Se corrigieron los 9 hallazgos de la revisión de ventanas y Conexiones. Además:
+
+- OpenCode 2.x: Conexiones reconoce el nuevo formato de `opencode auth list` (una fila «… stored» por credencial). Antes lo mostraba como «Sin sesión».
+- Cierre sin errores: los mensajes que llegan de una ventana que se está cerrando se ignoran. Antes salía el diálogo «Object has been destroyed» al salir de J7, sobre todo en las pruebas automáticas.
+- Un solo proceso `j7-helper` atiende títulos, captura, voz y Ajustes. Antes había hasta tres. «Volver a la app anterior» funciona desde el arranque.
+- Un servicio desactivado muestra «Desactivado» en lugar de «Modelos 0».
+- Verificación: `npm run typecheck`, `npm test` (336 pruebas) y `npx playwright test` (4 recorridos) aprobados.
+- Pendiente de comprobar a mano: iniciar y cerrar sesión de verdad desde Conexiones (Claude, Codex y Antigravity), y el foco al cerrar la barra con Ajustes abierto.

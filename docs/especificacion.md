@@ -14,7 +14,7 @@ J7 no usa API keys. Habla con los programas que ya están instalados en el Mac:
 | `codex` | GPT | La cuota de Codex (no la de chatgpt.com) |
 | `opencode` | **Solo los modelos gratis de OpenCode Zen** | Gratis, con un límite diario. Otros proveedores configurados en OpenCode no se muestran, para no generar cobros |
 
-**Gemini queda fuera de la primera versión.** Google rechaza Gemini CLI con cuentas personales y pide usar Antigravity (etapa 0). El adaptador queda guardado en el código, sin registrar. Volver a Gemini, a través de Antigravity, es una idea a futuro.
+**Gemini se conecta mediante Antigravity CLI.** El adaptador usa `agy acp` con la sesión de Google existente, catálogo real y configuración aislada. Gemini CLI sigue fuera de uso por el rechazo de cuentas personales observado en la etapa 0. Validación y limitaciones: [Antigravity](antigravity.md).
 
 - Cada programa corre en una carpeta vacía propia de J7, con instrucciones de chat que reemplazan sus instrucciones de agente de programación.
 - **Herramientas permitidas:** solo la búsqueda web, con un botón 🌐 en la barra que viene encendido. El modelo decide cuándo buscar.
@@ -23,13 +23,13 @@ J7 no usa API keys. Habla con los programas que ya están instalados en el Mac:
 
 ## La barra
 
-- **Atajo global configurable**, por defecto `⌥ J`. Si la combinación ya la usa otra app, J7 avisa.
+- **Atajo global configurable**, por defecto `⌥ Espacio`. Si la combinación ya la usa otra app, J7 avisa.
 - **Barra compacta** centrada arriba, con fondo de vidrio esmerilado nativo de macOS. Crece hacia abajo cuando llega la respuesta.
 - **Botón ☰:** despliega el historial hacia la izquierda; la columna del chat no se mueve de su lugar.
 - **Cómo se esconde:** con `Esc`, con el mismo atajo o al hacer clic fuera. El botón 📌 "mantener visible" la deja encima de todo.
 - **Posición:** si el usuario la arrastra, J7 recuerda dónde la dejó.
 - **Al abrir:** si pasaron menos de 5 minutos desde que se escondió, muestra el último chat. Si pasó más tiempo, muestra la barra vacía. `⌘ N` empieza un chat nuevo.
-- **Presencia en el Mac:** solo un ícono en la barra de menús, sin ícono en el Dock. El menú tiene Abrir, Ajustes y Salir. La app arranca sola al iniciar sesión.
+- **Presencia en el Mac:** ícono en la barra de menús y en el Dock. El menú tiene Abrir, Ajustes y Salir. La app arranca sola al iniciar sesión.
 
 ## Modelos
 
@@ -45,7 +45,7 @@ J7 no usa API keys. Habla con los programas que ya están instalados en el Mac:
 ## Adjuntos
 
 - **Cómo se adjunta:** arrastrando a la barra, pegando con `⌘ V`, o con el botón de captura. El botón esconde J7, permite seleccionar una zona como `⌘ ⇧ 4` y vuelve con la imagen adjunta. La primera vez, macOS pide el permiso de Grabación de pantalla.
-- **Tipos en la versión 1:** imágenes, capturas, PDF y archivos de texto o código.
+- **Tipos admitidos:** imágenes, capturas, PDF, archivos de texto o código, Word (`.docx`) y PowerPoint (`.pptx`). Los documentos Office se convierten a texto; no se interpretan sus imágenes, gráficos ni diseño.
 - **PDF:** se entrega directamente si el modelo lo soporta; si no, J7 extrae el texto y se lo pasa. Los PDF largos (papers y apuntes) son un caso de uso central: si J7 tiene que recortar el texto, debe avisarlo.
 - Si el modelo elegido no ve imágenes, J7 avisa antes de enviar.
 - J7 guarda una copia de cada adjunto para que el chat no se rompa si el original se mueve o se borra.
@@ -68,13 +68,15 @@ Además del atajo para abrir la barra hay dos atajos más, ambos configurables:
 
 ## Respuestas
 
+- **Modo comparar:** permite elegir dos o tres modelos para responder la misma pregunta y adjuntos. Las respuestas se muestran lado a lado y se guardan agrupadas en el historial. Cada ejecución parte del mismo contexto previo, sin recibir las respuestas rivales de esa pregunta. Comparar consume un turno por modelo; los modelos de un mismo programa se atienden en su cola.
+
 - **Formato:** Markdown completo (títulos, listas, tablas y negritas), código con colores y botón para copiar, y fórmulas con KaTeX.
 - **Aparición:** la respuesta se va escribiendo en vivo.
 - **Búsqueda web:** cuando el modelo busca, aparece una línea como "Buscó en 4 sitios" que se puede desplegar, y las fuentes quedan como enlaces.
 
 ## Historial
 
-- **Almacenamiento:** solo local, en una base de datos SQLite dentro de `~/Library/Application Support/J7 Chat`. Sin nube.
+- **Almacenamiento:** historial local en `~/Library/Application Support/J7 Chat/j7.db` y copias de adjuntos en `attachments/`. Ver [datos-locales.md](datos-locales.md). No hay sincronización del historial con los sitios web; los proveedores procesan los turnos usando sus propios servicios.
 - **Títulos:** automáticos y editables. Los genera Apple Intelligence dentro del Mac, sin gastar ninguna cuota. Si no está disponible o falla, se usan las primeras palabras de la pregunta.
 - **Orden:** grupos Hoy, Ayer, Últimos 7 días y Anteriores, con los chats fijados arriba.
 - **Búsqueda:** un buscador arriba del historial que busca en títulos y dentro de las conversaciones.
@@ -104,5 +106,5 @@ Además del atajo para abrir la barra hay dos atajos más, ambos configurables:
 ## Instalación
 
 - Solo macOS, en Mac con Apple Silicon.
-- Se construye localmente desde el repo y sin firma de desarrollador de Apple. La primera vez se abre con clic derecho y luego "Abrir".
+- Se construye localmente desde el repo. Firma estable con «J7 Chat Local» si existe; en su ausencia, firma ad hoc. No está notarizada por Apple: una descarga puede requerir «Abrir igualmente». Ver [firma.md](firma.md).
 - Las actualizaciones se hacen a mano, volviendo a construir la app.

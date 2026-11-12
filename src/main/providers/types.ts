@@ -60,6 +60,7 @@ export type TurnHint = Pick<TurnInput, "model" | "effort" | "webSearch" | "instr
 export interface ChatProvider {
   id: ProviderId;
   getStatus(): Promise<ProviderStatus>;
+  connectionAccount?(): { email?: string; plan?: string } | undefined;
   listModels(): Promise<ModelInfo[]>;
   runTurn(input: TurnInput): AsyncIterable<ChatEvent>;
   /** Starts a fresh session with these options, so the first turn of a new chat doesn't wait for the program to start. */

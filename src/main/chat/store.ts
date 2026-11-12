@@ -6,6 +6,7 @@ export interface Chat {
   provider: ProviderId;
   webSearch: boolean;
   effort: string;
+  compareModels?: string[];
 }
 export interface ProviderSession {
   chatId: string;

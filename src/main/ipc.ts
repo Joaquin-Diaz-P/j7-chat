@@ -1,15 +1,20 @@
 import { SqliteChatStore } from "./chat/sqlite-store.js";
 import { ipcMain } from "electron";
 import { showSettingsNotice } from "./tray.js";
+import { fromMainFrame } from "./ipc-trust.js";
 import type { Panel } from "./window.js";
 import type { ChatService } from "./chat/service.js";
 import type { AttachmentStore } from "./attachments/index.js";
 export function registerIpc(panel: Panel, chat: ChatService, attachments: AttachmentStore) {
+  panel.window.webContents.on("before-input-event", (event, input) => {
+    if (input.type === "keyDown" && input.meta && !input.control && !input.alt && !input.shift && (input.code === "Comma" || input.key === ",")) {
+      event.preventDefault();
+      showSettingsNotice(panel);
+    }
+  });
   const trusted = (
     event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
-  ) =>
-    event.sender === panel.window.webContents &&
-    event.senderFrame === panel.window.webContents.mainFrame;
+  ) => fromMainFrame(panel.window, event);
   ipcMain.handle("history:list",(event,query:unknown='',offset:unknown=0)=>{
     if(trusted(event) && chat.store instanceof SqliteChatStore && typeof query==='string' && query.length<=1000 && typeof offset==='number' && Number.isSafeInteger(offset) && offset>=0) return chat.store.list(query,offset);
     return [];
@@ -49,8 +54,10 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.handle("chat:update", (event, options: unknown) => {
     if (!trusted(event) || !options || typeof options !== "object") return;
     const value = options as Record<string, unknown>;
+    if (value.compareModels !== undefined && (!Array.isArray(value.compareModels) || value.compareModels.length > 3 || !value.compareModels.every(key => typeof key === "string"))) throw new Error("Selección de comparación no válida");
     chat.updateChat({
       ...(typeof value.model === "string" ? { model: value.model } : {}),
+      ...(Array.isArray(value.compareModels) ? { compareModels: value.compareModels as string[] } : {}),
       ...(typeof value.webSearch === "boolean" ? { webSearch: value.webSearch } : {}),
       ...(typeof value.effort === "string" && /^[a-z0-9_-]{1,40}$/i.test(value.effort) ? { effort: value.effort } : {}),
     });
@@ -82,6 +89,9 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.on("window:moveCard", (event, dx, dy) => { if(trusted(event) && Number.isFinite(dx) && Number.isFinite(dy)) panel.moveCard(dx,dy); });
   ipcMain.on("window:layout", (event, height, history) => {
     if (trusted(event) && Number.isFinite(height) && height >= 90 && height <= 680 && typeof history === 'boolean') panel.layout(height, history);
+  });
+  ipcMain.on("window:attachments", (event, present: unknown) => {
+    if (trusted(event) && typeof present === "boolean") panel.setAttachmentState(present);
   });
   ipcMain.on("window:setPinned", (event, pinned: unknown) => {
     if (trusted(event) && typeof pinned === "boolean") panel.setPinned(pinned);

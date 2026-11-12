@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {replaceShortcuts,isAccelerator,accelerator,voiceModifier,shortcutIdentity,shortcutLabel} from '../../src/shared/shortcut.js';
+import {replaceShortcuts,resolveShortcutBindings,isAccelerator,accelerator,voiceModifier,shortcutIdentity,shortcutLabel} from '../../src/shared/shortcut.js';
 import {generateTitle,cleanTitle} from '../../src/main/titles.js';
 import {validateSettings} from '../../src/main/settings.js';
 describe('etapa 6',()=>{
@@ -20,11 +20,26 @@ it('recovers missing titles at startup without overwriting manual titles',async(
  chat.start();await Promise.resolve();expect(renamed).toEqual([['a','Why the sky is blue']]);await chat.dispose();
 });
 
-it('keeps old shortcuts active on registration collision and rolls back partial changes',()=>{
- const removed:string[]=[];
- expect(()=>replaceShortcuts([{previous:'Alt+J',next:'Alt+K',activate:()=>true},{previous:'Alt+Shift+J',next:'Alt+L',activate:()=>false}],key=>removed.push(key),'collision')).toThrow('collision');
- expect(removed).toEqual(['Alt+K']);
- replaceShortcuts([{previous:'Alt+J',next:'Alt+K',activate:()=>true}],key=>removed.push(key),'collision');expect(removed.at(-1)).toBe('Alt+J');
+it('exchanges shortcut bindings and restores originals after a partial collision',()=>{
+ const bindings=new Map<string,string>([['Alt+J','panel'],['Alt+Shift+J','capture']]);
+ const change=(previous:string,next:string,callback:string)=>({previous,next,activate:(key:string)=>{
+  if(bindings.has(key)||key==='Alt+L')return false;
+  bindings.set(key,callback);return true;
+ }});
+ const unregister=(key:string)=>{bindings.delete(key);};
+ replaceShortcuts([change('Alt+J','Alt+Shift+J','panel'),change('Alt+Shift+J','Alt+J','capture')],unregister,'collision');
+ expect([...bindings]).toEqual([['Alt+Shift+J','panel'],['Alt+J','capture']]);
+ expect(()=>replaceShortcuts([change('Alt+Shift+J','Alt+K','panel'),change('Alt+J','Alt+L','capture')],unregister,'collision')).toThrow('collision');
+ expect([...bindings]).toEqual([['Alt+Shift+J','panel'],['Alt+J','capture']]);
  expect(isAccelerator('J')).toBe(false);expect(isAccelerator('Alt+;')).toBe(true);
  expect(accelerator({code:'Semicolon',altKey:true,metaKey:false,ctrlKey:false,shiftKey:false})).toBe('Alt+;');
 });
+it('swaps both settings when the recorder chooses the other J7 binding',()=>{
+ const previous={shortcut:'Alt+J',captureShortcut:'Alt+Shift+J'};
+ expect(resolveShortcutBindings(previous,{shortcut:'Shift+Option+J'})).toEqual({shortcut:'Shift+Option+J',captureShortcut:'Alt+J'});
+ expect(resolveShortcutBindings(previous,{captureShortcut:'Alt+J'})).toEqual({shortcut:'Alt+Shift+J',captureShortcut:'Alt+J'});
+ expect(resolveShortcutBindings(previous,{shortcut:'Alt+K'})).toEqual({shortcut:'Alt+K',captureShortcut:'Alt+Shift+J'});
+});
+
+import {settingsStrings} from '../../src/renderer/strings.js';
+it('mantiene Conexiones en el índice que abre Primeros pasos',()=>{expect(settingsStrings.sections[4]).toBe('Conexiones');expect(validateSettings({disabledProviders:['claude','invalid','claude']}).disabledProviders).toEqual(['claude']);});

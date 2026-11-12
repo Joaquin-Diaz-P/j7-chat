@@ -25,7 +25,7 @@ export class ModelCatalog {
     this.providers = new Map((providers ?? (process.env.J7_MOCK === "1" ? [createProvider("mock-a"), createProvider("mock-b")] : REGISTERED_PROVIDERS.map(id => createProvider(id)))).map(p => [p.id, p]));
   }
   snapshot(): CatalogSnapshot {
-    return structuredClone({ effortByModel: this.settings?.value.effortByModel ?? {}, models: [...this.providers.keys()].flatMap(id => this.models.get(id) ?? []), statuses: this.statuses, favorites: this.settings?.value.favorites ?? [], lastModel: this.settings?.value.lastModel ?? null });
+    return structuredClone({ effortByModel: this.settings?.value.effortByModel ?? {}, models: [...this.providers.keys()].filter(id => !this.settings?.value.disabledProviders.includes(id)).flatMap(id => this.models.get(id) ?? []), statuses: this.statuses, favorites: this.settings?.value.favorites ?? [], lastModel: this.settings?.value.lastModel ?? null });
   }
   exclusive<T>(id: ProviderId, task: () => Promise<T>, signal?: AbortSignal): Promise<T> {
     let started = false;

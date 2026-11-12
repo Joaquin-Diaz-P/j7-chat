@@ -279,6 +279,18 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 ---
 
+**E13 · Modo comparar**
+- El usuario activa «Comparar» desde el selector de modelos (ícono bajo la estrella de favoritos) y elige dos o tres modelos distintos; puede desactivarlo para volver al chat normal. Mientras está activo, el botón del modelo muestra «Comparar · N».
+- Envía una sola pregunta con los mismos adjuntos y contexto previo a todos los modelos seleccionados. Cada respuesta se produce en una sesión independiente, sin ver la respuesta rival de esa pregunta.
+- Muestra respuestas en columnas con nombre del modelo, estado, Markdown, razonamiento, fuentes y copia individual.
+- Los proveedores distintos pueden responder simultáneamente; los modelos del mismo proveedor respetan su cola.
+- Detener cancela todas las respuestas activas o en cola. Un fallo en un modelo no elimina las respuestas de los demás.
+- La selección de modelos y la agrupación de respuestas se conservan al reabrir el chat desde el historial.
+- Comparar consume un turno por modelo usando las cuotas existentes.
+- **Se comprueba:** tests con proveedores simulados, cola por proveedor, aislamiento de contexto, errores/cancelación y persistencia al reabrir; recorrido de interfaz con modelos simulados.
+
+---
+
 ## F · Turnos, sesiones y traspaso
 
 **F1 · Fuente de verdad**
@@ -358,11 +370,12 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 |---|---|---|---|
 | Imagen | png, jpg, jpeg, gif, webp, heic | 20 MB | Convierte HEIC a JPEG con `sips`. Reduce a 2000 px en el lado más largo. |
 | PDF | pdf | 50 MB | — |
+| Word y PowerPoint | docx, pptx | 50 MB | Extrae texto, datos de gráficos e imágenes (hasta 20, a modelos con visión). Hasta 400.000 caracteres de contenido extraído, con aviso de recorte. |
 | Texto o código | txt, md, csv, json, js, ts, tsx, py, html, css, xml, yaml, yml, sh, sql y otras de texto | 2 MB | Comprueba que el contenido sea UTF-8. |
 
 - Hasta 10 adjuntos por mensaje.
-- Si el tipo no está permitido, aparece un aviso: "J7 todavía no puede leer archivos .docx". Si se pasa el tamaño, el aviso dice cuál es el máximo.
-- **Se comprueba:** un `.docx`, una imagen de 25 MB y 11 archivos producen el aviso que corresponde.
+- Si el tipo no está permitido, aparece un aviso: "J7 todavía no puede leer archivos .zip". Si se pasa el tamaño, el aviso dice cuál es el máximo.
+- **Se comprueba:** un `.zip`, una imagen de 25 MB y 11 archivos producen el aviso que corresponde.
 
 **G6 · Copia de cada adjunto**
 - Al adjuntar, J7 copia el archivo a `{datos}/attachments/{uuid}-{nombre}`. Los mensajes guardan esa copia, no el original.
@@ -385,6 +398,20 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Texto:** ícono y nombre.
 - Todas tienen ✕ para quitar el adjunto, y al hacer clic abren la vista rápida.
 - **Se comprueba:** cada tipo se ve como se describe.
+
+---
+
+**G10 · Documentos Office**
+- Admite `.docx` y `.pptx` desde el selector, arrastrar y pegar archivos de Finder.
+- Extrae el texto de Word, incluyendo tablas, y el texto de las diapositivas en el orden de la presentación.
+- Guarda y envía el texto extraído con el flujo de adjuntos; conserva la copia original para vista rápida e historial.
+- Lee el cuerpo de Word y el texto de las diapositivas. No incluye encabezados/pies de Word ni notas del presentador ni reproduce el diseño.
+- **Imágenes:** marca cada imagen incrustada como «[Imagen N]» en su lugar (con su texto alternativo si existe) y, a los modelos que ven imágenes, las envía aparte en el mismo orden (hasta 20 por documento; PNG/JPEG/GIF/BMP/TIFF/WebP/HEIC, redimensionadas a 2000 px). Formatos vectoriales como EMF/WMF quedan marcados como no enviados. A los modelos sin visión se les avisa que las imágenes no se enviaron.
+- **Gráficos:** convierte cada gráfico nativo de Word/PowerPoint en «[Gráfico N · tipo: título]» con su tabla de categorías, series y valores, usando los datos guardados en el propio archivo.
+- Las imágenes extraídas se guardan junto a la copia local (`<adjunto>.media/`) y se borran con el chat.
+- Rechaza documentos corruptos, cifrados o formatos antiguos `.doc`/`.ppt` y limita el tamaño expandido del ZIP y XML internos.
+- Si recorta texto, avisa antes del envío y en el contenido entregado al modelo.
+- **Se comprueba:** documentos sintéticos con párrafos, tablas, diapositivas reordenadas, imágenes (incluida una EMF no compatible) y gráficos de barras y circular; archivos vacíos/corruptos/cifrados, límites, envío del texto y recuperación del adjunto después de reiniciar.
 
 ---
 
@@ -540,7 +567,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **J1 · Ventana de ajustes**
 - Es una ventana normal, no tipo panel. Se abre desde el menú o con `⌘ ,`.
-- Secciones: General, Atajos, Modelos, Instrucciones, Programas y Permisos.
+- Secciones: General, Atajos, Modelos, Instrucciones, Conexiones y Permisos.
 - Los ajustes se guardan en `{datos}/settings.json` y se aplican en vivo.
 - **Se comprueba:** cada cambio se aplica sin reiniciar la app.
 
@@ -566,18 +593,17 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - Un campo de texto de hasta 4.000 caracteres, con contador. Se guarda solo y muestra "Guardado".
 - Se aplica según F5.
 
-**J6 · Programas**
-- Arriba dice: "Necesitas al menos uno: Claude Code o Codex. Hex es opcional y sirve para la voz."
-- Muestra **Claude Code**, **Codex** y **Hex**, con su nombre visible (no el id), para qué sirve y su estado: Listo, Sin instalar, Sin sesión o Error, con el detalle. OpenCode solo aparece si ya está instalado.
-- **Sin instalar:** botón "Descargar", que abre la página oficial en el navegador. Debajo, el comando de Terminal para instalarlo, con botón "Copiar".
-  - Claude Code: página `https://code.claude.com/docs/en/setup` · comando `curl -fsSL https://claude.ai/install.sh | bash`.
-  - Codex: página `https://developers.openai.com/codex/cli` · comando `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (no necesita Node).
-  - Hex: el botón descarga el DMG de `https://anoma.ly/hex/download/macos-arm64-dmg`. Sin comando. Aclara: "Requiere un Mac con Apple silicon y macOS 15 o posterior. Ábrelo una vez y sigue sus pasos."
-- **Sin sesión:** el comando para iniciar sesión (`claude auth login` o `codex login`) con "Copiar", y un botón "Abrir Terminal". Aclara: "Pégalo en la Terminal y sigue los pasos del navegador. J7 usará esa misma cuenta."
-- **Hex instalado pero cerrado:** botón "Abrir Hex".
-- Solo se abren las direcciones de esta lista; J7 no abre ninguna otra.
-- Tiene un botón "Volver a comprobar", y también vuelve a comprobar solo cuando la ventana de ajustes recupera el foco.
-- **Se comprueba:** con una ruta falsa aparece "Sin instalar", su botón "Descargar" y su comando.
+**J6 · Conexiones**
+- Introducción: "Conecta al menos una cuenta. J7 usa la misma sesión que el programa oficial de cada servicio." En modo de prueba identifica los modelos locales sin consultar cuentas reales.
+- **Modelos de IA:** tarjetas de Claude, ChatGPT (Codex), Gemini (Antigravity) y OpenCode; OpenCode solo si está instalado. Cada tarjeta muestra programa y versión, estado con texto, cuenta y plan cuando el programa los proporciona, y número de modelos. "Ver modelos" despliega los nombres disponibles dentro de la tarjeta.
+- **Inicio de sesión desde J7:** "Iniciar sesión" abre el navegador mediante la CLI oficial de Claude o Codex. Gemini utiliza `authenticate` de ACP con `oauth-personal` (Google); si la CLI no anuncia ese método, abre `agy` en Terminal y lo explica. OpenCode abre `opencode auth login` en Terminal.
+- Mientras se inicia sesión, comprueba el estado cada 2 segundos, permite "Abrir el enlace otra vez" si hay URL y "Cancelar". Si Claude pide código, aparecen el campo "Código" y "Enviar". El plazo máximo es de cinco minutos y J7 cierra los procesos de login al salir.
+- **Cerrar sesión:** disponible para Claude y Codex. Pide confirmar: "¿Cerrar la sesión de <servicio> también en <programa>? Afecta a todas las apps que lo usan." El login y el logout usan el HOME del usuario y actualizan el catálogo, compartiendo la sesión de la CLI oficial.
+- **Activar o desactivar:** el interruptor oculta o recupera todos los modelos del servicio en la barra, Comparar y Modelos. No permite desactivar el último servicio activo con sesión y explica el bloqueo. Si el modelo seleccionado deja de estar disponible, la barra elige el siguiente disponible.
+- **Descargar y sitio oficial:** sin instalar aparece "Descargar" y un desplegable "Instalar desde la Terminal" con comando y "Copiar". Todas las tarjetas conservan "Sitio oficial", incluso conectadas. Solo se abren las páginas oficiales de la lista fija de J7, incluida `https://opencode.ai/download`.
+- **Voz:** Hex queda al final, con su estado, "Descargar" si falta o "Abrir Hex" si está cerrado, y el requisito de Apple silicon y macOS 15. No cambia su funcionamiento.
+- "Volver a comprobar" refresca las conexiones y los modelos; también se comprueban al recuperar el foco de Ajustes.
+- **Se comprueba:** binarios falsos y HOME temporal cubren cuenta, plan, login, código, cancelación, timeout, logout, validación IPC y proveedores desactivados. Las sesiones reales se verifican manualmente por el revisor; las pruebas automáticas nunca autentican ni cierran cuentas reales.
 
 **J7 · Permisos**
 - **J7 Chat:** Grabación de pantalla ("para las capturas") y Monitoreo de entrada ("para la tecla de voz"). Cada uno con su estado y el botón "Abrir Ajustes del Sistema", que abre esa página exacta. Debajo: "Busca J7 Chat en la lista y actívalo. Si no aparece, usa + y elígelo en Aplicaciones."
@@ -591,11 +617,11 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 **J8 · Primeros pasos**
 - Al arrancar, cuando termina la primera comprobación de programas:
-  - Si ningún programa de chat está Listo, se abren los ajustes en **Programas**. Pasa en cada arranque hasta que haya uno listo, porque sin eso J7 no sirve.
+  - Si ningún programa de chat está Listo, se abren los ajustes en **Conexiones**. Pasa en cada arranque hasta que haya uno listo, porque sin eso J7 no sirve.
   - Si no, y es el primer arranque, y a J7 le falta Grabación de pantalla o Monitoreo de entrada, se abren en **Permisos**.
   - Hex nunca abre los ajustes solo.
 - Si todo está listo, no se abre nada.
-- **Se comprueba:** con todos los programas en ruta falsa, la app abre los ajustes en Programas; con todo listo, no abre nada.
+- **Se comprueba:** con todos los programas en ruta falsa, la app abre los ajustes en Conexiones; con todo listo, no abre nada.
 
 ---
 

@@ -1,3 +1,5 @@
+import type { ProviderId } from './providers/types.js';
+import { validateDisabledProviders } from '../shared/connections.js';
 import { isAccelerator } from "../shared/shortcut.js";
 import { canonicalModelKey } from "../shared/model-key.js";
 import { mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
@@ -7,6 +9,7 @@ export interface Position {
   y: number;
 }
 export interface Settings {
+  disabledProviders: ProviderId[];
   firstRunDone: boolean;
   openAtLogin: boolean;
   shortcut: string;
@@ -39,6 +42,7 @@ export function validateSettings(value: unknown): Settings {
         positions[id] = { x: Math.round(p.x) + (v.positionsVersion === 2 ? 0 : 340), y: Math.round(p.y) + (v.positionsVersion === 2 ? 0 : 88) };
     }
   return {
+    disabledProviders: validateDisabledProviders(v.disabledProviders),
     effortByModel: Object.fromEntries(Object.entries(v.effortByModel && typeof v.effortByModel === "object" ? v.effortByModel : {}).filter((entry): entry is [string,string] => typeof entry[1] === "string" && /^[a-z0-9_-]{1,40}$/i.test(entry[1])).map(([key, value]) => [canonicalModelKey(key), value])),
     firstRunDone: v.firstRunDone === true,
     openAtLogin: v.openAtLogin !== false,

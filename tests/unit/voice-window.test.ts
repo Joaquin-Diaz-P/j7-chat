@@ -1,5 +1,5 @@
 import { it,expect,vi } from 'vitest';
-vi.mock('electron',()=>({app:{hide:vi.fn()},BrowserWindow:class{},screen:{},nativeTheme:{}}));
+vi.mock('electron',()=>({app:{hide:vi.fn()},BrowserWindow:class{static getAllWindows(){return [];}static getFocusedWindow(){return null;}},screen:{},nativeTheme:{}}));
 import { Panel } from '../../src/main/window.js';
 import { VisibilityClock } from '../../src/main/window-state.js';
 import { CaptureFlows } from '../../src/main/capture/flows.js';

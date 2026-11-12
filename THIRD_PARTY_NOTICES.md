@@ -5,6 +5,8 @@
 - `@anthropic-ai/claude-agent-sdk` 0.3.318: © Anthropic PBC, todos los derechos reservados; sujeto a sus [acuerdos legales](https://code.claude.com/docs/en/legal-and-compliance). No es una dependencia MIT.
 - `@agentclientprotocol/sdk` 2.4.0: Apache-2.0.
 - `unpdf` 1.9.1: MIT; incluye PDF.js y sus avisos de licencia.
+- `yauzl` 3.4.0: MIT; lectura de archivos ZIP de Word y PowerPoint sin extraerlos al disco.
+- `sax` 1.6.1: BlueOak-1.0.0; lectura de XML de documentos Office. Los paquetes de tipos `@types/sax` y `@types/yauzl` son dependencias de desarrollo con licencia MIT.
 - Herramientas de desarrollo: TypeScript (Apache-2.0), Vitest y tsx (MIT). Las versiones transitivas y sus avisos se conservan en npm y `package-lock.json`.
 
 Los PNG y PDF de prueba son sintéticos, creados con `spikes/create-attachments.swift`. Los eventos de prueba corresponden a preguntas sintéticas; se eliminaron datos de cuenta, firmas y rutas personales.

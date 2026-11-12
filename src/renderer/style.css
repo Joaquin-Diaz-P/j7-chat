@@ -168,7 +168,7 @@ summary { cursor: pointer; color: var(--secondary-label); }
 .attachment-remove { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; justify-content:center; border-radius:50%; background:var(--text); color:var(--surface); border:2px solid var(--surface); opacity:0; transform:scale(.85); transition:opacity .12s, transform .12s; }
 .attachment-remove:hover { background:var(--text); }
 .attachment-chip:hover .attachment-remove, .attachment-remove:focus-visible { opacity:1; transform:none; }
-.drop-overlay { position:absolute; inset:0; z-index:20; display:grid; place-items:center; background:var(--drop-surface); color:var(--drop-foreground); pointer-events:none; border:2px dashed var(--drop-foreground); border-radius:14px; }
+.drop-overlay { position:absolute; inset:3px; z-index:20; display:grid; place-items:center; background:var(--drop-surface); color:var(--drop-foreground); pointer-events:none; border:2px dashed var(--drop-foreground); border-radius:9px; }
 .shell {display:flex;align-items:stretch;width:680px;}
 .shell.history-open {width:940px;min-height:360px;}
 .history {width:260px;flex-shrink:0;padding:10px;background:var(--background);max-height:100vh;display:flex;flex-direction:column;border-right:1px solid var(--border);}
@@ -267,8 +267,6 @@ textarea::placeholder { color:var(--text-muted);opacity:1; }
 .shell.compact { background:var(--surface); border:0; border-radius:20px; box-shadow:none; padding:8px; overflow:hidden; }
 .compact .panel,.dark .compact .panel { padding:0; background:transparent; }
 .compact .composer { margin:0; flex-shrink:0; }
-.compact-tools { display:flex; opacity:0; }
-.compact:hover .compact-tools,.compact-tools:focus-within { opacity:1; }
 .history { flex:0 0 260px; width:260px; min-width:0; height:100%; padding:36px 10px 10px; display:flex; flex-direction:column; border:0; border-right:1px solid var(--border); border-radius:0; box-shadow:none; background:var(--surface-sidebar); }
 .history-search { display:flex; align-items:center; color:var(--text-muted); border-bottom:1px solid var(--border); }
 .history-search:focus-within { border-color:var(--accent); }
@@ -327,6 +325,7 @@ article [role=status],article details { color:var(--text-muted); }
 .panel,.dark .panel,.compact .panel,.dark .compact .panel {position:absolute;right:0;bottom:0;width:min(520px,100%);height:100%;padding:36px 0 0;background:transparent;border:0;box-shadow:none;overflow:visible;}
 .composer,.compact .composer { margin:auto 11px 11px; }
 .compact .panel {display:flex;}
+.compact .drop-overlay {top:calc(var(--card-top) + 3px);}
 .card-clip > .window-bar {position:absolute;top:0;left:260px;right:0;z-index:3;transition:opacity 150ms var(--ease) 80ms;}
 .history-open .hide-dot {transform:translateX(-260px);}
 .window-bar .hide-dot {transition:transform var(--motion) var(--ease);}
@@ -380,3 +379,65 @@ button[aria-pressed=true] { background:var(--row-active); }
 .settings-view {--sidebar-row-selected:color-mix(in srgb,var(--text) 7%,transparent)}
 .settings-titlebar {position:absolute;top:0;left:0;right:0;height:40px;-webkit-app-region:drag}
 .settings-view :is(button,input,select,textarea) {-webkit-app-region:no-drag}
+
+/* The same question has independently generated answer columns. */
+.compare-picker {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  max-height: 330px;
+  overflow-y: auto;
+}
+.compare-picker h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.compare-picker p { margin: 6px 0; font-size: 12px; line-height: 1.5; }
+.compare-models { display: grid; gap: 4px; margin: 10px 0; }
+.compare-models label { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 5px; font-size: 12px; cursor: pointer; }
+.compare-models label:hover { background: var(--row-hover); }
+.compare-models input { accent-color: var(--accent); }
+.compare-help { color: var(--muted-foreground); }
+.compare-picker-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; font-size: 12px; }
+.compare-picker-actions button:first-child { margin-right: auto; }
+.compare-picker-actions .compare-apply { background: var(--row-hover); font-weight: 600; }
+.comparison-grid { display: grid; grid-template-columns: repeat(var(--comparison-columns), minmax(250px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; align-items: start; }
+.comparison-grid .assistant-message { min-width: 0; margin: 0; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.comparison-model { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; margin: 0 0 10px; }
+.comparison-grid .response-actions { flex-wrap: wrap; }
+.model-compare[data-active=true] { color: var(--accent); }
+.model-compare:disabled { opacity: .4; }
+.model-compare-count { position: absolute; right: 3px; bottom: 5px; font-size: 9px; font-weight: 700; line-height: 1; }
+.model-selector .compare-picker { flex: 1; min-width: 0; max-height: none; border: 0; overflow-y: auto; }
+.model-selector .compare-models input { width: auto; padding: 0; flex-shrink: 0; }
+
+/* Connections uses the Settings theme in both appearances. */
+.settings-view .connections {padding:16px 0}
+.settings-view .connections-intro {color:var(--text-muted);line-height:1.6;margin-bottom:20px}
+.settings-view .connections-heading {font-size:12px;color:var(--text-muted);margin:20px 0 10px}
+.settings-view section.connection-card {padding:16px;margin:0 0 12px;border:1px solid var(--border-raised);border-radius:10px;overflow:visible;background:var(--surface);flex:none}
+.connection-header {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.connection-header > svg {flex:none}
+.connection-name {flex:1;min-width:130px}
+.connection-name h4 {font-size:14px;font-weight:600;margin:0}
+.connection-name h4 span {display:block;font-size:11px;font-weight:400;color:var(--text-muted);margin-top:3px}
+.settings-view .connection-name p {font-size:11px;color:var(--text-muted);margin-top:5px}
+.connection-status {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.connection-badge {font-size:10px;padding:4px 7px;border-radius:20px;color:var(--text-muted);background:var(--row-hover);white-space:normal}
+.connection-badge.ready {color:light-dark(#176236,#7bdda1);background:light-dark(#e5f4ea,#173324)}
+.connection-badge.not_authenticated {color:light-dark(#845500,#f4cc80);background:light-dark(#fff3d9,#3b2e19)}
+.connection-badge.signing_in {color:light-dark(#2456a8,#9abfff);background:light-dark(#eaf1ff,#1e2e48)}
+.connection-badge.error {color:var(--error);background:var(--error-surface)}
+.connection-account {display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;margin:16px 0}
+.connection-account div {display:flex;gap:6px;min-width:0;overflow-wrap:anywhere}
+.connection-account dt {color:var(--text-muted)}
+.connection-account dd {margin:0}
+.connection-actions {display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.settings-view .connection-help {color:var(--text-muted);line-height:1.6;margin:12px 0;overflow-wrap:anywhere}
+.settings-view button.connection-primary {margin-top:16px;background:var(--accent);color:white;border-color:transparent}
+.settings-view button.connection-official {display:block;margin-top:14px;padding:0;border:0;background:none;color:var(--text-muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.connection-install {margin-top:14px;color:var(--text-muted);font-size:12px}
+.connection-install summary {cursor:pointer}
+.settings-view .connection-install .settings-command {display:flex;align-items:center;gap:8px;margin-top:10px;overflow-wrap:anywhere}
+.connection-install code {min-width:0;flex:1;white-space:normal}
+.connection-models {font-size:12px;line-height:1.8;padding-left:18px;margin:12px 0;color:var(--text-muted)}
+.connection-code {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.connection-code input {width:120px;min-width:0;flex:1;border:1px solid var(--border-raised);border-radius:5px;background:var(--surface-raised);padding:6px;color:var(--text)}
+.settings-view input[role=switch]:disabled {opacity:.4;cursor:default}
+.connections-refresh {margin-top:6px}

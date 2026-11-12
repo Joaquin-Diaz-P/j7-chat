@@ -249,13 +249,14 @@ it("preserves every character in /echo-context, including CRLF and Unicode separ
   } finally { vi.useRealTimers(); }
 });
 it('uses the turn provider login command and never suggests login for Zen', async () => {
-  for (const id of ['claude', 'codex', 'opencode'] as const) {
+  for (const id of ['claude', 'codex', 'gemini', 'opencode'] as const) {
     const p = new RecordingProvider(id);
     p.script = async function* () { yield { type: 'error', kind: 'auth', message: 'auth' }; };
     const { service, send } = await setup([p]); await send('question');
     const error = service.snapshot().messages.at(-1)!.text;
-    if (id === 'claude') { expect(error).toContain('/login'); expect(error).not.toContain('codex login'); }
+    if (id === 'claude') { expect(error).toContain('claude auth login'); expect(error).not.toContain('codex login'); }
     if (id === 'codex') { expect(error).toContain('codex login'); expect(error).not.toContain('/login'); }
+    if (id === 'gemini') { expect(error).toContain('`agy`'); expect(error).not.toContain('`gemini`'); }
     if (id === 'opencode') expect(error).not.toContain('Terminal');
     await service.dispose();
   }

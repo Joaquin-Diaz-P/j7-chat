@@ -1,6 +1,6 @@
 {
   "name": "j7-chat",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Barra de consultas rápidas para macOS que usa Claude Code, Codex y OpenCode, con capturas y voz de Hex.",
   "author": "Joaquin Diaz",
   "license": "MIT",
@@ -27,7 +27,9 @@
   "dependencies": {
     "@agentclientprotocol/sdk": "2.4.0",
     "@anthropic-ai/claude-agent-sdk": "0.3.318",
+    "sax": "1.6.1",
     "unpdf": "^1.4.0",
+    "yauzl": "3.4.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -36,6 +38,8 @@
     "@types/node": "^24.10.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/sax": "1.2.7",
+    "@types/yauzl": "3.4.0",
     "@vitejs/plugin-react": "^6.2.1",
     "electron": "^45.2.3",
     "electron-builder": "^26.18.0",

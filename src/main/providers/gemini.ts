@@ -9,66 +9,40 @@ import {
 } from "@agentclientprotocol/sdk/unstable";
 import { Readable, Writable } from "node:stream";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { textWithAttachments } from "../attachments/content.js";
 import { buildChatInstructions } from "../chat/instructions.js";
 import {
   AsyncQueue,
   BaseProvider,
   cleanEnvironment,
-  linkExisting,
   object,
   privateHome,
   ProviderError,
   urlsIn,
   classifyError,
+  resumeError,
   stopChild,
 } from "./runtime.js";
 import type { ChatEvent, ModelInfo, TurnInput } from "./types.js";
 
-export function geminiSettings(
-  webSearch: boolean,
-  model: string,
-  effort: string,
-) {
+export function geminiSettings(webSearch: boolean) {
   return {
-    security: { auth: { selectedType: "oauth-personal" } },
-    tools: {
-      core: webSearch ? ["google_web_search", "web_fetch"] : [],
-      exclude: [],
-      autoAccept: false,
-    },
-    context: {
-      fileName: [],
-      discoveryMaxDirs: 0,
-      loadMemoryFromIncludeDirectories: false,
-    },
-    mcpServers: {},
-    hooksConfig: { enabled: false },
-    skills: { enabled: false },
-    general: {
-      enableAutoUpdate: false,
-      enableAutoUpdateNotification: false,
-      enablePromptCompletion: false,
-    },
-    telemetry: { enabled: false },
-    modelConfigs: {
-      customOverrides: [
-        {
-          match: { model },
-          modelConfig: {
-            generateContentConfig: {
-              thinkingConfig: model.startsWith("gemini-2.5")
-                ? { thinkingBudget: effort === "high" ? 8192 : 0 }
-                : { thinkingLevel: effort === "high" ? "HIGH" : "LOW" },
-            },
-          },
-        },
+    toolPermission: "strict",
+    allowNonWorkspaceAccess: false,
+    useG1Credits: false,
+    permissions: {
+      deny: [
+        "command(*)", "read_file(*)", "write_file(*)", "execute_url(*)", "mcp(*)",
+        ...(!webSearch ? ["read_url(*)"] : []),
       ],
     },
+    disableSlashCommands: true,
   };
+}
+export function geminiAgent(instructions: string, webSearch: boolean) {
+  return `---\nname: j7-chat\ndescription: Asistente de chat de J7 Chat.\nmainAgent: true\nsubagent: false\ncommandExecutionPolicy: off\ntools: ${JSON.stringify(webSearch ? ["search_web", "read_url_content"] : [])}\nmcpServers: []\nskills: []\nplugins: []\n---\n${instructions}\n`;
 }
 export function translateGeminiEvent(raw: unknown): ChatEvent[] {
   const message = object(raw),
@@ -92,7 +66,7 @@ export function translateGeminiEvent(raw: unknown): ChatEvent[] {
     (update.sessionUpdate === "tool_call" ||
       update.sessionUpdate === "tool_call_update") &&
     (update.kind === "search" ||
-      /google_web_search|web_fetch|search|fetch/i.test(String(update.title)))
+      /google_web_search|web_fetch|search_web|read_url_content|search|fetch/i.test(String(update.title)))
   ) {
     const query = object(update.rawInput).query;
     return [
@@ -106,6 +80,7 @@ export function translateGeminiEvent(raw: unknown): ChatEvent[] {
   return [];
 }
 interface GeminiSession extends NewSessionResponse {
+  // Antigravity also publishes the older ACP model catalog.
   models?: { availableModels: { modelId: string; name: string }[] };
 }
 
@@ -114,62 +89,50 @@ export class GeminiProvider extends BaseProvider {
   private child: ChildProcessWithoutNullStreams | undefined;
   private connection: ClientConnection | undefined;
   private key = "";
+  private account: { email?: string; plan?: string } | undefined;
+  connectionAccount() { return this.account; }
+  private readAccount(value: unknown) {
+    const record = object(value), account = object(record.account);
+    const email = account.email ?? record.email;
+    const plan = account.plan ?? record.plan;
+    const fields = { ...(typeof email === "string" ? {email} : {}), ...(typeof plan === "string" ? {plan} : {}) };
+    if (Object.keys(fields).length) this.account = fields;
+  }
   private capabilities: InitializeResponse["agentCapabilities"];
-  private nativePdf = false;
   private session: GeminiSession | undefined;
   private events: AsyncQueue<ChatEvent> | undefined;
+  private async paths() {
+    const paths = await privateHome(this.id, this.options);
+    const workspace = join(paths.root, "workspace");
+    await mkdir(workspace, { recursive: true, mode: 0o700 });
+    return { ...paths, workspace };
+  }
   private async connect(input?: TurnInput) {
-    const model = input?.model ?? "gemini-2.5-flash";
     const key = JSON.stringify([
-      model,
-      input?.effort ?? "normal",
       input?.webSearch ?? false,
       input?.instructions ?? buildChatInstructions(),
     ]);
     if (this.connection && input && this.key !== key) await this.dispose();
     if (this.connection) return this.connection;
     const start = performance.now(),
-      paths = await privateHome(this.id, this.options);
-    const config = join(paths.root, ".gemini");
-    await mkdir(config, { recursive: true, mode: 0o700 });
-    for (const file of ["oauth_creds.json", "google_accounts.json"])
-      await linkExisting(
-        join(paths.userHome, ".gemini", file),
-        join(config, file),
-      );
-    try {
-      await access(join(config, "oauth_creds.json"));
-    } catch {
-      throw new ProviderError(
-        "auth",
-        "Inicia sesión en Gemini desde la terminal con tu cuenta de Google.",
-      );
-    }
-    const settings = geminiSettings(
-      input?.webSearch ?? false,
-      model,
-      input?.effort ?? "normal",
-    );
+      paths = await this.paths();
+    const config = join(paths.root, "antigravity-cli");
+    const agents = join(paths.workspace, ".agents", "agents");
+    await Promise.all([config, agents].map(path => mkdir(path, { recursive: true, mode: 0o700 })));
+    const settings = geminiSettings(input?.webSearch ?? false);
     await writeFile(join(config, "settings.json"), JSON.stringify(settings), {
       mode: 0o600,
     });
-    const system = join(paths.root, "system.md");
-    await writeFile(system, input?.instructions ?? buildChatInstructions(), {
-      mode: 0o600,
-    });
-    const empty = join(paths.root, "empty-settings.json");
-    await writeFile(empty, "{}", { mode: 0o600 });
+    await writeFile(join(agents, "j7-chat.md"), geminiAgent(input?.instructions ?? buildChatInstructions(), input?.webSearch ?? false), { mode: 0o600 });
     const child = spawn(
       await this.binary(),
-      ["--acp", "--model", model, "--extensions", "none"],
+      ["acp", "--agent", "j7-chat", "--gemini-dir", paths.root,
+        "--include-default-customizations=false", "--disable-telemetry"],
       {
         cwd: paths.workspace,
         env: {
           ...cleanEnvironment(this.options.environment),
-          GEMINI_CLI_HOME: paths.root,
-          GEMINI_SYSTEM_MD: system,
-          GEMINI_CLI_SYSTEM_SETTINGS_PATH: empty,
-          GEMINI_CLI_SYSTEM_DEFAULTS_PATH: empty,
+          AGY_CLI_DISABLE_AUTO_UPDATE: "true",
         },
         stdio: "pipe",
       },
@@ -182,7 +145,13 @@ export class GeminiProvider extends BaseProvider {
       this.events?.end();
     });
     const app = client({ name: "J7 Chat" })
-      .onRequest("session/request_permission", () => {
+      .onRequest("session/request_permission", ({ params }) => {
+        const tool = params.toolCall;
+        // The custom agent only exposes these two tools. Everything else is denied.
+        if (input?.webSearch && (tool.kind === "search" || tool.kind === "fetch")) {
+          const allow = params.options.find(option => option.kind === "allow_once");
+          if (allow) return { outcome: { outcome: "selected" as const, optionId: allow.optionId } };
+        }
         this.diagnostic({ type: "permission-rejected" });
         return { outcome: { outcome: "cancelled" as const } };
       })
@@ -216,7 +185,7 @@ export class GeminiProvider extends BaseProvider {
       this.events?.push({
         type: "error",
         kind: "other",
-        message: "El proceso de Gemini terminó.",
+        message: "El proceso de Antigravity terminó.",
       });
       this.events?.end();
     });
@@ -230,18 +199,17 @@ export class GeminiProvider extends BaseProvider {
         },
       });
       this.capabilities = init.agentCapabilities;
-      this.nativePdf =
-        init.agentCapabilities?.promptCapabilities?.embeddedContext ?? false;
+      this.readAccount(init);
       this.raw({
         type: "initialize",
         agentCapabilities: init.agentCapabilities,
       });
       this.diagnostic({
         type: "isolation",
-        allowedTools: settings.tools.core,
+        allowedTools: input?.webSearch ? ["search_web", "read_url_content"] : [],
         extensions: [],
         mcpServers: [],
-        note: "ACP no publica inventario de herramientas; allowlist en settings.json.",
+        note: "Agente propio, configuración aislada y permisos ACP restringidos.",
       });
       this.diagnostic({
         type: "startup",
@@ -255,7 +223,7 @@ export class GeminiProvider extends BaseProvider {
   }
   private async newSession(input?: TurnInput) {
     const connection = await this.connect(input),
-      paths = await privateHome(this.id, this.options);
+      paths = await this.paths();
     if (!input && this.session) return { connection, session: this.session };
     if (
       input?.nativeSessionId &&
@@ -267,9 +235,7 @@ export class GeminiProvider extends BaseProvider {
           "Esta versión de Gemini no permite retomar sesiones.",
         );
       const result = await connection.agent.request("session/load", {
-        sessionId: input.nativeSessionId,
-        cwd: paths.workspace,
-        mcpServers: [],
+        sessionId: input.nativeSessionId, cwd: paths.workspace, mcpServers: [],
       });
       this.session = { ...result, sessionId: input.nativeSessionId };
     } else if (!this.session || !input?.nativeSessionId) {
@@ -278,6 +244,7 @@ export class GeminiProvider extends BaseProvider {
         { cwd: paths.workspace, mcpServers: [] },
       );
     }
+    this.readAccount(this.session);
     return { connection, session: this.session };
   }
   protected async checkAuth() {
@@ -285,33 +252,51 @@ export class GeminiProvider extends BaseProvider {
   }
   async listModels(): Promise<ModelInfo[]> {
     const { session } = await this.newSession();
-    return (session.models?.availableModels ?? []).map((model) => ({
+    const config = session.configOptions?.find(option => option.category === "model");
+    const effort = session.configOptions?.find(option => option.id === "thought_level");
+    const values = config?.type === "select" ? config.options.flatMap(option => "group" in option ? option.options : [option]) : undefined;
+    const reasoningEfforts = effort?.type === "select" ? effort.options.flatMap(option => "group" in option ? option.options.map(value => value.value) : [option.value]) : [];
+    return (values?.map(option => ({ modelId: option.value, name: option.name })) ?? session.models?.availableModels ?? [])
+      .filter(model => model.modelId.startsWith("gemini-"))
+      .map((model) => ({
       id: model.modelId,
       label: model.name,
       provider: this.id,
       supportsImages: this.capabilities?.promptCapabilities?.image ?? false,
-      supportsPdf: this.nativePdf,
-      supportsEffort: /gemini-(2\.5|3)/.test(model.modelId),
+      // Antigravity 1.5.6 advertises embeddedContext but drops application/pdf blobs.
+      supportsPdf: false,
+      supportsEffort: reasoningEfforts.length > 0,
+      ...(reasoningEfforts.length ? { reasoningEfforts } : {}),
     }));
   }
   protected async *execute(input: TurnInput): AsyncIterable<ChatEvent> {
-    const { connection, session } = await this.newSession(input);
+    let state: Awaited<ReturnType<GeminiProvider["newSession"]>>;
+    try {
+      state = await this.newSession(input);
+    } catch (error) {
+      yield input.nativeSessionId ? resumeError(error) : classifyError(error);
+      return;
+    }
+    const { connection, session } = state;
+    if (session.configOptions?.some(option => option.category === "model")) {
+      const result = await connection.agent.request("session/set_config_option", {
+        sessionId: session.sessionId, configId: "model", value: input.model,
+      });
+      session.configOptions = result.configOptions;
+      if (session.configOptions.some(option => option.id === "thought_level")) {
+        const result = await connection.agent.request("session/set_config_option", {
+          sessionId: session.sessionId, configId: "thought_level", value: input.effort === "normal" ? "low" : input.effort,
+        });
+        session.configOptions = result.configOptions;
+      }
+    } else if (session.models) {
+      await connection.agent.request("session/set_model", { sessionId: session.sessionId, modelId: input.model });
+    }
     yield { type: "session", nativeSessionId: session.sessionId };
-    const events = new AsyncQueue<ChatEvent>();
-    this.events = events;
     const prompt: ContentBlock[] = [
-      { type: "text", text: await textWithAttachments(input, this.nativePdf) },
+      { type: "text", text: await textWithAttachments(input, false) },
     ];
     for (const attachment of input.attachments) {
-      if (attachment.kind === "pdf" && this.nativePdf)
-        prompt.push({
-          type: "resource",
-          resource: {
-            uri: pathToFileURL(attachment.path).href,
-            mimeType: "application/pdf",
-            blob: (await readFile(attachment.path)).toString("base64"),
-          },
-        });
       if (attachment.kind === "image") {
         if (!this.capabilities?.promptCapabilities?.image)
           throw new ProviderError(
@@ -325,6 +310,8 @@ export class GeminiProvider extends BaseProvider {
         });
       }
     }
+    const events = new AsyncQueue<ChatEvent>();
+    this.events = events;
     const abort = () => {
       void connection.agent
         .notify("session/cancel", { sessionId: session.sessionId })
@@ -364,6 +351,7 @@ export class GeminiProvider extends BaseProvider {
     this.connection?.close();
     this.connection = undefined;
     this.session = undefined;
+    this.account = undefined;
     if (child) await stopChild(child);
   }
 }

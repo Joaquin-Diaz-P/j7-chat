@@ -7,7 +7,9 @@ import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Panel } from '../window.js';
+import { fromMainFrame } from '../ipc-trust.js';
 import { AttachmentStore, TEXT_EXTENSIONS } from './index.js';
+import { OFFICE_EXTENSIONS } from './office.js';
 // A page only sees the schemes handled when it loads, so this must run before the panel is created.
 export function registerAttachmentProtocol(store: AttachmentStore) {
   protocol.handle('j7-file', async request => {
@@ -19,7 +21,7 @@ export function registerAttachmentProtocol(store: AttachmentStore) {
 export function registerAttachments(panel: Panel, store: AttachmentStore) {
   let busy = false;
   ipcMain.handle('attachments:action', async (event, action: unknown, value: unknown, count: unknown) => {
-    if (event.sender !== panel.window.webContents || event.senderFrame !== panel.window.webContents.mainFrame || busy) return [];
+    if (!fromMainFrame(panel.window, event) || busy) return [];
     if (typeof count !== 'number' || !Number.isInteger(count) || count < 0 || count > 10) throw new Error('Cantidad inválida');
     busy = true;
     let temporary: string | undefined;
@@ -42,7 +44,7 @@ export function registerAttachments(panel: Panel, store: AttachmentStore) {
       }
       if (action === 'dialog') {
         panel.suppressHide = true;
-        const result = await dialog.showOpenDialog(panel.window, { properties: ['openFile','multiSelections'], filters: [{ name: 'Adjuntos', extensions: ['png','jpg','jpeg','gif','webp','heic','pdf', ...TEXT_EXTENSIONS] }] });
+        const result = await dialog.showOpenDialog(panel.window, { properties: ['openFile','multiSelections'], filters: [{ name: 'Adjuntos', extensions: ['png','jpg','jpeg','gif','webp','heic','pdf', ...TEXT_EXTENSIONS, ...OFFICE_EXTENSIONS] }] });
         paths = result.filePaths;
       }
       if (action === 'paste') {

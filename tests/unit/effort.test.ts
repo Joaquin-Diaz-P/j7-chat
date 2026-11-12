@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
+import { migrations } from "../../src/main/db/migrations.js";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initialEffort, resolveEffort } from "../../src/shared/effort.js";
@@ -32,9 +34,9 @@ describe("N10",()=>{
  });
  it("migrates persisted normal to low and preserves high",()=>{
   const dir=mkdtempSync(join(tmpdir(),"j7-migrate-")); const path=join(dir,"chat.db");
-  let store=new SqliteChatStore(path);
-  for(const effort of ["normal","high"]) store.createChat({id:effort,model:"mock:a",provider:"mock",webSearch:true,effort});
-  store.db.exec("PRAGMA user_version=1");store.db.close();store=new SqliteChatStore(path);
+  const previous=new DatabaseSync(path); previous.exec(migrations[0]!); previous.exec("PRAGMA user_version=1");
+  for(const effort of ["normal","high"]) previous.prepare("INSERT INTO chats(id,model,provider,web_search,effort,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").run(effort,"mock:a","mock",1,effort,0,0);
+  previous.close(); const store=new SqliteChatStore(path);
   expect(store.getChat("normal")?.effort).toBe("low");expect(store.getChat("high")?.effort).toBe("high");store.db.close();rmSync(dir,{recursive:true,force:true});
  });
 });

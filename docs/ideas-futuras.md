@@ -1,64 +1,45 @@
-# Ideas a futuro
+# Ideas y prioridades
 
-Funcionalidades que quedaron fuera de la primera versión de J7 Chat, pero que queremos hacer después.
+Actualizado el 11 de noviembre de 2026 según las decisiones del usuario. El resultado comprobado de cada cambio se registra en [estado.md](estado.md).
 
-## Modo comparar
+## Implementado en 0.1.2
 
-Hacer una pregunta y que respondan dos o tres modelos lado a lado, para comparar sus respuestas.
+- **Adjuntar Word y PowerPoint:** lectura del texto, las imágenes incrustadas y los datos de los gráficos de `.docx` y `.pptx` mediante el flujo normal de adjuntos, conservando la copia local. No incluye OCR propio (lo hace el modelo con visión) ni reproducción del diseño original.
+- **Modo comparar:** una misma pregunta y sus adjuntos para dos o tres modelos, con respuestas independientes lado a lado, cancelación y conservación en el historial. Sigue disponible «Preguntar a otro modelo…» en el chat normal.
+- **Parche de mantenimiento:** corregidos el inicio de Hex, el intercambio de atajos y los estados y comandos en Ajustes → Conexiones. Eliminada la descripción de micrófono sobrante del empaquetado. Añadido manejo nativo de `⌘ ,` con test automático. Ver el cierre y las verificaciones en `estado.md`.
 
-En la primera versión esto se cubre con el botón **"Preguntar a otro modelo…"** de cada respuesta, que reenvía la misma pregunta a otro modelo dentro del mismo chat.
+## Primera prioridad después: OpenRouter
 
-## Pendientes técnicos de la versión 1
+Agregar conexión mediante API key, empezando por OpenRouter. Queda pendiente: **no se implementa ni se pide ninguna clave en este trabajo**. Antes de construirlo, definir almacenamiento de credenciales, selección de modelos, límites y cómo informar el consumo de pago.
 
-Detectados en la revisión final (etapa 6):
+## Carpetas con contexto compartido: solo idea futura
 
-- **Tiempo de inicio de Hex:** el tiempo máximo de `hex dictation start` bajó de 5 s a 1 s para que el `stop` alcance a correr al salir. Si Hex tarda más de 1 s en empezar, la voz falla. Lo mejor sería volver a 5 s durante el uso normal y aplicar el límite corto solo al salir. Se confirma en el paso 5 de `docs/prueba-final.md`.
-- [x] **Firma de la app:** se firma con la identidad local «J7 Chat Local» y el identificador `cl.j7.chat`; sin esa identidad, firma ad hoc (ver `docs/firma.md`). Falta notarizar con una cuenta de Apple Developer para que el DMG descargado abra sin **Abrir igualmente**.
-- **Intercambiar atajos:** si se intercambian entre sí el atajo de la barra y el de "Captura y pregunta", falla con "Ese atajo ya lo usa otra app", porque se registra el nuevo antes de soltar el viejo.
-- [x] **Ventana de ajustes:** rediseñada con la estética de la barra (N13).
-- **Programas en los ajustes:**
-  - El detalle de `claude` dice "/login", pero el comando que muestra es `claude auth login`.
-  - Se muestran los dos comandos (instalar e iniciar sesión) sin importar el estado.
-  - Con `J7_MOCK=1`, todos los programas salen "Error" sin detalle.
-- **Empaquetado:**
-  - electron-builder agrega un `NSMicrophoneUsageDescription` en inglés que no hace falta.
-  - [x] El `.dmg` bajó de 280 MB a 120 MB: ya no incluye el binario de Claude del SDK (J7 usa el Claude instalado), las dependencias de la interfaz no se copian dos veces, Shiki carga solo 12 lenguajes y quedan solo los idiomas español e inglés. Casi todo lo que queda es Electron.
-- **Zen gratis:** el límite diario seguía agotado durante toda la construcción, así que nunca se probó una respuesta real.
+Agrupar conversaciones en carpetas propias de J7. La intención del usuario es que un chat nuevo dentro de una carpeta pueda recibir contexto de conversaciones anteriores de esa misma carpeta.
 
-## Gemini a través de Antigravity
+No se construye ahora. Si se retoma, definir qué conversaciones se incluyen, cuánto contexto se entrega, cómo se actualiza y qué controles tiene el usuario para excluir o quitar información. El contexto debe estar limitado a la carpeta; no se propone memoria automática global.
 
-Google rechaza Gemini CLI con cuentas personales y pide usar Antigravity. Hay que instalar Antigravity, conectarlo por ACP como lo hace T3 Code (`apps/server/src/provider/acp/Antigravity*`) y reutilizar `src/main/providers/gemini.ts`, que ya está escrito pero no está registrado.
+Actualmente el historial usa búsqueda y chats fijados. Guardar chats en disco no hace que los modelos recuerden automáticamente otras conversaciones. Detalles de almacenamiento en [datos-locales.md](datos-locales.md).
 
-## Memoria automática
+## Otras ideas sin fecha
 
-Que J7 recuerde datos de chats anteriores y se los entregue al modelo, como la memoria de ChatGPT. En la primera versión cada chat parte de cero, salvo por las instrucciones personales.
+- **Conectores:** investigar acceso a Gmail, Drive, Calendar y otros servicios desde los proveedores, con permisos explícitos. Hoy las herramientas de acceso general siguen bloqueadas.
+- **Pestañas de sitios oficiales:** investigar abrir claude.ai, chatgpt.com y Gemini con su sesión dentro de J7. No equivale a importar sus conversaciones al historial local.
 
-## Carpetas
+## Fuera del alcance por decisión del usuario
 
-Agrupar chats en carpetas propias de J7, parecidas a los proyectos de ChatGPT o Claude. En la primera versión el historial se organiza con búsqueda y chats fijados.
+- **Importar conversaciones antiguas:** no interesa; no implementar.
+- **Memoria automática entre todos los chats:** no es necesaria. Cualquier futura continuidad entre conversaciones se estudiará dentro de carpetas.
 
-## Importar historial antiguo
+## Distribución y verificaciones externas pendientes
 
-Importar las exportaciones oficiales de datos para que los chats antiguos aparezcan en el historial de J7, mezclados con el resto:
+- **Notarización de Apple:** la firma local «J7 Chat Local» ya existe; notarizar requiere una cuenta Apple Developer. Mientras tanto, una descarga puede requerir «Abrir igualmente».
+- **H.1, salir con ⌘ Q durante transcripción:** prueba física en pausa por petición previa del usuario. No marcar como comprobada por tests de lógica.
+- **Permisos:** verificar a mano que conceder un permiso se refleja al volver a J7, cuando se haga la próxima prueba física.
+- **⌘ , en la barra:** añadido manejo nativo en el proceso principal y test automático. El fallo físico histórico no se da por cerrado sin una nueva comprobación con teclado real.
 
-- **ChatGPT:** Ajustes → Controles de datos → Exportar datos.
-- **Claude:** Ajustes → Privacidad → Exportar datos.
-- **Gemini:** Google Takeout (el formato viene más desordenado).
+## Pendientes antiguos que ya estaban resueltos
 
-Es una foto del momento: los chats nuevos en esos sitios no aparecen hasta volver a exportar e importar.
-
-## Adjuntar Word y PowerPoint
-
-Extraer el texto de archivos `.docx` y `.pptx` para pasárselo al modelo.
-
-## Conectores
-
-Usar los conectores de claude.ai (Gmail, Drive, Calendar…) desde J7 a través de `claude`.
-
-## Pestañas web de los sitios oficiales
-
-Abrir claude.ai, chatgpt.com y Gemini dentro de J7, con la sesión iniciada, para acceder a sus proyectos y a su historial.
-
-## Conexión por API keys
-
-Agregar un proveedor que use API keys (directo o a través de OpenRouter), por si la velocidad de los programas CLI molesta o para usar modelos que no tienen CLI.
+- Firma local estable de la app: ver [firma.md](firma.md).
+- Rediseño de Ajustes con la estética de la barra (N13).
+- Reducción anterior del DMG de aproximadamente 280 MB a 120 MB; no es una medición del paquete nuevo.
+- **Zen gratis:** probado físicamente por el usuario con la app firmada el 5 de noviembre; la nota anterior que decía que nunca se había probado quedó obsoleta.

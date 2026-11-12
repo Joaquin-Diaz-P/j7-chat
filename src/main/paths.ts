@@ -29,7 +29,7 @@ export async function ensurePaths(dataDir?: string) {
 export interface BinaryResolverOptions {
   home?: string;
   directories?: string[];
-  loginShell?: (binary: ProviderId) => Promise<string>;
+  loginShell?: (binary: string) => Promise<string>;
   override?: string;
 }
 async function executable(path: string): Promise<boolean> {
@@ -50,6 +50,7 @@ export async function resolveBinary(
     return isAbsolute(options.override) && (await executable(options.override))
       ? options.override
       : undefined;
+  const command = binary === "gemini" ? "agy" : binary;
   const home = options.home ?? homedir();
   for (const directory of options.directories ?? [
     "/opt/homebrew/bin",
@@ -57,7 +58,7 @@ export async function resolveBinary(
     join(home, ".local/bin"),
     join(home, ".opencode/bin"),
   ]) {
-    const path = join(directory, binary);
+    const path = join(directory, command);
     if (await executable(path)) return path;
   }
   try {
@@ -72,7 +73,7 @@ export async function resolveBinary(
               env: { HOME: home, PATH: "/usr/bin:/bin:/usr/sbin:/sbin" },
             })
           ).stdout)
-      )(binary)
+      )(command)
     ).trim();
     if (isAbsolute(found) && !found.includes("\n") && (await executable(found)))
       return found;

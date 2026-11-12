@@ -32,6 +32,7 @@ export function ProviderIcon({ provider, size=14 }: {provider: ProviderId; size?
  const props = {width:size,height:size,"aria-hidden":true as const,"data-provider":provider};
  if(provider === "codex") return <OpenAI {...props}/>;
  if(provider === "claude") return <ClaudeAI {...props}/>;
+ if(provider === "gemini") return <svg {...props} viewBox="0 0 24 24" fill="#4285F4"><path d="M12 1C12 7.1 7.1 12 1 12c6.1 0 11 4.9 11 11 0-6.1 4.9-11 11-11-6.1 0-11-4.9-11-11Z"/></svg>;
  if(provider === "opencode") return <svg {...props} viewBox="0 0 32 40" fill="currentColor"><path d="M24 32H8V16H24V32Z" className="opencode-detail"/><path d="M24 8H8V32H24V8ZM32 40H0V0H32V40Z"/></svg>;
  return <FlaskConical {...props}/>;
 }

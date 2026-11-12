@@ -180,3 +180,23 @@ it('shutdown during an in-flight start executes the later stop within three seco
  await vi.advanceTimersByTimeAsync(901);await begin;await shutdown;
  expect(closed).toHaveBeenCalledOnce();expect(f.hex.stop).toHaveBeenCalled();
 });
+
+it('allows a slow normal Hex start and shortens an in-flight start only for shutdown',async()=>{
+ const {mkdtemp,writeFile,chmod,rm}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'hex-start-timeout-'));const binary=join(dir,'hex');
+ const hex=new Hex(binary);
+ try {
+  await writeFile(binary,`#!${process.execPath}\nsetTimeout(()=>console.log(JSON.stringify({changed:true})),1200);\n`);
+  await chmod(binary,0o700);
+  expect((await hex.begin()).code).toBe(0);
+  await writeFile(binary,`#!${process.execPath}\nsetTimeout(()=>console.log(JSON.stringify({changed:true})),10000);\n`);
+  const pending=hex.begin();const since=Date.now();hex.prepareShutdown();
+  expect((await pending).code).toBe(-1);
+  expect(Date.now()-since).toBeLessThan(2200);
+ } finally {hex.abort();await rm(dir,{recursive:true,force:true});}
+});
+it('does not start a new voice flow after disposal',async()=>{
+ const f=fixture();await f.flow.dispose();await f.flow.begin();
+ expect(f.hex.begin).not.toHaveBeenCalled();
+});

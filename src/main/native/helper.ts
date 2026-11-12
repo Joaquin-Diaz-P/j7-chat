@@ -17,7 +17,7 @@ export class NativeHelper extends EventEmitter {
     createInterface({ input: child.stdout }).on('line', line => {
       try {
         const value = JSON.parse(line);
-        if (['holdStart','holdEnd','holdCancel','tap','doubleTap'].includes(value.event)) this.emit(value.event);
+        if (['holdStart','holdEnd','holdCancel','tap','doubleTap','shortcutReleased','pointerDown','spaceChanged'].includes(value.event)) this.emit(value.event, value);
         const pending = this.pending.get(value.id);
         if (pending) { clearTimeout(pending.timer); this.pending.delete(value.id); pending.resolve(value); }
       } catch { /* Ignore malformed protocol lines. */ }
@@ -43,5 +43,9 @@ export class NativeHelper extends EventEmitter {
     });
   }
   watch(keyCode: number) { this.keyCode = keyCode; return this.request('watchModifier', { keyCode }); }
+  async activatePreviousApp(): Promise<boolean> {
+    const reply = await this.request('activatePreviousApp');
+    return reply.ok && 'activated' in reply && reply.activated === true;
+  }
   dispose() { this.closed = true; clearTimeout(this.restart); this.child?.kill(); for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('Helper closed')); } this.pending.clear(); }
 }

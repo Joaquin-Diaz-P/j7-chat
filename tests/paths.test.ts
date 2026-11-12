@@ -60,6 +60,15 @@ describe("paths and executable resolution", () => {
       }),
     ).toBeUndefined();
   });
+  it("resolves Gemini through Antigravity CLI instead of the retired Gemini CLI", async () => {
+    const directory = await setup();
+    await binary(join(directory, "gemini"));
+    const agy = await binary(join(directory, "agy"));
+    expect(await resolveBinary("gemini", { directories: [directory] })).toBe(agy);
+    const loginShell = vi.fn(async () => agy);
+    expect(await resolveBinary("gemini", { directories: [], loginShell })).toBe(agy);
+    expect(loginShell).toHaveBeenCalledWith("agy");
+  });
   it("does not silently fall back when an explicit path is missing", async () => {
     const loginShell = vi.fn();
     expect(

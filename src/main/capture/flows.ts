@@ -21,6 +21,7 @@ export class CaptureFlows {
   private autoSend = true;
   // Without screen recording, voice still works; the notice stays up while the flow runs.
   private screenMissing = false;
+  private disposed = false;
   /** Double tap or microphone button: keeps recording until explicitly finished. */
   locked = false;
   constructor(private ports: FlowPorts, private hex: Pick<Hex,'begin'|'start'|'stop'|'recoverSince'>, private now = Date.now) {}
@@ -32,7 +33,7 @@ export class CaptureFlows {
     catch { this.ports.show(); this.phase('failed'); }
   }
   async begin(locked = false, captureScreen = true) {
-    if (this.stopping || ['capturing','opening','listening','transcribing','recovering','queued','sending'].includes(this.state.phase)) { this.ports.emit({state:{...this.state,busy:true}}); return; }
+    if (this.disposed || this.stopping || ['capturing','opening','listening','transcribing','recovering','queued','sending'].includes(this.state.phase)) { this.ports.emit({state:{...this.state,busy:true}}); return; }
     this.attachment = undefined; this.screenMissing = false;
     const token = ++this.generation; this.released = false; this.autoSend = captureScreen; this.locked = locked; this.wasVisible = this.ports.visible();
     this.phase('capturing'); this.ports.protect(true);
@@ -88,6 +89,8 @@ export class CaptureFlows {
     if (this.recording) { await this.stop(); this.recording = false; }
   }
   async dispose() {
+    this.disposed = true;
+    (this.hex as { prepareShutdown?: () => void }).prepareShutdown?.();
     let timer: ReturnType<typeof setTimeout> | undefined;
     await Promise.race([(async () => { const pending = this.beginning; await this.cancel(); if (pending) { await pending; await this.stop(); } })(), new Promise<void>(resolve => { timer = setTimeout(resolve, 3000); })]);
     clearTimeout(timer);

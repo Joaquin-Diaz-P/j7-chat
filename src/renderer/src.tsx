@@ -12,11 +12,15 @@ import { createRoot } from "react-dom/client";
 import { useChat } from "./store.js";
 import { strings as s } from "./strings.js";
 import "./style.css";
+import type { Message } from "../shared/ipc.js";
 import type { Attachment } from "../main/providers/types.js";
 import { nativePdf } from "../main/attachments/policy.js";
+function isOffice(file: Attachment) {
+  return /\.(docx|pptx)$/i.test(file.name) || file.mime?.includes("openxmlformats-officedocument");
+}
 function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id: string) => void }) {
   return <div className="attachment-chips">{files.map(file => <div className={`attachment-chip ${file.kind === "image" ? "image" : "file"}`} key={file.id ?? file.path}>
-    <button className="attachment-open" onClick={() => void window.j7.attachments("preview", file.id)} title={file.name} aria-label={file.name}>
+    <button className="attachment-open" onClick={() => void window.j7.attachments("preview", file.id)} title={isOffice(file) ? `${file.name} · ${s.officeTextOnly}${file.truncated ? ` · ${s.officeTruncated}` : ""}` : file.name} aria-label={file.name}>
       {file.kind === "image" ? <img src={`j7-file://attachment/${file.id}`} alt={file.name}/> : <>
         <span className="attachment-icon">{file.kind === "pdf" ? <FileText size={16}/> : <File size={16}/>}</span>
         <span className="attachment-text"><span className="attachment-name">{file.name}</span><small>{fileMeta(file)}</small></span>
@@ -27,6 +31,7 @@ function AttachmentChips({ files, remove }: { files: Attachment[]; remove?: (id:
 }
 function fileMeta(file: Attachment) {
   const type = file.kind === "pdf" ? "PDF" : (/\.([a-z0-9]{1,5})$/i.exec(file.name)?.[1] ?? s.textFile).toUpperCase();
+  if (isOffice(file)) return `${type} · ${s.officeTextLabel}${file.truncated ? ` · ${s.officeTruncatedLabel}` : ""}`;
   return file.pages !== undefined ? `${type} · ${s.pages(file.pages)}` : type;
 }
 function useLeaving<T>(value: T, delay: number): T {
@@ -71,13 +76,17 @@ function App() {
   const [dragging, setDragging] = useState(false);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const attachmentLock = useRef(false);
-  async function attach(action: "files" | "data" | "paste" | "dialog" | "capture", value?: unknown) {
+  async function attach(action: "files" | "data" | "paste" | "dialog" | "capture", value?: unknown | (() => Promise<unknown>)) {
     if (attachmentLock.current) return;
     attachmentLock.current = true; setLoadingAttachments(true);
-    try { const files = await window.j7.attachments(action, value, attachments.length); setAttachments(previous => [...previous, ...files]); setAttachmentError(""); return files.length; }
+    window.j7.setAttachmentState(true);
+    try { const files = await window.j7.attachments(action, typeof value === "function" ? await value() : value, attachments.length); setAttachments(previous => [...previous, ...files]); setAttachmentError(""); return files.length; }
     catch (error) { setAttachmentError(error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, "") : s.attachmentFailed); }
     finally { attachmentLock.current = false; setLoadingAttachments(false); }
   }
+  useEffect(() => {
+    window.j7.setAttachmentState(attachments.length > 0 || loadingAttachments);
+  }, [attachments.length, loadingAttachments]);
   const [selector, setSelector] = useState<"model" | "other" | null>(null);
   const shownSelector = useLeaving(selector, 150);
   const shownAttachmentMenu = useLeaving(attachmentMenu, 150);
@@ -88,7 +97,10 @@ function App() {
   useEffect(() => { if (!copied) return; const timer = setTimeout(() => setCopied(null), 1500); return () => clearTimeout(timer); }, [copied]);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
 
-  const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
+  const compareKeys = chat.compareModels ?? [];
+  const compareModels = compareKeys.map(key => chat.catalog?.models.find(candidate => `${candidate.provider}:${candidate.id}` === key));
+  const blockedModel = compareKeys.length ? compareModels.find(candidate => !candidate?.supportsImages) : !model?.supportsImages ? model : undefined;
+  const imageBlocked = attachments.some(f => f.kind === "image") && (compareKeys.length ? compareModels.some(candidate => !candidate?.supportsImages) : !model?.supportsImages);
   const lastAnswer = chat.messages.findLast(m => m.role === "assistant")?.id;
   const lastQuestion = chat.messages.findLast(m => m.role === "user")?.id;
 
@@ -304,80 +316,18 @@ function App() {
     if(decision!=='send'){void window.j7.captureAction(decision==='blocked-image'?'idle':'failed');return;}
     void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
-  return (
-    <div onPointerDown={event => {
-      if(event.button!==0 || (event.target as Element).closest('button,input,textarea,a,.conversation,.history,.model-selector'))return;
-      if(!(event.target as Element).closest('.window-bar,.composer'))return;
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      let x=event.screenX,y=event.screenY;
-      const move=(e:PointerEvent)=>{window.j7.moveCard(e.screenX-x,e.screenY-y);x=e.screenX;y=e.screenY;};
-      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);window.j7.endMoveCard();input.current?.focus();};
-      window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
-    }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${chat.messages.length || selector || historyOpen ? "expanded" : "compact"}`}>
-      <div className="card-surface" aria-hidden="true"/>
-          {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
-            if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
-          }}>
-            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}><FileUp size={15}/>{s.attachFile}</button>
-            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}><SquareDashed size={15}/>{s.capture}</button>
-          </div>}
-      <div className="card-clip">
-      <header className="window-bar" inert={!expanded}>
-        {<button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
-        <div>
-          <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
-          <button
-            title={s.newChat}
-            aria-label={s.newChat}
-            onClick={() => {
-              if (voiceBusy.current || pendingVoice.current) return;
-              setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
-              void window.j7.newChat();
-              input.current?.focus();
-            }}
-          >
-            <Plus size={16}/>
-          </button>
-          <button
-            title={s.pin}
-            aria-label={s.pin}
-            aria-pressed={pinned}
-            onClick={() => window.j7.setPinned(!pinned)}
-          >
-            <Pin size={16}/>
-          </button>
-        </div>
-      </header>
-    <div className="history-reveal" inert={!historyOpen}><History open={historyOpen} current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/></div>
-    <div className="panel"  ref={content}
-      onDragOver={event => { event.preventDefault(); setDragging(true); }}
-      onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
-      onDrop={event => {
-        event.preventDefault(); setDragging(false);
-        const files = [...event.dataTransfer.files];
-        const paths = files.map(file => window.j7.filePath(file));
-        if (files.length) void Promise.all(files.map(async (file, index) => paths[index] || new Uint8Array(await file.arrayBuffer()))).then(entries => attach("files", entries));
-        else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void fetch(data).then(r => r.arrayBuffer()).then(bytes => attach("data", new Uint8Array(bytes))); }
-      }}>
-      {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
-      {(shownSelector || prewarm) && chat.catalog && <div className="selector-host" inert={!selector} style={{visibility:shownSelector ? "visible" : "hidden"}}><ModelSelector open={!!selector} catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
-        if (selector === "other") void window.j7.askOther(key, effort);
-        else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
-        setSelector(null); input.current?.focus();
-      }}/></div>}
-
-      {shownMessages && (
-        <div className="conversation" ref={conversation} onScroll={() => {
-          const el = conversation.current!;
-          following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
-          setAway(!following.current);
-        }}>
-          <div className="transcript">
-            {chat.messages.map((message) => (
-              message.role === "notice" ? <p className="model-notice" key={message.id}>{message.text}</p> :
+  const transcript: (Message | Message[])[] = [];
+  const comparisonGroups = new Map<string, Message[]>();
+  for (const message of chat.messages) {
+    if (message.role !== "assistant" || !message.comparisonId) { transcript.push(message); continue; }
+    let group = comparisonGroups.get(message.comparisonId);
+    if (!group) { group = []; comparisonGroups.set(message.comparisonId, group); transcript.push(group); }
+    group.push(message);
+  }
+  const renderMessage = (message: Message) => (
+message.role === "notice" ? <p className="model-notice" key={message.id}>{message.text}</p> :
               <article key={message.id} className={`${message.role}-message ${message.id === lastAnswer ? "last-answer" : ""} ${message.status === "error" ? "response-error" : ""}`}>
+                {message.role === "assistant" && message.comparisonId && <h3 className="comparison-model">{message.provider && <ProviderIcon provider={message.provider} size={14}/>} {message.modelLabel ?? message.model}</h3>}
                 {message.status === "error" && <AlertTriangle size={14} aria-label={s.error}/>}
                 {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.thinking && <details><summary>{s.reasoning}</summary><ResponseMarkdown text={message.thinking}/></details>}
@@ -400,7 +350,7 @@ function App() {
                   <div className="response-actions">
                     <button title={s.copy} aria-label={s.copy} onClick={() => { void navigator.clipboard.writeText(message.text).then(() => setCopied(message.id)); }}>{copied === message.id ? <Check size={14}/> : <Copy size={14}/>}</button>
                     {message.id === lastAnswer && !chat.active && <>
-                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={s.retry} aria-label={s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
+                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={message.comparisonId ? s.compareRetry : s.retry} aria-label={message.comparisonId ? s.compareRetry : s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
                       {(!message.errorKind || message.errorKind === "quota" || message.errorKind === "unsupported") && <button title={s.askOther} aria-label={s.askOther} onClick={() => setSelector("other")}><ArrowLeftRight size={14}/></button>}
                     </>}
                     <small className="model-label">{message.modelLabel ?? message.model}{message.effort && chat.catalog?.models.some(m => `${m.provider}:${m.id}` === message.model && levels(m).length > 0) && <span className="effort-label"> · {effortLabel(message.effort)}</span>}</small>
@@ -408,7 +358,81 @@ function App() {
                 </>}
                 {message.role === "user" && message.id === lastQuestion && !chat.active && editing !== message.id && <button className="edit-question" title={s.edit} aria-label={s.edit} onClick={() => { setEditing(message.id); setEditDraft(message.text); }}><Pencil size={14}/></button>}
               </article>
-            ))}
+  );
+  return (
+    <div onPointerDown={event => {
+      const target = event.target as Element;
+      const emptyInput = target === input.current && !input.current.value;
+      if(event.button!==0 || target.closest('button,input,a,label,.conversation,.history,.model-selector,.compare-picker') || (target.closest('textarea') && !emptyInput))return;
+      if(!target.closest('.card-surface,.window-bar,.composer'))return;
+      event.preventDefault();
+      input.current?.focus();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      let x=event.screenX,y=event.screenY, moved=false;
+      const move=(e:PointerEvent)=>{
+        if(!moved && Math.hypot(e.screenX-x,e.screenY-y)<4)return;
+        moved=true;
+        window.j7.moveCard(e.screenX-x,e.screenY-y);x=e.screenX;y=e.screenY;
+      };
+      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(moved)window.j7.endMoveCard();input.current?.focus();};
+      window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
+    }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${expanded ? "expanded" : "compact"}`}>
+      <div className="card-surface" aria-hidden="true"/>
+          {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
+            if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
+          }}>
+            <button autoFocus tabIndex={-1} role="menuitem" aria-label={s.attachFile} title={s.attachFile} onClick={() => { closeAttachments(); void attach('dialog').finally(() => input.current?.focus()); }}><FileUp size={15}/>{s.attachFile}</button>
+            <button tabIndex={-1} role="menuitem" aria-label={s.capture} title={s.capture} onClick={() => { closeAttachments(); void attach('capture').finally(() => input.current?.focus()); }}><SquareDashed size={15}/>{s.capture}</button>
+          </div>}
+      <div className="card-clip">
+      <header className="window-bar" inert={!expanded}>
+        {<button className="hide-dot" aria-label={s.hide} title={s.hide} onClick={() => window.j7.hide()}><X size={8}/></button>}
+        <div>
+          <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history} aria-expanded={historyOpen}><Menu size={16}/></button>
+          <button
+            title={s.newChat}
+            aria-label={s.newChat}
+            onClick={() => {
+              if (voiceBusy.current || pendingVoice.current) return;
+              setDraft(""); setAttachments([]); setAttachmentError(""); setSelector(null); setEditing(null);
+              void window.j7.newChat();
+              input.current?.focus();
+            }}
+          >
+            <Plus size={16}/>
+          </button>
+          <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
+        </div>
+      </header>
+    <div className="history-reveal" inert={!historyOpen}><History open={historyOpen} current={chat.chatId} revision={chat.messages} focus={searchFocus} onSelect={()=>{following.current=true;setDraft("");setAttachments([]);}}/></div>
+    <div className="panel"  ref={content}
+      onDragOver={event => { event.preventDefault(); setDragging(true); }}
+      onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
+      onDrop={event => {
+        event.preventDefault(); setDragging(false);
+        const files = [...event.dataTransfer.files];
+        const paths = files.map(file => window.j7.filePath(file));
+        if (files.length) void attach("files", () => Promise.all(files.map(async (file, index) => paths[index] || new Uint8Array(await file.arrayBuffer()))));
+        else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void attach("data", async () => new Uint8Array(await (await fetch(data)).arrayBuffer())); }
+      }}>
+      {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
+      {(shownSelector || prewarm) && chat.catalog && <div className="selector-host" inert={!selector} style={{visibility:shownSelector ? "visible" : "hidden"}}><ModelSelector open={!!selector} catalog={chat.catalog} selected={chat.model} effort={chat.effort} compare={selector === "other" ? undefined : {selected: compareKeys, disabled: chat.active, onApply: async keys => { await window.j7.updateChat({compareModels: keys}); }}} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
+        if (selector === "other") void window.j7.askOther(key, effort);
+        else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
+        setSelector(null); input.current?.focus();
+      }}/></div>}
+
+      {shownMessages && (
+        <div className="conversation" ref={conversation} onScroll={() => {
+          const el = conversation.current!;
+          following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
+          setAway(!following.current);
+        }}>
+          <div className="transcript">
+            {transcript.map(item => Array.isArray(item)
+              ? <section key={item[0]!.comparisonId} className="comparison-grid" role="region" tabIndex={0} aria-label={s.compareResults} style={{"--comparison-columns": item.length} as React.CSSProperties}>{item.map(renderMessage)}</section>
+              : renderMessage(item))}
           </div>
         </div>
       )}
@@ -432,8 +456,10 @@ function App() {
           {capture.phase === 'failed' && !capture.permission && <p role="alert">{capture.recoverable ? s.captureFailed : s.captureUnavailable} {capture.recoverable && <button onClick={() => void window.j7.captureAction('recover')}>{s.captureRetry}</button>}</p>}
 
           <AttachmentChips files={attachments} remove={id => { setAttachmentError(""); setAttachments(files => files.filter(file => file.id !== id)); }}/>
+          {attachments.some(isOffice) && <p role="status">{s.officeTextOnly}</p>}
+          {attachments.filter(file => isOffice(file) && file.truncated).map(file => <p role="status" key={file.id}>{file.name}: {s.officeTruncated}</p>)}
           {attachmentError && <p role="alert">{attachmentError}</p>}
-          {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
+          {imageBlocked && <p role="alert">{s.noVision(blockedModel?.label ?? model?.label ?? s.model)}</p>}
           {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
         </div>
         <textarea
@@ -467,11 +493,9 @@ function App() {
           <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} >
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
           </div>
-          {!(chat.messages.length || selector || historyOpen) && <div className="compact-tools">
-            <button onClick={() => toggleHistory()} aria-label={s.history} title={s.history}><Menu size={16}/></button>
-            <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
-          </div>}
-          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</button>
+          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{compareKeys.length > 0
+            ? <><ArrowLeftRight size={14}/>{s.compareCount(compareKeys.length)}</>
+            : <>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</>}</button>
           <button className={`dictation-button ${dictating ? "recording" : ""}`} title={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-label={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-pressed={dictating} disabled={transcribing || pendingVoice.current || capture.phase === 'queued' || capture.phase === 'sending'} onClick={() => void toggleDictation()}>
             {transcribing ? <LoaderCircle size={15} className="dictation-spinner"/> : dictating ? <Square size={12} fill="currentColor"/> : <Mic size={16}/>}
           </button>

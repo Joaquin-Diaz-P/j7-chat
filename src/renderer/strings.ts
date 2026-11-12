@@ -1,5 +1,23 @@
 export const strings = {
-  programs: "Programas",
+  // Modo comparar.
+  compare: "Comparar modelos",
+  compareRetry: "Reintentar comparación",
+  officeTextOnly: "De Word y PowerPoint se envían el texto, los datos de los gráficos y las imágenes (a los modelos que ven imágenes). No se conserva el diseño.",
+  officeTextLabel: "Texto, imágenes y gráficos",
+  officeTruncatedLabel: "Recortado",
+  officeTruncated: "El texto se recortó a 400000 caracteres.",
+  compareTitle: "Comparar respuestas",
+  compareHint: "Elige 2 o 3 modelos. Cada uno recibirá la misma pregunta, adjuntos y contexto previo.",
+  compareApply: "Usar comparación",
+  compareNormal: "Volver al chat normal",
+  compareUnavailable: "Necesitas al menos dos modelos disponibles para comparar.",
+  compareInvalid: "Elige entre 2 y 3 modelos distintos y disponibles.",
+  compareCount: (n: number) => `Comparar · ${n}`,
+  compareBusy: "Espera a que termine la respuesta para cambiar la comparación.",
+  compareResults: "Respuestas de la comparación",
+  compareIndependent: "Usa un turno de cuota por modelo. Las respuestas se generan por separado; los modelos del mismo programa responden por turnos.",
+
+  programs: "Conexiones",
   favorites: "Favoritos",
   effortLabels: {low:"Bajo", medium:"Medio", high:"Alto", xhigh:"Muy alto", max:"Máximo", ultracode:"Ultracode"} as Record<string,string>,
  attachmentMissing:"El adjunto ya no está disponible.",
@@ -30,7 +48,7 @@ export const strings = {
   captureInput: "J7 necesita el permiso de Monitoreo de entrada para detectar la tecla de voz",
   systemSettings: "Abrir Ajustes del Sistema",
   hexConflict: "La tecla de voz de J7 coincide con el atajo de dictado de Hex. Cambia la tecla de voz en Ajustes → Atajos.",
-  hexMissing: "Hex no está instalado o no está disponible. Revisa Programas en los ajustes.",
+  hexMissing: "Hex no está instalado o no está disponible. Revisa Conexiones en los ajustes.",
 
   dropAttachments: "Suelta para adjuntar",
   removeAttachment: "Quitar adjunto",
@@ -40,7 +58,7 @@ export const strings = {
   pdfTruncated: (x: number, n: number) => `Se enviarán las páginas 1 a ${x} de ${n}`,
   scannedPdf: (model: string) => `Este PDF es una imagen escaneada; ${model} no puede leerlo. Prueba con Claude`,
   noVision: (model: string) => `${model} no ve imágenes. Cambia de modelo o quita la imagen`,
-  loginCommands: { claude: "`claude` y luego `/login`", codex: "`codex login`", mock: "`claude` y luego `/login` o `codex login`" },
+  loginCommands: { claude: "`claude auth login`", codex: "`codex login`", mock: "`claude auth login` o `codex login`" },
   zenNoModels: "OpenCode no tiene modelos gratis de Zen disponibles.",
   zenOnlyFree: "J7 solo permite modelos gratis de OpenCode Zen.",
 
@@ -60,7 +78,7 @@ export const strings = {
   programFailed: "El programa no pudo completar la consulta. Revisa su estado e intenta otra vez.",
   redacted: "[dato privado oculto]",
   subscriptionRequired: "J7 requiere una sesión de suscripción de Claude, sin API key.",
-  claudeLogin: "Abre la Terminal, ejecuta claude y luego /login.",
+  claudeLogin: "Abre la Terminal y ejecuta claude auth login.",
   claudeUnsafeTools: "Claude inició con herramientas no permitidas. Se bloqueó el turno.",
   permissionDenied: "J7 rechaza los pedidos de permiso.",
   processClosed: "El proceso se cerró.",
@@ -146,13 +164,37 @@ export const strings = {
   error: "No se pudo enviar el mensaje",
 };
 export const settingsStrings = {
- programsIntro:'Necesitas al menos uno: Claude Code o Codex. Hex es opcional y sirve para la voz.', download:'Descargar', terminal:'Abrir Terminal', openHex:'Abrir Hex', hexRequirements:'Requiere un Mac con Apple silicon y macOS 15 o posterior. Ábrelo una vez y sigue sus pasos.', loginHelp:'Pégalo en la Terminal y sigue los pasos del navegador. J7 usará esa misma cuenta.', hexClosed:'Abre Hex para ver sus permisos', hexClosedProgram:'Hex está cerrado. Ábrelo para usar la voz.', hexNeeded:'La voz necesita Hex', hexPermissions:'Hex (para la voz)', hexPermissionHelp:'Estos permisos son de Hex, no de J7: en la lista, activa Hex.', permissionHelp:'Busca J7 Chat en la lista y actívalo. Si no aparece, usa + y elígelo en Aplicaciones.', relaunch:'Reiniciar J7', screenPurpose:'para las capturas', inputPurpose:'para la tecla de voz', microphone:'Micrófono', accessibility:'Accesibilidad', noPermissions:'Claude Code y Codex no necesitan permisos.', unknown:'No disponible', hexError:'No se pudo consultar el estado de Hex.',
- sections:['General','Modelos','Atajos','Instrucciones','Programas','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz (mantener o doble toque)'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',closed:'Cerrado',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
+ mockProgramsIntro:'Modo de prueba: estos modelos no usan cuentas ni cuota real.', checkingProgram:'Comprobando el programa…', mockPurpose:'Modelo de prueba local; no necesita instalación ni inicio de sesión.', programsIntro:'Necesitas al menos uno: Claude Code, Codex o Antigravity CLI. Hex es opcional y sirve para la voz.', download:'Descargar', openHex:'Abrir Hex', hexRequirements:'Requiere un Mac con Apple silicon y macOS 15 o posterior. Ábrelo una vez y sigue sus pasos.', hexClosed:'Abre Hex para ver sus permisos', hexClosedProgram:'Hex está cerrado. Ábrelo para usar la voz.', hexNeeded:'La voz necesita Hex', hexPermissions:'Hex (para la voz)', hexPermissionHelp:'Estos permisos son de Hex, no de J7: en la lista, activa Hex.', permissionHelp:'Busca J7 Chat en la lista y actívalo. Si no aparece, usa + y elígelo en Aplicaciones.', relaunch:'Reiniciar J7', screenPurpose:'para las capturas', inputPurpose:'para la tecla de voz', microphone:'Micrófono', accessibility:'Accesibilidad', noPermissions:'Los programas de IA no necesitan permisos adicionales.', unknown:'No disponible', hexError:'No se pudo consultar el estado de Hex.',
+ sections:['General','Modelos','Atajos','Instrucciones','Conexiones','Permisos'], theme:'Tema', themes:['Sistema','Claro','Oscuro'], login:'Arrancar al iniciar sesión', record:'Presiona el atajo…', shortcuts:['Abrir barra','Captura y pregunta','Captura y voz (mantener o doble toque)'], restore:'Restaurar atajos predeterminados', saved:'Guardado', refresh:'Volver a comprobar', copy:'Copiar', system:'Abrir Ajustes del Sistema', states:{ready:'Listo',not_installed:'Sin instalar',not_authenticated:'Sin sesión',closed:'Cerrado',checking:'Comprobando',error:'Error'}, screen:'Grabación de pantalla', input:'Monitoreo de entrada', missing:'Sin permiso', granted:'Concedido', instructions:'Instrucciones personales', favorite:'Favorito', loading:'Comprobando…'
 };
 
 export const settingsPrograms: Record<string,{label:string;purpose:string;downloadUrl:string | undefined;installCommand?:string;loginCommand?:string}> = {
  claude:{label:'Claude Code',purpose:'Para conversar con los modelos de Claude.',downloadUrl:'https://code.claude.com/docs/en/setup',installCommand:'curl -fsSL https://claude.ai/install.sh | bash',loginCommand:'claude auth login'},
  codex:{label:'Codex',purpose:'Para conversar con los modelos de OpenAI.',downloadUrl:'https://developers.openai.com/codex/cli',installCommand:'curl -fsSL https://chatgpt.com/codex/install.sh | sh',loginCommand:'codex login'},
- opencode:{label:'OpenCode',purpose:'Para conversar con los modelos gratis de Zen.',downloadUrl:undefined,loginCommand:'opencode auth login'},
+ gemini:{label:'Antigravity CLI',purpose:'Para conversar con los modelos de Gemini usando tu cuenta de Google.',downloadUrl:'https://antigravity.google/docs/getting-started',installCommand:'curl -fsSL https://antigravity.google/cli/install.sh | bash',loginCommand:'agy'},
+ opencode:{label:'OpenCode',purpose:'Para conversar con los modelos gratis de Zen.',downloadUrl:'https://opencode.ai/download',installCommand:'curl -fsSL https://opencode.ai/install | bash',loginCommand:'opencode auth login'},
  hex:{label:'Hex',purpose:'Para dictar con la voz.',downloadUrl:'https://anoma.ly/hex/download/macos-arm64-dmg'}
+};
+
+export const connectionStrings = {
+ intro: 'Conecta al menos una cuenta. J7 usa la misma sesión que el programa oficial de cada servicio.',
+ modelsHeading: 'Modelos de IA', voiceHeading: 'Voz',
+ services: {
+  claude: {name:'Claude', program:'Claude Code', purpose:'Modelos de Anthropic'},
+  codex: {name:'ChatGPT', program:'Codex', purpose:'Modelos de OpenAI'},
+  gemini: {name:'Gemini', program:'Antigravity', purpose:'Modelos de Google'},
+  opencode: {name:'OpenCode', program:'OpenCode', purpose:'Modelos gratis de Zen'},
+ },
+ states: {ready:'Conectado',not_authenticated:'Sin sesión',signing_in:'Esperando al navegador…',not_installed:'Sin instalar',error:'Error'},
+ terminalState: 'Esperando a la Terminal…',
+ browserHelp: 'Se abrió tu navegador para iniciar sesión. Vuelve aquí al terminar; J7 lo detecta solo.',
+ terminalHelp: 'Inicia sesión en la ventana de Terminal que se abrió; J7 lo detecta solo',
+ account:'Cuenta', plan:'Plan', models:'Modelos', disabled:'Desactivado', viewModels:'Ver modelos', login:'Iniciar sesión', logout:'Cerrar sesión',
+ confirmLogout:(service:string,program:string)=>`¿Cerrar la sesión de ${service} también en ${program}? Afecta a todas las apps que lo usan.`,
+ reopen:'Abrir el enlace otra vez', cancel:'Cancelar', code:'Código', submit:'Enviar', official:'Sitio oficial', install:'Instalar desde la Terminal',
+ enabled:(service:string)=>`Activar ${service}`, lastReady:'No puedes desactivar el último servicio con sesión.',
+ failed:'No se pudo completar la operación. Vuelve a intentarlo.', statusTimeout:'El programa tardó demasiado en responder.',
+ loginTimeout:'No se completó el inicio de sesión. Inténtalo de nuevo.', missing:'El programa no está instalado.',
+ apiKey:'Clave de API', invalidCode:'El código debe tener entre 1 y 512 caracteres y no puede contener saltos de línea.',
+ invalidId:'Servicio desconocido.', noLogin:'No hay un inicio de sesión esperando un código.',
 };
