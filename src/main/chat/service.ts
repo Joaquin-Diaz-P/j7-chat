@@ -21,7 +21,7 @@ export class ChatService {
   readonly store: ChatStore;
   private draftChat: Chat | undefined;
   private chatId: string | null = null;
-  private active = new Map<string, ActiveTurn[]>();
+  private active = new Map<string, ActiveTurn>();
   private running = new Set<Promise<void>>();
   private warmup: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
@@ -69,10 +69,10 @@ export class ChatService {
   }
   snapshot(): ChatSnapshot {
     const chat = this.currentChat();
-    const turns = chat ? this.active.get(chat.id) : undefined;
+    const turn = chat ? this.active.get(chat.id) : undefined;
     const model = this.selectedModel(chat);
-    const messages = chat ? this.store.listMessages(chat.id).map(m => { const turn = turns?.find(t => t.message.id === m.id); return turn ? structuredClone(turn.message) : m; }) : [];
-    return { chatId: this.chatId, messages, active: !!turns?.length, queued: !!turns?.length && turns.every(t => t.queued), compareModels: chat?.compareModels ?? [],
+    const messages = chat ? this.store.listMessages(chat.id).map(m => m.id === turn?.message.id ? structuredClone(turn.message) : m) : [];
+    return { chatId: this.chatId, messages, active: !!turn, queued: turn?.queued ?? false,
       ...(model ? { model: modelKey(model), providerLabel: model.label } : {}),
       webSearch: true, effort: chat?.effort ?? (model ? initialEffort(model, this.settings?.value.effortByModel) : "low"), catalog: this.catalog.snapshot(),
       ...(this.warning ? { warning: this.warning } : {}) };
@@ -91,28 +91,13 @@ export class ChatService {
   }
   newChat() { this.draftChat=undefined; this.chatId = null; this.warning = undefined; this.notify(); this.prewarm(); }
   selectChat(id: string) { if (this.store.getChat(id)) { this.chatId = id; this.notify(); } }
-  /** Drops comparison models that stopped being available, e.g. after a provider is disabled. */
-  pruneCompareModels() {
-    const chat = this.currentChat();
-    if (!chat?.compareModels?.length || this.active.has(chat.id)) return;
-    const keys = chat.compareModels.filter(key => this.models().some(m => modelKey(m) === key));
-    if (keys.length === chat.compareModels.length) return;
-    const compareModels = keys.length >= 2 ? keys : [];
-    if (this.chatId) this.store.updateChat(chat.id, { compareModels }); else chat.compareModels = compareModels;
-  }
-  updateChat(options: { model?: string; webSearch?: boolean; effort?: string; compareModels?: string[] }) {
+  updateChat(options: { model?: string; webSearch?: boolean; effort?: string }) {
     if (!this.currentChat()) {
       const model=this.selectedModel(); if(!model)return;
       this.draftChat={id:randomUUID(),model:modelKey(model),provider:model.provider,webSearch:true,effort:initialEffort(model, this.settings?.value.effortByModel)};
     }
     const chat = this.currentChat()!;
     const update = (changes: Partial<Omit<Chat,"id">>) => { if(this.chatId)this.store.updateChat(chat.id,changes); else Object.assign(chat,changes); };
-    if (options.compareModels) {
-      if (this.active.has(chat.id)) return;
-      const keys = options.compareModels;
-      if (keys.length && (keys.length < 2 || keys.length > 3 || new Set(keys).size !== keys.length || keys.some(key => !this.models().some(m => modelKey(m) === key)))) throw new Error(s.compareInvalid);
-      update({ compareModels: [...keys] });
-    }
     if (options.model) {
       const model = this.models().find(m => modelKey(m) === options.model);
       if (model) this.settings?.update({ lastModel: modelKey(model) });
@@ -140,22 +125,19 @@ export class ChatService {
     if (!chat || this.active.has(chat.id)) return;
     const model = this.selectedModel(chat);
     if (!model) { this.warning = s.noAvailableModels; this.notify(); return; }
-    const comparing = !!chat.compareModels?.length;
-    const models = comparing ? chat.compareModels!.map(key => this.models().find(m => modelKey(m) === key)) : [model];
-    if (models.some(m => !m) || (comparing && (models.length < 2 || models.length > 3))) throw new Error(s.compareInvalid);
-    for (const selected of models) prepareAttachments(attachments, selected!);
+    prepareAttachments(attachments, model);
     if (!this.chatId) { this.store.createChat(chat); this.chatId=chat.id; this.draftChat=undefined; }
     this.warning = undefined;
-    const question: Message = { id: randomUUID(), role: "user", text, attachments, status: "complete", ...(comparing ? { comparisonId: randomUUID(), comparisonModels: [...chat.compareModels!] } : {}) };
+    const question: Message = { id: randomUUID(), role: "user", text, attachments, status: "complete" };
     this.store.appendMessage(chat.id, question);
-    for (const selected of models) this.launch(chat, selected!, question);
+    this.launch(chat, model, question);
   }
   private launch(chat: Chat, model: ModelInfo, question: Message) {
     this.settings?.update({ lastModel: modelKey(model) });
-    const message: Message = { id: randomUUID(), role: "assistant", text: "", status: "queued", model: modelKey(model), modelLabel: model.label, provider: model.provider, effort: resolveEffort(model, question.comparisonId ? initialEffort(model, this.settings?.value.effortByModel) : chat.effort), ...(question.comparisonId ? { comparisonId: question.comparisonId } : {}) };
+    const message: Message = { id: randomUUID(), role: "assistant", text: "", status: "queued", model: modelKey(model), modelLabel: model.label, provider: model.provider, effort: resolveEffort(model, chat.effort) };
     this.store.appendMessage(chat.id, message);
     const turn: ActiveTurn = { controller: new AbortController(), message, queued: true };
-    this.active.set(chat.id, [...(this.active.get(chat.id) ?? []), turn]);
+    this.active.set(chat.id, turn);
     this.notify();
     const task = this.catalog.exclusive(model.provider, async () => {
       if (turn.controller.signal.aborted) return;
@@ -170,9 +152,8 @@ export class ChatService {
     }).finally(() => {
       if (message.status === "queued" || message.status === "streaming") message.status = turn.controller.signal.aborted ? "stopped" : "complete";
       this.store.updateMessage(chat.id, message.id, message);
-      const remaining = this.active.get(chat.id)?.filter(t => t !== turn) ?? [];
-      if (remaining.length) this.active.set(chat.id, remaining); else this.active.delete(chat.id);
-      if (!remaining.length && this.store.listMessages(chat.id).filter(m=>m.role==="user").length===1 && this.titleGenerator) {
+      this.active.delete(chat.id);
+      if (this.store.listMessages(chat.id).filter(m=>m.role==="user").length===1 && this.titleGenerator) {
         void this.titleGenerator(question.text).then(title=>{
           const store=this.store as ChatStore & {rename?: (id:string,title:string,manual:boolean)=>void};
           store.rename?.(chat.id,title,false); this.notify();
@@ -195,7 +176,7 @@ export class ChatService {
     const provider = this.catalog.providers.get(model.provider)!;
     const instructions = buildChatInstructions(this.settings?.value.personalInstructions);
     const hash = createHash("sha256").update(instructions).digest("hex");
-    const saved = question.comparisonId ? undefined : this.store.getProviderSession(chat.id, model.provider);
+    const saved = this.store.getProviderSession(chat.id, model.provider);
     let session = saved?.instructionsHash === hash && saved.nativeSessionId ? saved.nativeSessionId : undefined;
     let lastSeen = session ? saved?.lastMessageId : undefined;
     let processRestarted = false;
@@ -240,13 +221,13 @@ export class ChatService {
           this.emit({ chatId: chat.id, messageId: message.id, event: { ...failure, message: message.text } });
         } else {
           message.status = "complete";
-          if (nativeId && !question.comparisonId) this.store.upsertProviderSession({ chatId: chat.id, provider: model.provider, nativeSessionId: nativeId, lastMessageId: message.id, instructionsHash: hash });
+          if (nativeId) this.store.upsertProviderSession({ chatId: chat.id, provider: model.provider, nativeSessionId: nativeId, lastMessageId: message.id, instructionsHash: hash });
         }
         break;
       }
     } finally {
       clearInterval(timer);
-      if (!question.comparisonId && (controller.signal.aborted || message.status === "error")) {
+      if (controller.signal.aborted || message.status === "error") {
         this.store.upsertProviderSession({ chatId: chat.id, provider: model.provider, nativeSessionId: "", lastMessageId: "", instructionsHash: hash });
       }
       if (controller.signal.aborted) message.status = "stopped";
@@ -262,20 +243,8 @@ export class ChatService {
     const question = this.lastQuestion();
     const model = this.models().find(m => modelKey(m) === (answer?.model && canonicalModelKey(answer.model)));
     if (!answer || !question || !model) return;
-    if (answer.comparisonId && answer.comparisonId === question.comparisonId) {
-      const models = question.comparisonModels?.map(key => this.models().find(m => modelKey(m) === key)) ?? [];
-      if (models.length < 2 || models.some(m => !m)) { this.warning = s.compareInvalid; this.notify(); return; }
-      try { for (const selected of models) prepareAttachments(question.attachments ?? [], selected!); }
-      catch (error) { this.warning = error instanceof Error ? error.message : s.responseFailed; this.notify(); return; }
-      const first = messages.find(m => m.role === "assistant" && m.comparisonId === question.comparisonId);
-      if (!first) return;
-      this.store.deleteMessagesFrom(chat.id, first.id);
-      for (const selected of models) this.launch(chat, selected!, question);
-    } else {
-      this.store.deleteMessagesFrom(chat.id, answer.id);
-      const followup = { ...question }; delete followup.comparisonId; delete followup.comparisonModels;
-      this.launch(chat, model, followup);
-    }
+    this.store.deleteMessagesFrom(chat.id, answer.id);
+    this.launch(chat, model, question);
   }
   edit(text: string) {
     const chat = this.currentChat(), question = this.lastQuestion();
@@ -293,26 +262,26 @@ export class ChatService {
     this.settings?.update({effortByModel: {...this.settings.value.effortByModel, [key]: effort}});
     this.store.updateChat(chat.id, { model: key, provider: model.provider, effort });
     this.store.appendMessage(chat.id, { id: randomUUID(), role: "notice", text: s.sameQuestion(model.label), status: "complete" });
-    const followup = { ...question }; delete followup.comparisonId; delete followup.comparisonModels;
-    this.launch({ ...chat, model: key, provider: model.provider, effort }, model, followup);
+    this.launch({ ...chat, model: key, provider: model.provider, effort }, model, question);
   }
   async removeChat(id: string, remove: () => void) {
-    const turns=this.active.get(id); for (const turn of turns ?? []) turn.controller.abort();
-    if(turns?.length)await this.waitForIdle();
+    const turn=this.active.get(id); turn?.controller.abort();
+    if(turn)await this.waitForIdle();
     remove();
     if(this.chatId===id)this.newChat(); else this.notify();
   }
   stop() {
-    const turns = this.chatId ? this.active.get(this.chatId) : undefined;
-    if (!turns?.length) return;
-    for (const turn of turns) { turn.controller.abort(); turn.message.status = "stopped"; }
+    const turn = this.chatId ? this.active.get(this.chatId) : undefined;
+    if (!turn) return;
+    turn.controller.abort();
+    turn.message.status = "stopped";
     this.notify();
   }
   async waitForIdle() { await Promise.allSettled(this.running); }
   async dispose() {
     this.disposed = true;
     clearTimeout(this.warmup);
-    for (const turns of this.active.values()) for (const turn of turns) turn.controller.abort();
+    for (const turn of this.active.values()) turn.controller.abort();
     await this.catalog.dispose();
     await this.waitForIdle();
   }

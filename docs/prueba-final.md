@@ -110,16 +110,7 @@ Antes de empezar, cierra cualquier J7 que esté abierta (menú del ícono → Sa
 3. Cierra y reabre J7, abre el chat desde el historial y comprueba que los adjuntos siguen abriéndose aunque hayas movido el original.
 4. Prueba un documento sin texto o con contraseña: debe mostrar un error claro y permitir seguir usando el chat. Un documento que exceda el límite de texto debe avisar del recorte.
 
-## 10. Comparar
-
-1. Activa **Comparar**, elige dos modelos y aplica la selección. Envía una pregunta: debe verse una sola pregunta y dos respuestas en columnas con el modelo identificado.
-2. Prueba con tres modelos. En la barra estrecha, desplaza las columnas horizontalmente para leerlas; cada una debe conservar su copia y su estado.
-3. Detén una comparación en curso: deben detenerse todas las respuestas, incluidas las que esperan la cola del mismo programa.
-4. Abre otro chat y vuelve al anterior desde el historial; luego reinicia J7 y repite. La comparación debe mantener selección y agrupación.
-5. Vuelve a **Chat normal** y comprueba que enviar una pregunta produce una sola respuesta. **Preguntar a otro modelo…** debe seguir funcionando.
-6. Si comparas con servicios reales, cada modelo consume un turno de su cuota. La prueba automática usa modelos simulados.
-
-## 11. Parche y datos locales
+## 10. Parche y datos locales
 
 1. En **Conexiones**, comprueba cuenta, plan, versión y modelos, el enlace permanente Sitio oficial y que Descargar e Iniciar sesión aparecen según el estado. Prueba login, código, cancelación y timeout con fixtures; no cierres sesiones reales durante el desarrollo.
 2. En una ejecución de desarrollo con `J7_MOCK=1`, Conexiones debe identificar los proveedores simulados sin mostrar falsos errores de Claude o Codex.

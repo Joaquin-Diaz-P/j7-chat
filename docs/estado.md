@@ -105,3 +105,10 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Un servicio desactivado muestra «Desactivado» en lugar de «Modelos 0».
 - Verificación: `npm run typecheck`, `npm test` (336 pruebas) y `npx playwright test` (4 recorridos) aprobados.
 - Pendiente de comprobar a mano: iniciar y cerrar sesión de verdad desde Conexiones (Claude, Codex y Antigravity), y el foco al cerrar la barra con Ajustes abierto.
+
+### Versión 0.2.1 (11 de noviembre)
+
+- Se retiró el modo comparar: el usuario no le vio suficiente uso. Queda como idea futura transformado en «modo council» (ver `ideas-futuras.md`). La columna `compare_models` de la base de datos se conserva para que las migraciones sigan en orden; ya no se usa.
+- Íconos: Gemini usa el arco de Antigravity, el mismo dibujo que usa T3 Code. Hex tiene su logo en Conexiones, sin el fondo de la app, como OpenCode.
+- Al dictar, ya sea con el botón del micrófono o con `⌥` derecho mantenido o con doble toque, una onda de puntos al estilo de Hex reemplaza el campo de texto. Es solo visual: Hex sigue grabando y transcribiendo, y J7 no abre el micrófono.
+- Verificación: `npm run typecheck`, `npm test` (331 pruebas) y `npx playwright test` (3 recorridos) aprobados. Capturas revisadas de la onda y de la tarjeta de Hex.

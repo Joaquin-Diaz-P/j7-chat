@@ -279,18 +279,6 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 
 ---
 
-**E13 · Modo comparar**
-- El usuario activa «Comparar» desde el selector de modelos (ícono bajo la estrella de favoritos) y elige dos o tres modelos distintos; puede desactivarlo para volver al chat normal. Mientras está activo, el botón del modelo muestra «Comparar · N».
-- Envía una sola pregunta con los mismos adjuntos y contexto previo a todos los modelos seleccionados. Cada respuesta se produce en una sesión independiente, sin ver la respuesta rival de esa pregunta.
-- Muestra respuestas en columnas con nombre del modelo, estado, Markdown, razonamiento, fuentes y copia individual.
-- Los proveedores distintos pueden responder simultáneamente; los modelos del mismo proveedor respetan su cola.
-- Detener cancela todas las respuestas activas o en cola. Un fallo en un modelo no elimina las respuestas de los demás.
-- La selección de modelos y la agrupación de respuestas se conservan al reabrir el chat desde el historial.
-- Comparar consume un turno por modelo usando las cuotas existentes.
-- **Se comprueba:** tests con proveedores simulados, cola por proveedor, aislamiento de contexto, errores/cancelación y persistencia al reabrir; recorrido de interfaz con modelos simulados.
-
----
-
 ## F · Turnos, sesiones y traspaso
 
 **F1 · Fuente de verdad**
@@ -599,7 +587,7 @@ Si algo no está aquí ni en [especificacion.md](especificacion.md), no se imple
 - **Inicio de sesión desde J7:** "Iniciar sesión" abre el navegador mediante la CLI oficial de Claude o Codex. Gemini utiliza `authenticate` de ACP con `oauth-personal` (Google); si la CLI no anuncia ese método, abre `agy` en Terminal y lo explica. OpenCode abre `opencode auth login` en Terminal.
 - Mientras se inicia sesión, comprueba el estado cada 2 segundos, permite "Abrir el enlace otra vez" si hay URL y "Cancelar". Si Claude pide código, aparecen el campo "Código" y "Enviar". El plazo máximo es de cinco minutos y J7 cierra los procesos de login al salir.
 - **Cerrar sesión:** disponible para Claude y Codex. Pide confirmar: "¿Cerrar la sesión de <servicio> también en <programa>? Afecta a todas las apps que lo usan." El login y el logout usan el HOME del usuario y actualizan el catálogo, compartiendo la sesión de la CLI oficial.
-- **Activar o desactivar:** el interruptor oculta o recupera todos los modelos del servicio en la barra, Comparar y Modelos. No permite desactivar el último servicio activo con sesión y explica el bloqueo. Si el modelo seleccionado deja de estar disponible, la barra elige el siguiente disponible.
+- **Activar o desactivar:** el interruptor oculta o recupera todos los modelos del servicio en la barra y en Modelos. No permite desactivar el último servicio activo con sesión y explica el bloqueo. Si el modelo seleccionado deja de estar disponible, la barra elige el siguiente disponible.
 - **Descargar y sitio oficial:** sin instalar aparece "Descargar" y un desplegable "Instalar desde la Terminal" con comando y "Copiar". Todas las tarjetas conservan "Sitio oficial", incluso conectadas. Solo se abren las páginas oficiales de la lista fija de J7, incluida `https://opencode.ai/download`.
 - **Voz:** Hex queda al final, con su estado, "Descargar" si falta o "Abrir Hex" si está cerrado, y el requisito de Apple silicon y macOS 15. No cambia su funcionamiento.
 - "Volver a comprobar" refresca las conexiones y los modelos; también se comprueban al recuperar el foco de Ajustes.

@@ -3,8 +3,6 @@ export interface Message {
   id: string;
   role: "user" | "assistant" | "notice";
   text: string;
-  comparisonId?: string;
-  comparisonModels?: string[];
   thinking?: string;
   effort?: string;
   status: "interrupted" | "queued" | "streaming" | "complete" | "stopped" | "error";
@@ -33,7 +31,6 @@ export interface ChatSnapshot {
   providerLabel?: string;
   warning?: string;
   catalog?: CatalogSnapshot;
-  compareModels?: string[];
 }
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
 export interface PanelState { offset?: {x:number;y:number}; historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
@@ -67,7 +64,7 @@ export interface J7Api {
   stop(): Promise<void>;
   newChat(): Promise<void>;
   selectChat(id: string): Promise<void>;
-  updateChat(options: { model?: string; webSearch?: boolean; effort?: string; compareModels?: string[] }): Promise<void>;
+  updateChat(options: { model?: string; webSearch?: boolean; effort?: string }): Promise<void>;
   refreshModels(): Promise<void>;
   openSettings(): Promise<void>;
   favorite(model: string): Promise<void>;

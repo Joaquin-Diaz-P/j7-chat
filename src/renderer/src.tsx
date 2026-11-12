@@ -1,4 +1,5 @@
 import { ProviderIcon } from "./components/ProviderIcon.js";
+import { VoiceWave } from "./components/VoiceWave.js";
 import { levels } from "../shared/effort.js";
 import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
@@ -97,10 +98,7 @@ function App() {
   useEffect(() => { if (!copied) return; const timer = setTimeout(() => setCopied(null), 1500); return () => clearTimeout(timer); }, [copied]);
   const model = chat.catalog?.models.find(m => `${m.provider}:${m.id}` === chat.model);
 
-  const compareKeys = chat.compareModels ?? [];
-  const compareModels = compareKeys.map(key => chat.catalog?.models.find(candidate => `${candidate.provider}:${candidate.id}` === key));
-  const blockedModel = compareKeys.length ? compareModels.find(candidate => !candidate?.supportsImages) : !model?.supportsImages ? model : undefined;
-  const imageBlocked = attachments.some(f => f.kind === "image") && (compareKeys.length ? compareModels.some(candidate => !candidate?.supportsImages) : !model?.supportsImages);
+  const imageBlocked = attachments.some(f => f.kind === "image") && !model?.supportsImages;
   const lastAnswer = chat.messages.findLast(m => m.role === "assistant")?.id;
   const lastQuestion = chat.messages.findLast(m => m.role === "user")?.id;
 
@@ -316,18 +314,9 @@ function App() {
     if(decision!=='send'){void window.j7.captureAction(decision==='blocked-image'?'idle':'failed');return;}
     void send().then(()=>window.j7.captureAction('idle'));
   }, [draft, chat.active, chat.model, imageBlocked, loadingAttachments]);
-  const transcript: (Message | Message[])[] = [];
-  const comparisonGroups = new Map<string, Message[]>();
-  for (const message of chat.messages) {
-    if (message.role !== "assistant" || !message.comparisonId) { transcript.push(message); continue; }
-    let group = comparisonGroups.get(message.comparisonId);
-    if (!group) { group = []; comparisonGroups.set(message.comparisonId, group); transcript.push(group); }
-    group.push(message);
-  }
   const renderMessage = (message: Message) => (
 message.role === "notice" ? <p className="model-notice" key={message.id}>{message.text}</p> :
               <article key={message.id} className={`${message.role}-message ${message.id === lastAnswer ? "last-answer" : ""} ${message.status === "error" ? "response-error" : ""}`}>
-                {message.role === "assistant" && message.comparisonId && <h3 className="comparison-model">{message.provider && <ProviderIcon provider={message.provider} size={14}/>} {message.modelLabel ?? message.model}</h3>}
                 {message.status === "error" && <AlertTriangle size={14} aria-label={s.error}/>}
                 {message.attachments && <AttachmentChips files={message.attachments}/>}
                 {message.thinking && <details><summary>{s.reasoning}</summary><ResponseMarkdown text={message.thinking}/></details>}
@@ -350,7 +339,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
                   <div className="response-actions">
                     <button title={s.copy} aria-label={s.copy} onClick={() => { void navigator.clipboard.writeText(message.text).then(() => setCopied(message.id)); }}>{copied === message.id ? <Check size={14}/> : <Copy size={14}/>}</button>
                     {message.id === lastAnswer && !chat.active && <>
-                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={message.comparisonId ? s.compareRetry : s.retry} aria-label={message.comparisonId ? s.compareRetry : s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
+                      {message.errorKind !== "quota" && message.errorKind !== "unsupported" && <button title={s.retry} aria-label={s.retry} onClick={() => void window.j7.retry()}><RotateCcw size={14}/></button>}
                       {(!message.errorKind || message.errorKind === "quota" || message.errorKind === "unsupported") && <button title={s.askOther} aria-label={s.askOther} onClick={() => setSelector("other")}><ArrowLeftRight size={14}/></button>}
                     </>}
                     <small className="model-label">{message.modelLabel ?? message.model}{message.effort && chat.catalog?.models.some(m => `${m.provider}:${m.id}` === message.model && levels(m).length > 0) && <span className="effort-label"> · {effortLabel(message.effort)}</span>}</small>
@@ -363,7 +352,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
     <div onPointerDown={event => {
       const target = event.target as Element;
       const emptyInput = target === input.current && !input.current.value;
-      if(event.button!==0 || target.closest('button,input,a,label,.conversation,.history,.model-selector,.compare-picker') || (target.closest('textarea') && !emptyInput))return;
+      if(event.button!==0 || target.closest('button,input,a,label,.conversation,.history,.model-selector') || (target.closest('textarea') && !emptyInput))return;
       if(!target.closest('.card-surface,.window-bar,.composer'))return;
       event.preventDefault();
       input.current?.focus();
@@ -417,7 +406,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
         else { const data = event.dataTransfer.getData("text/uri-list"); if (data.startsWith("data:image/")) void attach("data", async () => new Uint8Array(await (await fetch(data)).arrayBuffer())); }
       }}>
       {dragging && <div className="drop-overlay">{s.dropAttachments}</div>}
-      {(shownSelector || prewarm) && chat.catalog && <div className="selector-host" inert={!selector} style={{visibility:shownSelector ? "visible" : "hidden"}}><ModelSelector open={!!selector} catalog={chat.catalog} selected={chat.model} effort={chat.effort} compare={selector === "other" ? undefined : {selected: compareKeys, disabled: chat.active, onApply: async keys => { await window.j7.updateChat({compareModels: keys}); }}} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
+      {(shownSelector || prewarm) && chat.catalog && <div className="selector-host" inert={!selector} style={{visibility:shownSelector ? "visible" : "hidden"}}><ModelSelector open={!!selector} catalog={chat.catalog} selected={chat.model} effort={chat.effort} onClose={() => { setSelector(null); input.current?.focus(); }} onSelect={(key, effort) => {
         if (selector === "other") void window.j7.askOther(key, effort);
         else void window.j7.updateChat({ model: key, ...(effort ? { effort } : {}) });
         setSelector(null); input.current?.focus();
@@ -430,9 +419,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           setAway(!following.current);
         }}>
           <div className="transcript">
-            {transcript.map(item => Array.isArray(item)
-              ? <section key={item[0]!.comparisonId} className="comparison-grid" role="region" tabIndex={0} aria-label={s.compareResults} style={{"--comparison-columns": item.length} as React.CSSProperties}>{item.map(renderMessage)}</section>
-              : renderMessage(item))}
+            {chat.messages.map(renderMessage)}
           </div>
         </div>
       )}
@@ -459,11 +446,13 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           {attachments.some(isOffice) && <p role="status">{s.officeTextOnly}</p>}
           {attachments.filter(file => isOffice(file) && file.truncated).map(file => <p role="status" key={file.id}>{file.name}: {s.officeTruncated}</p>)}
           {attachmentError && <p role="alert">{attachmentError}</p>}
-          {imageBlocked && <p role="alert">{s.noVision(blockedModel?.label ?? model?.label ?? s.model)}</p>}
+          {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
           {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
         </div>
+        {dictating && <VoiceWave label={s.voiceWave}/>}
         <textarea
           ref={input}
+          hidden={dictating}
           onPaste={event => {
             event.preventDefault();
             const text = event.clipboardData.getData("text/plain");
@@ -493,9 +482,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           <div ref={attachmentRegion} onKeyDown={e => { if (attachmentMenu && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeAttachments(); } }} >
           <button disabled={loadingAttachments} aria-haspopup="menu" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu(!attachmentMenu)} title={s.attach} aria-label={s.attach}><Paperclip size={16}/></button>
           </div>
-          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{compareKeys.length > 0
-            ? <><ArrowLeftRight size={14}/>{s.compareCount(compareKeys.length)}</>
-            : <>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</>}</button>
+          <button className="model-trigger" title={s.model} aria-expanded={!!selector} onClick={() => setSelector(selector ? null : "model")}>{model && <ProviderIcon provider={model.provider} size={14}/> }{model?.label ?? chat.providerLabel ?? s.model}{model && levels(model).length > 0 && chat.effort && <span className="effort-label">{effortLabel(chat.effort)}</span>}</button>
           <button className={`dictation-button ${dictating ? "recording" : ""}`} title={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-label={dictating ? s.transcribe : transcribing ? s.captureTranscribing : s.dictate} aria-pressed={dictating} disabled={transcribing || pendingVoice.current || capture.phase === 'queued' || capture.phase === 'sending'} onClick={() => void toggleDictation()}>
             {transcribing ? <LoaderCircle size={15} className="dictation-spinner"/> : dictating ? <Square size={12} fill="currentColor"/> : <Mic size={16}/>}
           </button>

@@ -3,20 +3,15 @@ import type { CatalogSnapshot } from "../../shared/ipc.js";
 import type { ProviderId } from "../../main/providers/types.js";
 import { initialEffort, levels } from "../../shared/effort.js";
 import { strings as s } from "../strings.js";
-import { Star, Check, Search, ArrowLeftRight } from "lucide-react";
+import { Star, Check, Search } from "lucide-react";
 import { ProviderIcon } from "./ProviderIcon.js";
-import { ComparePicker } from "./ComparePicker.js";
 export const effortLabel = (value: string) => s.effortLabels[value] ?? value.charAt(0).toUpperCase() + value.slice(1);
 export function selectorModels(catalog: CatalogSnapshot, group: string, query: string) {
  const favorites = catalog.favorites.filter(k=>catalog.models.some(m=>`${m.provider}:${m.id}`===k));
  return catalog.models.filter(m=>query.trim() ? `${m.label} ${m.provider}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()) : group==="favorites" ? !favorites.length || favorites.includes(`${m.provider}:${m.id}`) : m.provider===group).sort((a,b)=>query.trim()?a.provider.localeCompare(b.provider):0);
 }
-// Compare mode lives in the selector sidebar; `compare` is only passed when choosing the chat's model.
-interface CompareProps { selected: string[]; disabled: boolean; onApply: (keys: string[]) => Promise<void> }
-export function ModelSelector({ catalog, selected, effort, onSelect, onClose, open = true, compare }: { open?: boolean; catalog: CatalogSnapshot; selected?: string | undefined; effort?: string | undefined; onSelect: (key: string, effort?: string) => void; onClose: () => void; compare?: CompareProps | undefined }) {
+export function ModelSelector({ catalog, selected, effort, onSelect, onClose, open = true }: { open?: boolean; catalog: CatalogSnapshot; selected?: string | undefined; effort?: string | undefined; onSelect: (key: string, effort?: string) => void; onClose: () => void }) {
  const [query,setQuery]=useState(""); const [group,setGroup]=useState("favorites");
- const comparing=!!compare?.selected.length;
- useEffect(()=>{if(!open)return;setGroup(g=>compare && comparing && !compare.disabled ? "compare" : g==="compare" && (!compare || compare.disabled) ? "favorites" : g);},[open]);
  const [index,setIndex]=useState(Math.max(0,catalog.models.findIndex(m=>`${m.provider}:${m.id}`===selected))); const [column,setColumn]=useState(false); const [levelIndex,setLevelIndex]=useState(0);
  const root=useRef<HTMLDivElement>(null);
  const models=selectorModels(catalog,group,query);
@@ -30,8 +25,7 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose, op
  useEffect(()=>{if(column) root.current?.querySelectorAll<HTMLButtonElement>(".model-reasoning button")[levelIndex]?.focus();},[column,levelIndex,key]);
  useEffect(()=>{if(!open)return;const frame=requestAnimationFrame(()=>root.current?.querySelector('[data-focused="true"]')?.scrollIntoView({block:"nearest"}));return()=>cancelAnimationFrame(frame);},[index,open]);
  useEffect(()=>{if(!open)return;const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node) && !(e.target as Element).closest(".model-trigger"))onClose();};document.addEventListener("pointerdown",dismiss);return()=>document.removeEventListener("pointerdown",dismiss);},[onClose,open]);
- return <div ref={root} className="model-selector with-effort" tabIndex={-1} onClick={e=>{if(group!=="compare" && !(e.target as Element).closest("button,input"))root.current?.querySelector("input")?.focus();}} role="dialog" aria-label={s.model} onKeyDown={e=>{
-  if(group==="compare")return;
+ return <div ref={root} className="model-selector with-effort" tabIndex={-1} onClick={e=>{if(!(e.target as Element).closest("button,input"))root.current?.querySelector("input")?.focus();}} role="dialog" aria-label={s.model} onKeyDown={e=>{
   if(e.metaKey && /^[1-9]$/.test(e.key)){e.preventDefault();e.stopPropagation();const m=models[Number(e.key)-1];if(m)onSelect(`${m.provider}:${m.id}`);return;}
   if(!["Escape","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.key))return;
   e.stopPropagation();
@@ -42,11 +36,9 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose, op
   if(e.key==="Enter" && (e.target instanceof HTMLInputElement || column)){e.preventDefault();if(active)onSelect(key,column?supported[levelIndex]:undefined);}
  }}>
  <nav className="model-sidebar" aria-label={s.programs}>
- <button aria-label={s.favorites} aria-pressed={group==="favorites"} onClick={()=>setGroup("favorites")}><Star size={21} fill="currentColor"/></button>
- {compare && <button className="model-compare" title={compare.disabled ? s.compareBusy : s.compare} aria-label={s.compare} aria-pressed={group==="compare"} data-active={comparing} disabled={compare.disabled} onClick={()=>setGroup("compare")}><ArrowLeftRight size={21} strokeWidth={2.4}/>{comparing && <span className="model-compare-count">{compare.selected.length}</span>}</button>}<hr/>
+ <button aria-label={s.favorites} aria-pressed={group==="favorites"} onClick={()=>setGroup("favorites")}><Star size={21} fill="currentColor"/></button><hr/>
  {[...new Set(catalog.models.map(m=>m.provider))].map(p=><button key={p} aria-label={s.programLabels[p]} aria-pressed={group===p} onClick={()=>setGroup(p)}><ProviderIcon provider={p} size={21}/></button>)}
  </nav>
- {group==="compare" && compare && open ? <ComparePicker models={catalog.models} selected={compare.selected} current={selected} onApply={compare.onApply} onClose={onClose}/> : <>
  <section className="model-main"><label className="model-search"><Search size={15}/><input role="combobox" aria-haspopup="grid" aria-expanded="true" aria-controls="model-options" aria-activedescendant={active ? `model-option-${activeIndex}` : undefined} value={query} aria-label={s.searchModels} placeholder={s.searchModels} onChange={e=>setQuery(e.target.value)}/></label>
  <div id="model-options" className="model-list" role="grid" aria-label={s.model}>{models.map((m,i)=>{const k=`${m.provider}:${m.id}`;return <div className="model-row" role="row" id={`model-option-${i}`} aria-selected={k===selected} key={k} data-focused={!column && i===activeIndex} onMouseEnter={()=>{setIndex(i);setColumn(false);}}>
  {query.trim() && (i===0 || models[i-1]?.provider!==m.provider) && <span role="gridcell" className="search-provider">{s.programLabels[m.provider]}</span>}<span role="gridcell" className="model-name"><button title={m.label} onClick={()=>onSelect(k)}><ProviderIcon provider={m.provider}/><span>{m.label}</span>{k===selected&&<Check size={13}/ >}</button></span>
@@ -55,6 +47,6 @@ export function ModelSelector({ catalog, selected, effort, onSelect, onClose, op
  </div>;})}{!models.length&&<div role="row"><span role="gridcell">{query.trim() && catalog.models.length ? s.noResults : catalog.models.length ? s.noAvailableModels : s.noModels}</span></div>}</div>
  {Object.entries(catalog.statuses).filter(([,v])=>v.state!=="ready").map(([id])=><div className="unavailable" key={id}><button onClick={()=>void window.j7.openSettings()}>{s.unavailable(s.programLabels[id as ProviderId])}</button></div>)}
  </section>
- <section className="model-reasoning" role="menu" aria-label={s.reasoning}><header>{s.reasoning}<small>{active?.label}</small></header>{!supported.length&&<p className="no-levels">{s.noEffortLevels}</p>}{supported.map((value,i)=><button role="menuitemradio" aria-checked={chosen===value} key={value} data-focused={column&&levelIndex===i} onClick={()=>onSelect(key,value)}>{effortLabel(value)}{chosen===value&&<Check size={13}/>}</button>)}</section></>}
+ <section className="model-reasoning" role="menu" aria-label={s.reasoning}><header>{s.reasoning}<small>{active?.label}</small></header>{!supported.length&&<p className="no-levels">{s.noEffortLevels}</p>}{supported.map((value,i)=><button role="menuitemradio" aria-checked={chosen===value} key={value} data-focused={column&&levelIndex===i} onClick={()=>onSelect(key,value)}>{effortLabel(value)}{chosen===value&&<Check size={13}/>}</button>)}</section>
  </div>;
 }

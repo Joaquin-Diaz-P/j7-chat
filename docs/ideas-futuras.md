@@ -5,8 +5,17 @@ Actualizado el 11 de noviembre de 2026 según las decisiones del usuario. El res
 ## Implementado en 0.1.2
 
 - **Adjuntar Word y PowerPoint:** lectura del texto, las imágenes incrustadas y los datos de los gráficos de `.docx` y `.pptx` mediante el flujo normal de adjuntos, conservando la copia local. No incluye OCR propio (lo hace el modelo con visión) ni reproducción del diseño original.
-- **Modo comparar:** una misma pregunta y sus adjuntos para dos o tres modelos, con respuestas independientes lado a lado, cancelación y conservación en el historial. Sigue disponible «Preguntar a otro modelo…» en el chat normal.
 - **Parche de mantenimiento:** corregidos el inicio de Hex, el intercambio de atajos y los estados y comandos en Ajustes → Conexiones. Eliminada la descripción de micrófono sobrante del empaquetado. Añadido manejo nativo de `⌘ ,` con test automático. Ver el cierre y las verificaciones en `estado.md`.
+
+## Modo council: idea futura
+
+Reemplaza al modo comparar, que se retiró en 0.2.1 porque ver respuestas lado a lado no aportaba lo suficiente. La idea es un «consejo» de modelos que entrega **una sola respuesta mejor**, no varias:
+
+1. La misma pregunta va a dos o tres modelos (por ejemplo Claude, GPT y Gemini).
+2. Cada modelo lee las respuestas de los demás, sin saber de quién son, y las critica o las ordena.
+3. Un modelo «presidente» combina lo mejor en la respuesta final. Las respuestas intermedias quedan plegadas por si el usuario quiere verlas.
+
+Antes de construirlo hay que definir cuánto gasta (cada pregunta usa varios turnos de cuota), qué modelo preside y cómo se muestra el progreso mientras deliberan.
 
 ## Primera prioridad después: OpenRouter
 

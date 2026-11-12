@@ -61,7 +61,7 @@ export function setupSettings(settings: SettingsStore, panel: Panel, chat: ChatS
   for(const key of ['shortcut','captureShortcut'] as const) if(!isAccelerator(next[key]))throw Error(s.invalidShortcut);
   replaceShortcuts((['shortcut','captureShortcut'] as const).map(key=>({previous:value[key],next:next[key],activate:shortcut=>globalShortcut.register(shortcut,key==='shortcut'?()=>capture.activatePanel():()=>capture.question())})),key=>globalShortcut.unregister(key),s.shortcutUsed);
   settings.update({...value,...next}); nativeTheme.themeSource=settings.value.theme;
-  if(app.isPackaged)app.setLoginItemSettings({openAtLogin:settings.value.openAtLogin}); await capture.rebind();updateTray();if(raw.disabledProviders!==undefined)chat.pruneCompareModels();chat.notify();return settings.value;
+  if(app.isPackaged)app.setLoginItemSettings({openAtLogin:settings.value.openAtLogin}); await capture.rebind();updateTray();chat.notify();return settings.value;
  });
  ipcMain.handle('settings:model',(e,key:string,favorite:boolean)=>{if(trusted(e))favorite && chat.catalog.favorite(key);});
  ipcMain.handle('settings:refresh',async e=>{if(trusted(e))await chat.catalog.refresh(true);});

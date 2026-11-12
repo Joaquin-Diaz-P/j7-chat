@@ -9,7 +9,7 @@ const exec = promisify(execFile);
 interface Manifest { version: 1; images: { number: number; file: string; mime: string }[]; failed: number[] }
 const pending = new Map<string, Promise<Manifest>>();
 
-// Extracted images are cached next to the copied original, so retries and comparison columns reuse them.
+// Extracted images are cached next to the copied original, so retries reuse them.
 export const officeMediaDirectory = (path: string) => `${path}.media`;
 
 async function extract(file: Attachment, extension: string): Promise<Manifest> {

@@ -92,8 +92,6 @@ Los atajos se cambian en **Ajustes → Atajos**. Si Hex usa la misma tecla que J
 
 Para adjuntar archivos, arrástralos a la barra o usa el clip. J7 lee imágenes, PDF, texto, Word (`.docx`) y PowerPoint (`.pptx`). En Word y PowerPoint envía el texto, los datos de los gráficos como tablas y las imágenes incrustadas (a los modelos que ven imágenes); no reproduce el diseño.
 
-Con **Comparar** (en el selector de modelos, bajo la estrella de favoritos) puedes elegir dos o tres modelos para responder la misma pregunta y ver sus respuestas lado a lado. Las respuestas quedan guardadas en el historial. Cada modelo usa un turno de su cuota; los modelos de un mismo programa responden según su cola.
-
 Tus chats, ajustes y adjuntos se guardan en tu Mac, en `~/Library/Application Support/J7 Chat`: el historial está en `j7.db` y las copias de archivos, en `attachments/`. Un chat nuevo no recibe contexto de otros chats. [Dónde se guarda cada dato y cómo respaldarlo](docs/datos-locales.md). Para actualizar, cierra J7 y reemplaza la app por la nueva; tus datos se conservan.
 
 ## Compilarla tú
@@ -116,4 +114,4 @@ Las ideas, los reportes de errores y los pull requests son bienvenidos. Lee [CON
 
 ## Licencia
 
-[MIT](LICENSE). Las licencias de las dependencias y referencias están en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). J7 Chat no está afiliado a Anthropic, OpenAI, OpenCode ni Hex.
+[MIT](LICENSE). Las licencias de las dependencias y referencias están en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). J7 Chat no está afiliado a Anthropic, OpenAI, Google, OpenCode ni Hex. Sus logos son marcas de sus dueños y solo identifican cada servicio.

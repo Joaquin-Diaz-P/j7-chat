@@ -54,10 +54,8 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.handle("chat:update", (event, options: unknown) => {
     if (!trusted(event) || !options || typeof options !== "object") return;
     const value = options as Record<string, unknown>;
-    if (value.compareModels !== undefined && (!Array.isArray(value.compareModels) || value.compareModels.length > 3 || !value.compareModels.every(key => typeof key === "string"))) throw new Error("Selección de comparación no válida");
     chat.updateChat({
       ...(typeof value.model === "string" ? { model: value.model } : {}),
-      ...(Array.isArray(value.compareModels) ? { compareModels: value.compareModels as string[] } : {}),
       ...(typeof value.webSearch === "boolean" ? { webSearch: value.webSearch } : {}),
       ...(typeof value.effort === "string" && /^[a-z0-9_-]{1,40}$/i.test(value.effort) ? { effort: value.effort } : {}),
     });

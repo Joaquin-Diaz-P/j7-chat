@@ -279,6 +279,8 @@ textarea::placeholder { color:var(--text-muted);opacity:1; }
 .history-menu { position:absolute; right:0; top:100%; z-index:3; border-radius:6px; }
 .history [role=alertdialog] { padding:8px; border:1px solid var(--border); border-radius:8px; font-size:12px; }
 .composer textarea:focus-visible { outline:none; }
+/* While dictating, the wave takes the text field's place at the same height. */
+.voice-wave { display:block;width:100%;height:30px;margin:-3px 0 1px;color:var(--foreground); }
 .composer:focus-within { border-color:color-mix(in srgb,var(--text-muted) 40%,transparent); }
 .conversation { padding:0 20px; scrollbar-width:thin; }
 .user-message { position:relative; width:fit-content; max-width:80%; margin:12px 0 12px auto; padding:0; }
@@ -379,33 +381,6 @@ button[aria-pressed=true] { background:var(--row-active); }
 .settings-view {--sidebar-row-selected:color-mix(in srgb,var(--text) 7%,transparent)}
 .settings-titlebar {position:absolute;top:0;left:0;right:0;height:40px;-webkit-app-region:drag}
 .settings-view :is(button,input,select,textarea) {-webkit-app-region:no-drag}
-
-/* The same question has independently generated answer columns. */
-.compare-picker {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  max-height: 330px;
-  overflow-y: auto;
-}
-.compare-picker h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
-.compare-picker p { margin: 6px 0; font-size: 12px; line-height: 1.5; }
-.compare-models { display: grid; gap: 4px; margin: 10px 0; }
-.compare-models label { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 5px; font-size: 12px; cursor: pointer; }
-.compare-models label:hover { background: var(--row-hover); }
-.compare-models input { accent-color: var(--accent); }
-.compare-help { color: var(--muted-foreground); }
-.compare-picker-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; font-size: 12px; }
-.compare-picker-actions button:first-child { margin-right: auto; }
-.compare-picker-actions .compare-apply { background: var(--row-hover); font-weight: 600; }
-.comparison-grid { display: grid; grid-template-columns: repeat(var(--comparison-columns), minmax(250px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; align-items: start; }
-.comparison-grid .assistant-message { min-width: 0; margin: 0; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-.comparison-model { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; margin: 0 0 10px; }
-.comparison-grid .response-actions { flex-wrap: wrap; }
-.model-compare[data-active=true] { color: var(--accent); }
-.model-compare:disabled { opacity: .4; }
-.model-compare-count { position: absolute; right: 3px; bottom: 5px; font-size: 9px; font-weight: 700; line-height: 1; }
-.model-selector .compare-picker { flex: 1; min-width: 0; max-height: none; border: 0; overflow-y: auto; }
-.model-selector .compare-models input { width: auto; padding: 0; flex-shrink: 0; }
 
 /* Connections uses the Settings theme in both appearances. */
 .settings-view .connections {padding:16px 0}

@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useState } from 'react';
 import type { SettingsData } from '../../shared/ipc.js';
 import { canDisableConnection, type Connection, type ConnectionId } from '../../shared/connections.js';
 import { connectionStrings as t, settingsStrings as s, settingsPrograms, strings } from '../strings.js';
-import { ProviderIcon } from './ProviderIcon.js';
+import { HexIcon, ProviderIcon } from './ProviderIcon.js';
 
 interface Props {
   data: SettingsData;
@@ -88,7 +88,7 @@ export function Connections({ data, reload, refresh }: Props) {
     })}
     <h3 className="connections-heading">{t.voiceHeading}</h3>
     <section className="connection-card" aria-labelledby="connection-hex">
-      <div className="connection-header"><div className="connection-name"><h4 id="connection-hex">{settingsPrograms.hex!.label}</h4><p>{settingsPrograms.hex!.purpose}</p></div><span className={'connection-badge ' + (data.hex.running ? 'ready' : data.hex.installed ? 'not_authenticated' : 'not_installed')}>{s.states[data.hex.running ? 'ready' : data.hex.installed ? data.hex.status?.code === 3 ? 'closed' : 'error' : 'not_installed']}</span></div>
+      <div className="connection-header"><HexIcon size={34}/><div className="connection-name"><h4 id="connection-hex">{settingsPrograms.hex!.label}</h4><p>{settingsPrograms.hex!.purpose}</p></div><span className={'connection-badge ' + (data.hex.running ? 'ready' : data.hex.installed ? 'not_authenticated' : 'not_installed')}>{s.states[data.hex.running ? 'ready' : data.hex.installed ? data.hex.status?.code === 3 ? 'closed' : 'error' : 'not_installed']}</span></div>
       {!data.hex.installed && <><p className="connection-help">{s.hexRequirements}</p><button disabled={pending !== undefined} onClick={() => void act('hex', () => window.j7.settingsOpenUrl('hex'))}>{s.download}</button></>}
       {data.hex.installed && !data.hex.running && <><p className="connection-help">{data.hex.status?.code === 3 ? s.hexClosedProgram : s.hexError}</p><button disabled={pending !== undefined} onClick={() => void act('hex', () => window.j7.settingsStartHex())}>{s.openHex}</button></>}
       <button className="connection-official" onClick={() => void act('hex', () => window.j7.settingsOpenUrl('hex'))}>{t.official}</button>

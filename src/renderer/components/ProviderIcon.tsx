@@ -1,6 +1,8 @@
 import type { SVGProps } from "react";
 import { FlaskConical } from "lucide-react";
 import type { ProviderId } from "../../main/providers/types.js";
+// Same artwork T3 Code uses for Antigravity: its gradient arch cannot be drawn in one flat color.
+import antigravity from "../assets/antigravity.png";
 type BrandIcon = (props: SVGProps<SVGSVGElement>) => React.ReactNode;
 export const OpenAI: BrandIcon = ({ className, ...props }) => (
   <svg
@@ -28,11 +30,24 @@ export const ClaudeAI: BrandIcon = ({ className, ...props }) => (
   </svg>
 );
 
+// Hex's nested hexagons and cube, without the app's dark tile, so it follows the text color like OpenCode.
+export const HexIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path strokeWidth="1.7" strokeLinejoin="round" d="M12 1.6 21 6.8v10.4l-9 5.2-9-5.2V6.8z"/>
+    <path strokeWidth="1.4" strokeLinejoin="round" d="M12 5.2 17.9 8.6v6.8L12 18.8l-5.9-3.4V8.6z"/>
+    <g stroke="none" fill="currentColor">
+      <path d="M12 8.6 15 10.3 12 12 9 10.3z"/>
+      <path opacity=".65" d="M9 10.3 12 12v3.5l-3-1.7z"/>
+      <path opacity=".4" d="M15 10.3 12 12v3.5l3-1.7z"/>
+    </g>
+  </svg>
+);
+
 export function ProviderIcon({ provider, size=14 }: {provider: ProviderId; size?: number}) {
  const props = {width:size,height:size,"aria-hidden":true as const,"data-provider":provider};
  if(provider === "codex") return <OpenAI {...props}/>;
  if(provider === "claude") return <ClaudeAI {...props}/>;
- if(provider === "gemini") return <svg {...props} viewBox="0 0 24 24" fill="#4285F4"><path d="M12 1C12 7.1 7.1 12 1 12c6.1 0 11 4.9 11 11 0-6.1 4.9-11 11-11-6.1 0-11-4.9-11-11Z"/></svg>;
+ if(provider === "gemini") return <img {...props} src={antigravity} alt="" draggable={false}/>;
  if(provider === "opencode") return <svg {...props} viewBox="0 0 32 40" fill="currentColor"><path d="M24 32H8V16H24V32Z" className="opencode-detail"/><path d="M24 8H8V32H24V8ZM32 40H0V0H32V40Z"/></svg>;
  return <FlaskConical {...props}/>;
 }
