@@ -76,21 +76,27 @@ test('the card can be dragged past the screen edges but stays reachable and belo
   delete env.ELECTRON_RUN_AS_NODE;
   const app = await electron.launch({args:['.'],env});
   try {
-    await app.evaluate(() => (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show?.());
     const page = await app.firstWindow();
-    await page.evaluate(() => window.j7.setPinned(true));
+    await page.waitForLoadState('load');
+    await app.evaluate(() => (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show?.());
+    // macOS only constrains visible windows, so the edges must be checked on a shown bar.
+    await expect.poll(() => app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0]!.isVisible())).toBe(true);
     const card = async () => {
       const bounds = await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0]!.getBounds());
       const box = await page.locator('.card-surface').boundingBox();
       return {left:bounds.x+box!.x,top:bounds.y+box!.y,right:bounds.x+box!.x+box!.width,bottom:bounds.y+box!.y+box!.height};
     };
+    // Let the bar settle: until the renderer reports its measured height the card is laid out a few points taller.
+    await expect.poll(() => page.locator('.shell').evaluate(el => el.getAnimations({subtree:true}).filter(a => a.playState === 'running').length)).toBe(0);
+    await page.waitForTimeout(300);
     // The display under the card's middle owns it, so measure against wherever the card ends up.
     const area = async () => { const c = await card(); return app.evaluate(({screen}, point) => screen.getDisplayNearestPoint(point).workArea, {x:Math.round((c.left+c.right)/2), y:Math.round((c.top+c.bottom)/2)}); };
     const drag = async (dx: number, dy: number) => { await page.evaluate(([x, y]) => { window.j7.beginMoveCard(); window.j7.moveCard(x!, y!); window.j7.endMoveCard(); }, [dx, dy]); await page.waitForTimeout(150); };
     await drag(-4000, 0);
     await expect.poll(async () => (await card()).right - (await area()).x).toBe(80);
     await drag(0, 4000);
-    await expect.poll(async () => { const a = await area(); return (await card()).top - (a.y + a.height); }).toBe(-60);
+    // A strip stays visible to grab again (the compact card's drawn height varies by a few points).
+    await expect.poll(async () => { const a = await area(); return a.y + a.height - (await card()).top; }).toBeGreaterThanOrEqual(40);
     await drag(0, -8000);
     await expect.poll(async () => (await card()).top - (await area()).y).toBe(0);
     // With a second monitor, dragging the card's middle onto it hands the card over.

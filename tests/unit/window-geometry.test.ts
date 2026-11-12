@@ -24,7 +24,8 @@ it('reserves shadow space on every edge, including bottom right', () => {
   for (const history of [false,true]) {
    const {card,canvas}=cardLayout(area,anchor,680,history);
    expect(card.x-canvas.x).toBeGreaterThanOrEqual(24);
-   expect(card.y-canvas.y).toBeGreaterThanOrEqual(24);
+   // Only a card touching the top of the screen gives up its top shadow margin.
+   expect(card.y-canvas.y).toBeGreaterThanOrEqual(card.y===area.y ? 0 : 24);
    expect(canvas.x+canvas.width-card.x-card.width).toBeGreaterThanOrEqual(24);
    expect(canvas.y+canvas.height-card.y-card.height).toBeGreaterThanOrEqual(24);
   }
@@ -50,11 +51,16 @@ it('lets the card leave the screen sideways and downwards, like a macOS window',
   // Never under the menu bar, even when the card grows upwards.
   expect(cardLayout(area,far.up,680,history).card.y).toBe(0);
   for(const anchor of Object.values(far)) {
-   const {card,canvas,offset}=cardLayout(area,anchor,680,history);
-   expect(offset).toEqual({x:0,y:0});
+   const {card,canvas}=cardLayout(area,anchor,106,history);
+   // The window never rises above the work area: macOS would stop it there.
+   expect(canvas.y).toBeGreaterThanOrEqual(area.y);
+   expect(card.y).toBeGreaterThanOrEqual(canvas.y);
    expect(card.x-canvas.x).toBeGreaterThanOrEqual(24);
-   expect(canvas.y+canvas.height-card.y-card.height).toBe(24);
+   expect(canvas.y+canvas.height-card.y-card.height).toBeGreaterThanOrEqual(24);
   }
+  // At the top the compact card reaches the screen's edge inside a canvas pinned to it.
+  const top=cardLayout(area,far.up,106,history);
+  expect(top.canvas.y).toBe(0); expect(top.card.y).toBe(0); expect(top.offset.y).toBeLessThan(0);
  }
 });
 it('keeps the remembered bottom-right edge on expansion and places the card on another display', () => {

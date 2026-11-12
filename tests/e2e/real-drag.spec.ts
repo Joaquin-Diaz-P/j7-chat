@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 // The terminal running it needs Accessibility permission to post mouse events.
 test.skip(process.env.J7_REAL_INPUT !== '1', 'moves the real pointer');
 
-test('a real drag past the screen edge ends on release and never leaves the card following the pointer', async () => {
+test('a real drag past the screen edges ends on release, reaches the top and never leaves the card following the pointer', async () => {
   const data = await mkdtemp(join(tmpdir(), 'j7-real-drag-'));
   const drag = join(data, 'drag');
   execFileSync('swiftc', ['-O', resolve('scripts/verify/drag.swift'), '-o', drag]);
@@ -36,9 +36,15 @@ test('a real drag past the screen edge ends on release and never leaves the card
     expect(released.y).toBeGreaterThan(start.y);
     expect(area.y + area.height - released.y).toBeGreaterThanOrEqual(40);
     // Moving without the button pressed must not move the card.
-    execFileSync(drag, [String(x - 300), String(area.y + 200), String(x - 300), String(area.y + 200), '1']);
+    execFileSync(drag, [String(x), String(area.y + area.height - 20), String(x - 300), String(area.y + 200), '0']);
     await page.waitForTimeout(300);
     expect(await card()).toEqual(released);
+    // Upwards the card follows the pointer to the top of the screen; it used to hit an invisible
+    // wall where macOS stopped its transparent window at the menu bar.
+    const grab = {x: released.x + released.width - 60, y: released.y + 13};
+    execFileSync(drag, [String(grab.x), String(grab.y), String(grab.x), String(area.y + 5), '40']);
+    await page.waitForTimeout(300);
+    expect((await card()).y).toBe(area.y);
   } finally {
     await app.close();
     await rm(data, {recursive:true, force:true});

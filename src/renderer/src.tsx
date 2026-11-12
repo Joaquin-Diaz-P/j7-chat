@@ -189,7 +189,9 @@ function App() {
     };
   }, [chat.messages.length, selector, historyOpen]);
   const expanded = !!(chat.messages.length || selector || historyOpen);
-  useEffect(() => { window.j7.layout(expanded ? 680 : compactHeight, historyOpen); }, [expanded, compactHeight, historyOpen]);
+  // Re-sent on every appearance: showing the bar resets main's guess of the compact height, and the
+  // renderer must correct it even when its own measurement did not change.
+  useEffect(() => { window.j7.layout(expanded ? 680 : compactHeight, historyOpen); }, [expanded, compactHeight, historyOpen, appeared]);
   useEffect(() => {
     if (!appeared) return;
     const timer = setTimeout(() => void window.j7.refreshModels(), 300);

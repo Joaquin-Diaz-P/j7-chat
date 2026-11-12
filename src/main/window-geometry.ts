@@ -14,10 +14,11 @@ export const CANVAS_MARGIN = 24;
 // visible to grab it again, but never slides under the menu bar.
 export const VISIBLE_X = 80, VISIBLE_Y = 60;
 // Reserve the largest card from the outset, including its CSS shadow. The canvas follows the anchor
-// past the screen's edges so the card never shifts inside it.
+// past the screen's sides and bottom, but macOS keeps a visible window's top below the menu bar,
+// so there it stops and the card rises inside it instead.
 export function canvasBounds(area: Area, anchor: Position): Area {
   const width = Math.min(828, area.width), height = Math.min(728, area.height);
-  return { width, height, x: Math.round(anchor.x + 260 + CANVAS_MARGIN - width), y: Math.round(anchor.y + CANVAS_MARGIN - height) };
+  return { width, height, x: Math.round(anchor.x + 260 + CANVAS_MARGIN - width), y: Math.round(Math.max(area.y, anchor.y + CANVAS_MARGIN - height)) };
 }
 export function canvasAnchor(bounds: Area): Position {
   return { x: bounds.x + bounds.width - CANVAS_MARGIN - 260, y: bounds.y + bounds.height - CANVAS_MARGIN };

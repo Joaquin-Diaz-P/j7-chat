@@ -1,6 +1,6 @@
 {
   "name": "j7-chat",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Barra de consultas rápidas para macOS que usa Claude Code, Codex y OpenCode, con capturas y voz de Hex.",
   "author": "Joaquin Diaz",
   "license": "MIT",
