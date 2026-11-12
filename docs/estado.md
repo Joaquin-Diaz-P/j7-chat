@@ -125,3 +125,10 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Cada actualización de estado de la voz vuelve a comprobar si Hex está instalado, así que instalarlo activa el micrófono sin reiniciar J7.
 - El ocultamiento del visor de Hex no hace nada si Hex no está instalado.
 - Verificación: `npm test` (336 pruebas) y `npx playwright test` (4 recorridos, uno nuevo sin Hex) aprobados.
+
+### Voz más limpia en la barra (11 de noviembre)
+
+- Sin frases arriba al dictar: se quitaron «● Escuchando…» (mantenido y con doble toque), «Abriendo Hex…» y «Transcribiendo… Cancelar» de la zona de avisos. Los atajos quedan como ayuda al pasar el cursor sobre la onda: Enter o un toque envían, Esc descarta.
+- «Transcribiendo…» aparece donde va a quedar el texto, en el color del placeholder con un leve parpadeo, y «No se escuchó nada» se muestra como placeholder del campo.
+- La onda adapta el «Dot scope» de Hex (MIT): dos trazos trenzados que salen del centro, con la estela que se apaga de a poco. Como J7 no abre el micrófono, la sigue la voz sintética que Hex usa para previsualizarla, no tu voz real.
+- Verificación: `npm test` (336 pruebas) y `npx playwright test` (4 recorridos) aprobados. Capturas de la onda y de «Transcribiendo…» revisadas.

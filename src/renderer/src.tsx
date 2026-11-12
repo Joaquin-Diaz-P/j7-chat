@@ -430,15 +430,8 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           {capture.permission && <p role="alert">{capture.permission === 'screen' ? s.captureScreen : s.captureInput} <button onClick={() => void window.j7.captureAction(capture.permission!)}>{s.systemSettings}</button></p>}
           {capture.conflict && <p role="alert">{s.hexConflict}</p>}
           {capture.busy && <p role="status">{s.captureBusy}</p>}
-          {capture.phase === 'listening' && (capture.locked
-            ? <p role="status">{s.captureListeningLocked} <button onClick={() => void window.j7.captureAction('finish')}>{s.captureSend}</button> <button onClick={() => void window.j7.captureAction('cancel')}>{s.captureDiscard}</button></p>
-            : <p role="status">{s.captureListening}</p>)}
           {capture.hexBusy && <p role="status">{s.hexBusy}</p>}
-          {capture.phase === 'opening' && <p role="status">{s.captureOpening}</p>}
-          {capture.phase === 'empty' && <p role="status">{s.captureEmpty}</p>}
           {capture.phase === 'queued' && <p role="status">{s.queued}</p>}
-          {capture.phase === 'transcribing' && <p role="status">{s.captureTranscribing} {capture.seconds >= 3 ? capture.seconds + ' s' : ''} <button onClick={() => void window.j7.captureAction('cancel')}>{s.cancel}</button></p>}
-          {capture.phase === 'recovering' && <p role="status">{s.captureRecovering}</p>}
           {capture.phase === 'failed' && !capture.permission && <p role="alert">{capture.recoverable ? s.captureFailed : s.captureUnavailable} {capture.recoverable && <button onClick={() => void window.j7.captureAction('recover')}>{s.captureRetry}</button>}</p>}
 
           <AttachmentChips files={attachments} remove={id => { setAttachmentError(""); setAttachments(files => files.filter(file => file.id !== id)); }}/>
@@ -448,10 +441,12 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           {imageBlocked && <p role="alert">{s.noVision(model?.label ?? s.model)}</p>}
           {attachments.filter(file => file.kind === "pdf" && model && !nativePdf(file, model)).map(file => <p key={file.id} role="status">{!file.hasText ? s.scannedPdf(model!.label) : file.truncated ? s.pdfTruncated(file.sentPages ?? 0, file.pages ?? 0) : ""}</p>)}
         </div>
-        {dictating && <VoiceWave label={s.voiceWave}/>}
+        {/* Voice lives where its text will land: the wave while Hex listens, then its progress. */}
+        {dictating && <VoiceWave label={s.voiceWave} hint={capture.locked ? s.voiceHintLocked : s.voiceHint}/>}
+        {transcribing && <p className="voice-inline" role="status" title={s.voiceHintTranscribing}>{capture.phase === 'recovering' ? s.captureRecovering : s.captureTranscribing}{capture.phase === 'transcribing' && capture.seconds >= 3 ? ` ${capture.seconds} s` : ''}</p>}
         <textarea
           ref={input}
-          hidden={dictating}
+          hidden={dictating || transcribing}
           onPaste={event => {
             event.preventDefault();
             const text = event.clipboardData.getData("text/plain");
@@ -459,9 +454,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
             void attach("paste").then(count => { if (!count && text) setDraft(value => value.slice(0, start) + text + value.slice(end)); });
           }}
           aria-label={s.input}
-          placeholder={
-            s.newPlaceholder
-          }
+          placeholder={capture.phase === 'empty' ? s.captureEmpty : s.newPlaceholder}
           value={draft}
           rows={1}
           onChange={(event) => setDraft(event.target.value)}
