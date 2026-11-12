@@ -83,6 +83,7 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.on("window:regions", (event, regions) => {
     if (trusted(event) && Array.isArray(regions) && regions.length <= 20 && regions.every(r => r && ['left','top','right','bottom'].every(k => Number.isFinite(r[k])))) panel.setRegions(regions);
   });
+  ipcMain.on("window:beginMoveCard", event => { if (trusted(event)) panel.beginMoveCard(); });
   ipcMain.on("window:endMoveCard", event => { if (trusted(event)) panel.endMoveCard(); });
   ipcMain.on("window:moveCard", (event, dx, dy) => { if(trusted(event) && Number.isFinite(dx) && Number.isFinite(dy)) panel.moveCard(dx,dy); });
   ipcMain.on("window:layout", (event, height, history) => {

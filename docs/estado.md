@@ -142,3 +142,9 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Permisos web: J7 deniega todos salvo copiar al portapapeles y el micrófono de la barra. Antes Electron aprobaba cualquier permiso.
 - Rendimiento medido: unos 2% de CPU mientras se dicta (0,2% en reposo) y 60 cuadros por segundo estables.
 - Verificación: `npm test` (336 pruebas) y `npx playwright test` (5 recorridos). Uno nuevo arrastra la tarjeta más allá de los bordes y a otro monitor, y pasó con dos pantallas reales (1920×1080 y 2560×1600).
+
+### Arrastre que no se queda pegado (11 de noviembre)
+
+- Error de la 0.2.5, visto en un video del usuario: al llevar la tarjeta contra un borde, se detenía pero el cursor seguía de largo. Como la ventana deja pasar los clics fuera de la tarjeta, el soltar se perdía y la tarjeta seguía al mouse sin el botón apretado; un clic después la ocultaba.
+- Arreglo: mientras se arrastra, la ventana recibe todos los eventos del mouse. La posición se calcula desde donde empezó el arrastre, así la tarjeta vuelve bajo el cursor al regresar del borde. Y si llega un movimiento sin el botón apretado, el arrastre termina.
+- Verificación: un recorrido con el mouse real (`tests/e2e/real-drag.spec.ts`, se activa con `J7_REAL_INPUT=1` porque mueve el cursor) arrastra la tarjeta más allá del borde inferior. Comprueba que suelte y que, al mover el mouse sin apretar, la tarjeta quede quieta. Además, `npm test` (336) y `npx playwright test` (5 recorridos) aprobados.

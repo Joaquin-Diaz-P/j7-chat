@@ -25,6 +25,8 @@ export class Panel {
   private compactHeight = 106;
   private captureTimer: ReturnType<typeof setInterval> | undefined;
   private captured: boolean | undefined;
+  /** Where the card was when the current drag began; set only while dragging. */
+  private dragStart: Position | undefined;
   private bounds: Area = { x: 0, y: 0, width: 828, height: 728 };
   private ready = false;
   private pendingShow = false;
@@ -246,9 +248,16 @@ export class Panel {
       }
     }, 150);
   }
-  moveCard(dx: number, dy: number) {
+  beginMoveCard() {
     const base = canvasAnchor(this.window.getBounds());
-    const target = {x:base.x+this.offset.x+dx,y:base.y+this.offset.y+dy};
+    this.dragStart = {x:base.x+this.offset.x,y:base.y+this.offset.y};
+    this.updateCapture();
+  }
+  moveCard(dx: number, dy: number) {
+    // Measured from the drag's start, so after the card stops at an edge it is back under the
+    // pointer as soon as the pointer returns, instead of drifting away from it.
+    if (!this.dragStart) return;
+    const target = {x:this.dragStart.x+dx,y:this.dragStart.y+dy};
     const display = this.displayFor(target);
     const {card, canvas, offset} = cardLayout(display.workArea, target, this.cardHeight, this.settings.value.historyOpen);
     this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
@@ -264,6 +273,8 @@ export class Panel {
     return screen.getDisplayNearestPoint({x:Math.round(anchor.x+260-width/2),y:Math.round(anchor.y-this.cardHeight/2)});
   }
   endMoveCard() {
+    this.dragStart = undefined;
+    this.updateCapture();
     if(this.displayId && this.anchor) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
   }
   layout(height: number, history: boolean) {
@@ -284,7 +295,9 @@ export class Panel {
   }
   setRegions(regions: HitRect[]) { this.regions = regions; this.updateCapture(); }
   private updateCapture() {
-    const capture = capturesScreenPoint(screen.getCursorScreenPoint(), this.bounds, this.regions);
+    // While dragging, the window keeps every mouse event: the pointer can outrun a card stopped at an
+    // edge, and a release passed through to the app behind would leave the drag stuck.
+    const capture = !!this.dragStart || capturesScreenPoint(screen.getCursorScreenPoint(), this.bounds, this.regions);
     if (capture !== this.captured) {
       this.captured = capture;
       this.window.setIgnoreMouseEvents(!capture, { forward: true });

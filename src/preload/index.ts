@@ -50,6 +50,7 @@ const api: J7Api = {
   askOther: (model, effort) => ipcRenderer.invoke("chat:other", model, effort),
   onHiding: callback => subscribe("window:hiding", callback),
   setRegions: regions => ipcRenderer.send("window:regions", regions),
+  beginMoveCard: () => ipcRenderer.send("window:beginMoveCard"),
   moveCard: (dx,dy) => ipcRenderer.send("window:moveCard",dx,dy),
   endMoveCard: () => ipcRenderer.send("window:endMoveCard"),
   layout: (height, history) => ipcRenderer.send("window:layout", height, history),

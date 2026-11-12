@@ -86,7 +86,7 @@ test('the card can be dragged past the screen edges but stays reachable and belo
     };
     // The display under the card's middle owns it, so measure against wherever the card ends up.
     const area = async () => { const c = await card(); return app.evaluate(({screen}, point) => screen.getDisplayNearestPoint(point).workArea, {x:Math.round((c.left+c.right)/2), y:Math.round((c.top+c.bottom)/2)}); };
-    const drag = async (dx: number, dy: number) => { await page.evaluate(([x, y]) => window.j7.moveCard(x!, y!), [dx, dy]); await page.waitForTimeout(150); };
+    const drag = async (dx: number, dy: number) => { await page.evaluate(([x, y]) => { window.j7.beginMoveCard(); window.j7.moveCard(x!, y!); window.j7.endMoveCard(); }, [dx, dy]); await page.waitForTimeout(150); };
     await drag(-4000, 0);
     await expect.poll(async () => (await card()).right - (await area()).x).toBe(80);
     await drag(0, 4000);

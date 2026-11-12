@@ -357,13 +357,16 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
       event.preventDefault();
       input.current?.focus();
       event.currentTarget.setPointerCapture(event.pointerId);
-      let x=event.screenX,y=event.screenY, moved=false, frame=0, dx=0, dy=0;
+      const startX=event.screenX,startY=event.screenY;
+      let moved=false, frame=0, dx=0, dy=0, sent=false;
       // At most one move per frame: pointer events can outpace the display several times over.
-      const flush=()=>{frame=0;if(dx||dy)window.j7.moveCard(dx,dy);dx=0;dy=0;};
+      const flush=()=>{frame=0;if(!sent){sent=true;window.j7.moveCard(dx,dy);}};
       const move=(e:PointerEvent)=>{
-        if(!moved && Math.hypot(e.screenX-x,e.screenY-y)<4)return;
-        moved=true;
-        dx+=e.screenX-x;dy+=e.screenY-y;x=e.screenX;y=e.screenY;
+        // A release the window never saw (it happened over another app) must not leave the card following the pointer.
+        if(!(e.buttons&1)){end();return;}
+        if(!moved && Math.hypot(e.screenX-startX,e.screenY-startY)<4)return;
+        if(!moved){moved=true;window.j7.beginMoveCard();}
+        dx=e.screenX-startX;dy=e.screenY-startY;sent=false;
         if(!frame)frame=requestAnimationFrame(flush);
       };
       const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(frame){cancelAnimationFrame(frame);flush();}if(moved)window.j7.endMoveCard();input.current?.focus();};

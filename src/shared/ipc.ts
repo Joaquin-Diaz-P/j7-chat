@@ -73,6 +73,8 @@ export interface J7Api {
   askOther(model: string, effort?: string): Promise<void>;
   onHiding(callback: () => void): () => void;
   setRegions(regions: import("./hit-test.js").HitRect[]): void;
+  beginMoveCard():void;
+  /** dx and dy are measured from where the drag began, not from the previous move. */
   moveCard(dx:number,dy:number):void;
   endMoveCard():void;
   layout(height: number, history: boolean): void;
