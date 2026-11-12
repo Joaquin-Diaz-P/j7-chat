@@ -76,7 +76,7 @@ Los de Hex se le dan a **Hex**, no a J7: en la lista de Ajustes del Sistema, act
 
 **4. Voz (opcional)**
 
-Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y sigue sus pasos (descarga el modelo de voz). Después, mantén `⌥` derecho en cualquier app para dictarle a J7.
+Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y sigue sus pasos (descarga el modelo de voz). Después, mantén `⌥` derecho en cualquier app para dictarle a J7. Mientras dictas, la barra de J7 muestra una onda y J7 oculta el visor de Hex, que vuelve a su lugar al terminar.
 
 ## Cómo se usa
 

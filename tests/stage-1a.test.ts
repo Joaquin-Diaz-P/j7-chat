@@ -65,6 +65,7 @@ describe("settings", () => {
       effortByModel: {},
       lastModel: null,
       personalInstructions: "",
+      hexIndicatorRestore: null,
     });
     expect(
       validateSettings({
@@ -100,6 +101,7 @@ describe("settings", () => {
       effortByModel: {},
       lastModel: null,
       personalInstructions: "",
+      hexIndicatorRestore: null,
     });
   });
   it("creates missing settings, survives corruption and persists updates", () => {

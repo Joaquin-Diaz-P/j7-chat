@@ -24,6 +24,8 @@ export interface Settings {
   effortByModel: Record<string, string>;
   lastModel: string | null;
   personalInstructions: string;
+  /** Where Hex showed its dictation HUD before J7 hid it; restored when J7's dictation ends or at the next launch. */
+  hexIndicatorRestore: "top" | "bottom" | null;
 }
 export function validateSettings(value: unknown): Settings {
   const v =
@@ -57,6 +59,7 @@ export function validateSettings(value: unknown): Settings {
     favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
     lastModel: typeof v.lastModel === "string" ? canonicalModelKey(v.lastModel) : !("lastModel" in v) && typeof v.defaultModel === "string" ? canonicalModelKey(v.defaultModel) : null,
     personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions.slice(0,4000) : "",
+    hexIndicatorRestore: v.hexIndicatorRestore === "top" || v.hexIndicatorRestore === "bottom" ? v.hexIndicatorRestore : null,
   };
 }
 export class SettingsStore {

@@ -112,3 +112,9 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Íconos: Gemini usa el arco de Antigravity, el mismo dibujo que usa T3 Code. Hex tiene su logo en Conexiones, sin el fondo de la app, como OpenCode.
 - Al dictar, ya sea con el botón del micrófono o con `⌥` derecho mantenido o con doble toque, una onda de puntos al estilo de Hex reemplaza el campo de texto. Es solo visual: Hex sigue grabando y transcribiendo, y J7 no abre el micrófono.
 - Verificación: `npm run typecheck`, `npm test` (331 pruebas) y `npx playwright test` (3 recorridos) aprobados. Capturas revisadas de la onda y de la tarjeta de Hex.
+
+### Visor de Hex oculto al dictar en J7 (11 de noviembre)
+
+- Al empezar un dictado desde J7, J7 guarda la posición del visor de Hex (`indicator_position`, arriba o abajo) en su `settings.json` y lo oculta, porque la barra ya muestra la onda. Lo devuelve a su lugar al terminar, cancelar o fallar. Si J7 se cierra a mitad de un dictado, lo restaura al abrirse otra vez. Los dictados hechos con Hex fuera de J7 siguen mostrando su visor.
+- Si Hex ya estaba dictando por su cuenta, J7 no toca el visor.
+- Verificación: `npm test` (335 pruebas, 4 nuevas con un Hex falso) y `npx playwright test` (3 recorridos) aprobados. La sintaxis de `hex settings set indicator_position` se comprobó con el Hex instalado (3.4.0) sin cambiar su valor.

@@ -12,7 +12,8 @@ import type { AttachmentStore } from '../attachments/index.js';
 import type { SettingsStore } from '../settings.js';
 import type { CaptureEvent } from '../../shared/capture.js';
 export function setupCapture(panel: Panel, attachments: AttachmentStore, settings: SettingsStore, helper = new NativeHelper(app.isPackaged ? join(process.resourcesPath,'j7-helper') : join(app.getAppPath(),'build/j7-helper'))) {
-  const hex = new Hex(process.env.J7_HEX_BINARY);
+  const hex = new Hex(process.env.J7_HEX_BINARY, { get: () => settings.value.hexIndicatorRestore, set: position => settings.update({ hexIndicatorRestore: position }) });
+  void hex.restoreIndicator();
   const emit = (event: CaptureEvent) => { if (!panel.window.isDestroyed()) panel.window.webContents.send('capture:event',event); };
   let permission: 'screen'|'input'|undefined;
   const check = async (kind: 'screen'|'input') => {
