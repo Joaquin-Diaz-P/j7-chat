@@ -357,13 +357,16 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
       event.preventDefault();
       input.current?.focus();
       event.currentTarget.setPointerCapture(event.pointerId);
-      let x=event.screenX,y=event.screenY, moved=false;
+      let x=event.screenX,y=event.screenY, moved=false, frame=0, dx=0, dy=0;
+      // At most one move per frame: pointer events can outpace the display several times over.
+      const flush=()=>{frame=0;if(dx||dy)window.j7.moveCard(dx,dy);dx=0;dy=0;};
       const move=(e:PointerEvent)=>{
         if(!moved && Math.hypot(e.screenX-x,e.screenY-y)<4)return;
         moved=true;
-        window.j7.moveCard(e.screenX-x,e.screenY-y);x=e.screenX;y=e.screenY;
+        dx+=e.screenX-x;dy+=e.screenY-y;x=e.screenX;y=e.screenY;
+        if(!frame)frame=requestAnimationFrame(flush);
       };
-      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(moved)window.j7.endMoveCard();input.current?.focus();};
+      const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(frame){cancelAnimationFrame(frame);flush();}if(moved)window.j7.endMoveCard();input.current?.focus();};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
     }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${expanded ? "expanded" : "compact"}`}>
       <div className="card-surface" aria-hidden="true"/>

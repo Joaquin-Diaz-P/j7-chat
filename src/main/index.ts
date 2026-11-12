@@ -1,4 +1,5 @@
 import { setupSection } from "./setup.js";
+import { allowPermission } from "./ipc-trust.js";
 import { openSettings, setupSettings } from "./settings-window.js";
 import { strings as s } from "../renderer/strings.js";
 import { SqliteChatStore } from "./chat/sqlite-store.js";
@@ -7,7 +8,7 @@ import { generateTitle } from "./titles.js";
 import { setupCapture } from "./capture/setup.js";
 import { AttachmentStore } from "./attachments/index.js";
 import { registerAttachments, registerAttachmentProtocol } from "./attachments/ipc.js";
-import { app, protocol, globalShortcut, type Tray } from "electron";
+import { app, protocol, globalShortcut, type Tray, session } from "electron";
 import { join } from "node:path";
 import { resolveBinary, ensurePaths, getPaths } from "./paths.js";
 import { existsSync, writeFileSync, mkdirSync } from "node:fs";
@@ -88,6 +89,11 @@ else {
       await attachments.cleanup();
       registerAttachmentProtocol(attachments);
       panel = new Panel(settings, chat);
+      // Automated tests never open a real microphone.
+      session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+        const fromBar = process.env.J7_TEST !== "1" && !!panel && !panel.window.isDestroyed() && contents === panel.window.webContents && details.isMainFrame;
+        callback(allowPermission(permission, "mediaTypes" in details ? details.mediaTypes : undefined, fromBar));
+      });
       if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       registerAttachments(panel, attachments);
       capture = setupCapture(panel, attachments, settings, helper);

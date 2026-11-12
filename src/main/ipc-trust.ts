@@ -8,3 +8,10 @@ export function fromMainFrame(window: Pick<BrowserWindow, 'webContents'> & Parti
     return !contents.isDestroyed?.() && event.sender === contents && event.senderFrame === contents.mainFrame;
   } catch { return false; }
 }
+
+// Every web permission is denied except copying to the clipboard and, for the bar alone, the
+// microphone: the voice wave reads its loudness while Hex dictates (never recording it).
+export function allowPermission(permission: string, mediaTypes: readonly string[] | undefined, fromBar: boolean): boolean {
+  if (permission === 'clipboard-sanitized-write') return true;
+  return permission === 'media' && fromBar && !!mediaTypes?.length && mediaTypes.every(type => type === 'audio');
+}

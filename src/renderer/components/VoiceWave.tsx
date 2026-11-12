@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 
 // A port of Hex's "Dot scope" HUD (github.com/anomalyco/hex, MIT: src/rune_hud/dot_scope/scope.rs
 // and rune_hud.wgsl), recording stage only. Two braided traces follow a voice level, travel out
-// from the centre and leave a phosphor trail on a dot grid. Hex records and transcribes; J7 never
-// opens the microphone, so the level is Hex's own synthetic voice (`demo_level`) rather than a meter.
+// from the centre and leave a phosphor trail on a dot grid. Hex records and transcribes; J7 only
+// measures the microphone's loudness while it dictates, and falls back to Hex's synthetic voice
+// (`demo_level`) when the microphone is unavailable or not allowed.
 const TAU = Math.PI * 2, STEP = 1 / 240, HISTORY = 512, SUB = 3;
 const SPEEDS = [0.8, 1.25, 1.85, 2.6], BASE = [0.55, 0.42, 0.3, 0.2], SPATIAL = [1.4, 2.4, 3.8, 5.6];
 const PITCH = 3.6, ROWS = 7, SCALE = PITCH / 2.6; // Hex measures in points at a 2.6 pt pitch.
@@ -22,6 +23,20 @@ function demoLevel(time: number) {
   const syllable = 0.5 + 0.5 * Math.sin(TAU * (4.3 + 0.6 * Math.sin(phrase * 1.7)) * t + phrase);
   const stress = 0.75 + 0.25 * Math.sin(TAU * 1.1 * t + 2 * phrase);
   return clamp(0.08 + 0.82 * shape * syllable ** 1.6 * stress);
+}
+
+/** Hex's slow auto level: the speaker's recent peak reads as full and the room as silent. */
+class AutoLevel {
+  peak = -30; room = -55;
+  step(loudness: number, h: number) {
+    const db = Math.max(loudness, -120);
+    const follow = (value: number, target: number, time: number) => value + (target - value) * (1 - Math.exp(-h / Math.max(time, 1e-3)));
+    this.room = follow(this.room, db, db < this.room ? 0.3 : 6);
+    const lowest = Math.max(this.room, -60) + 16;
+    this.peak = Math.max(db > this.peak ? follow(this.peak, db, 0.04) : follow(this.peak, lowest, 3), lowest);
+    const low = Math.max(Math.max(this.room, -60) + 5, this.peak - 24);
+    return clamp((db - low) / Math.max(this.peak - low, 1));
+  }
 }
 
 class Voice {
@@ -68,6 +83,9 @@ class Scope {
   voices = [new Voice(), new Voice()];
   traces = [new Trace([0.1, 1.7, 3.3, 4.6]), new Trace([2.4, 0.6, 5.1, 1.9])];
   live = 0; carrier = 0; time = 0; pending = 0; columns = 0;
+  /** The microphone's loudness in dBFS, or undefined to follow the synthetic voice. */
+  loudness: number | undefined;
+  auto = new AutoLevel();
   head: Float32Array[] = []; tail: Float32Array[] = []; ys: Float32Array[] = []; bright: Float32Array[] = [];
   power = new Float32Array(0); fresh = new Float32Array(0);
   resize(columns: number) {
@@ -82,7 +100,7 @@ class Scope {
     this.pending += Math.min(dt, 0.25);
     while (this.pending >= STEP) {
       this.pending -= STEP;
-      const level = demoLevel(this.time), h = STEP;
+      const h = STEP, level = this.loudness === undefined ? demoLevel(this.time) : this.auto.step(this.loudness, h);
       this.voices[0]!.step(level, h); this.voices[1]!.step(level * 0.85, h);
       this.live += (1 - this.live) * (1 - Math.exp(-h / 0.55));
       const speed = still ? 0 : 1;
@@ -167,12 +185,27 @@ export function VoiceWave({ label, hint }: { label: string; hint: string }) {
     if (!element || !context) return;
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scope = new Scope();
-    let frame = 0, last = performance.now();
+    let frame = 0, last = performance.now(), stopped = false;
+    // Loudness only: the samples stay in this analyser and are never stored or sent anywhere.
+    let stream: MediaStream | undefined, audio: AudioContext | undefined, analyser: AnalyserNode | undefined, samples: Float32Array<ArrayBuffer> | undefined;
+    void navigator.mediaDevices?.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(granted => {
+      if (stopped) { granted.getTracks().forEach(track => track.stop()); return; }
+      stream = granted; audio = new AudioContext();
+      analyser = audio.createAnalyser(); analyser.fftSize = 1024;
+      audio.createMediaStreamSource(granted).connect(analyser);
+      samples = new Float32Array(analyser.fftSize);
+    }).catch(() => {});
     const draw = (now: number) => {
       const ratio = devicePixelRatio, width = element.clientWidth, height = element.clientHeight;
       if (element.width !== Math.round(width * ratio)) { element.width = Math.round(width * ratio); element.height = Math.round(height * ratio); }
       const columns = Math.max(8, Math.floor(width / PITCH));
       scope.resize(columns);
+      if (analyser && samples) {
+        analyser.getFloatTimeDomainData(samples);
+        let sum = 0;
+        for (const sample of samples) sum += sample * sample;
+        scope.loudness = 20 * Math.log10(Math.sqrt(sum / samples.length) + 1e-6);
+      }
       scope.advance((now - last) / 1000, still);
       last = now;
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -199,7 +232,13 @@ export function VoiceWave({ label, hint }: { label: string; hint: string }) {
       if (!still || scope.time < 0.5) frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(frame);
+      // Releasing the tracks turns macOS's microphone indicator off as soon as dictation ends.
+      stream?.getTracks().forEach(track => track.stop());
+      void audio?.close().catch(() => {});
+    };
   }, []);
   return <canvas ref={canvas} className="voice-wave" role="img" aria-label={label} title={hint}/>;
 }

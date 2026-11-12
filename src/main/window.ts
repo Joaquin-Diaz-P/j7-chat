@@ -76,9 +76,7 @@ export class Panel {
       const x = base.x + this.offset.x, y = base.y + this.offset.y;
       if (!this.userMoving.isUserMove(bounds) || !this.displayId) return;
       this.anchor = { x, y };
-      this.displayId = String(
-        screen.getDisplayMatching(this.window.getBounds()).id,
-      );
+      this.displayId = String(this.displayFor({ x, y }).id);
       settings.update({
         positions: { ...settings.value.positions, [this.displayId]: { x, y } },
       });
@@ -249,13 +247,21 @@ export class Panel {
     }, 150);
   }
   moveCard(dx: number, dy: number) {
-    const bounds = this.window.getBounds();
-    const base = canvasAnchor(bounds);
-    this.anchor = {x:base.x+this.offset.x+dx,y:base.y+this.offset.y+dy};
-    const area = screen.getDisplayMatching(bounds).workArea;
-    const {card} = cardLayout(area, this.anchor, this.cardHeight, this.settings.value.historyOpen);
+    const base = canvasAnchor(this.window.getBounds());
+    const target = {x:base.x+this.offset.x+dx,y:base.y+this.offset.y+dy};
+    const display = this.displayFor(target);
+    const {card, canvas, offset} = cardLayout(display.workArea, target, this.cardHeight, this.settings.value.historyOpen);
     this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
-    this.layout(this.cardHeight, this.settings.value.historyOpen);
+    this.displayId = String(display.id);
+    // While the card keeps its place in the canvas only the window moves; the renderer needs no update.
+    if (offset.x !== this.offset.x || offset.y !== this.offset.y) { this.layout(this.cardHeight, this.settings.value.historyOpen); return; }
+    this.place(canvas);
+    this.updateCapture();
+  }
+  /** The display under the card's middle owns it, so dragging across monitors hands the card over. */
+  private displayFor(anchor: Position) {
+    const width = this.settings.value.historyOpen ? 780 : 520;
+    return screen.getDisplayNearestPoint({x:Math.round(anchor.x+260-width/2),y:Math.round(anchor.y-this.cardHeight/2)});
   }
   endMoveCard() {
     if(this.displayId && this.anchor) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
@@ -268,8 +274,7 @@ export class Panel {
       if (this.settings.value.pinned) this.settings.update({ pinned: false });
     }
     if (!this.anchor) return;
-    const area = screen.getDisplayMatching(this.window.getBounds()).workArea;
-    const layout = cardLayout(area, this.anchor, height, history);
+    const layout = cardLayout(this.displayFor(this.anchor).workArea, this.anchor, height, history);
     this.offset = layout.offset;
     this.place(layout.canvas);
     const {card, canvas} = layout;

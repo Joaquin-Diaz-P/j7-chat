@@ -12,6 +12,7 @@ vi.mock('electron', () => ({
     getAppPath: () => '/unused',
   }),
   protocol: { registerSchemesAsPrivileged: vi.fn() }, globalShortcut: {},
+  session: { defaultSession: { setPermissionRequestHandler: vi.fn() } },
 }));
 vi.mock('../../src/main/setup.js', () => ({ setupSection: vi.fn() }));
 vi.mock('../../src/main/settings-window.js', () => ({

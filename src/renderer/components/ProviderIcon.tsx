@@ -30,16 +30,13 @@ export const ClaudeAI: BrandIcon = ({ className, ...props }) => (
   </svg>
 );
 
-// Hex's nested hexagons and cube, without the app's dark tile, so it follows the text color like OpenCode.
+// Official HexMark from https://github.com/anomalyco/hex/blob/dev/site/src/App.tsx (MIT).
+// Keep the standalone mark in the theme's text color, like OpenCode.
 export const HexIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path strokeWidth="1.7" strokeLinejoin="round" d="M12 1.6 21 6.8v10.4l-9 5.2-9-5.2V6.8z"/>
-    <path strokeWidth="1.4" strokeLinejoin="round" d="M12 5.2 17.9 8.6v6.8L12 18.8l-5.9-3.4V8.6z"/>
-    <g stroke="none" fill="currentColor">
-      <path d="M12 8.6 15 10.3 12 12 9 10.3z"/>
-      <path opacity=".65" d="M9 10.3 12 12v3.5l-3-1.7z"/>
-      <path opacity=".4" d="M15 10.3 12 12v3.5l3-1.7z"/>
-    </g>
+  <svg width={size} height={size} aria-hidden viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M32 4 57 18.5v27L32 60 7 45.5v-27Z"/>
+    <path d="M32 15 48 24.25v15.5L32 49l-16-9.25v-15.5Z"/>
+    <path fill="currentColor" stroke="none" d="m32 24 7.5 4.25v8.5L32 41l-7.5-4.25v-8.5Z"/>
   </svg>
 );
 

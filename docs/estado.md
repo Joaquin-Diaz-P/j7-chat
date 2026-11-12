@@ -132,3 +132,13 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - «Transcribiendo…» aparece donde va a quedar el texto, en el color del placeholder con un leve parpadeo, y «No se escuchó nada» se muestra como placeholder del campo.
 - La onda adapta el «Dot scope» de Hex (MIT): dos trazos trenzados que salen del centro, con la estela que se apaga de a poco. Como J7 no abre el micrófono, la sigue la voz sintética que Hex usa para previsualizarla, no tu voz real.
 - Verificación: `npm test` (336 pruebas) y `npx playwright test` (4 recorridos) aprobados. Capturas de la onda y de «Transcribiendo…» revisadas.
+
+### Arrastre libre entre pantallas y onda con la voz real (11 de noviembre)
+
+- La barra se puede arrastrar más allá de los bordes, como cualquier ventana de macOS: por los lados o hacia abajo, siempre con al menos 80 px (lados) o 60 px (abajo) visibles para volver a agarrarla. Nunca pasa bajo la barra de menús. Al abrir el historial, la tarjeta ancha no sobresale más de lo que ya sobresalía la compacta.
+- Se puede llevar a otro monitor: la pantalla bajo el centro de la tarjeta pasa a ser la suya, y ahí se guarda su posición.
+- Arrastre más fluido: como máximo un movimiento por cuadro, y solo se mueve la ventana, sin volver a dibujar la interfaz.
+- La onda sigue la voz real. Mientras Hex dicta, J7 mide el volumen del micrófono con el mismo nivel automático de Hex. No graba, no guarda audio y suelta el micrófono al terminar. Si no hay permiso, usa la voz sintética de Hex. El paquete vuelve a incluir `NSMicrophoneUsageDescription`, en español; se borró `scripts/after-pack.cjs`, que la quitaba.
+- Permisos web: J7 deniega todos salvo copiar al portapapeles y el micrófono de la barra. Antes Electron aprobaba cualquier permiso.
+- Rendimiento medido: unos 2% de CPU mientras se dicta (0,2% en reposo) y 60 cuadros por segundo estables.
+- Verificación: `npm test` (336 pruebas) y `npx playwright test` (5 recorridos). Uno nuevo arrastra la tarjeta más allá de los bordes y a otro monitor, y pasó con dos pantallas reales (1920×1080 y 2560×1600).

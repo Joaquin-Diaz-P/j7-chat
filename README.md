@@ -69,6 +69,7 @@ En **Ajustes → Permisos**, cada permiso tiene un botón que abre la página ex
 | --- | --- | --- |
 | J7 Chat | Grabación de pantalla | Las capturas |
 | J7 Chat | Monitoreo de entrada | La tecla de voz |
+| J7 Chat | Micrófono (opcional) | Que la onda siga tu voz al dictar. J7 solo mide el volumen; no graba ni guarda audio |
 | Hex | Micrófono | Escucharte |
 | Hex | Accesibilidad | Dictar |
 
@@ -76,7 +77,7 @@ Los de Hex se le dan a **Hex**, no a J7: en la lista de Ajustes del Sistema, act
 
 **4. Voz (opcional)**
 
-Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y sigue sus pasos (descarga el modelo de voz). Después, mantén `⌥` derecho en cualquier app para dictarle a J7. Mientras dictas, la barra de J7 muestra una onda y J7 oculta el visor de Hex, que vuelve a su lugar al terminar.
+Descarga [Hex](https://anoma.ly/hex/download/macos-arm64-dmg), ábrelo una vez y sigue sus pasos (descarga el modelo de voz). Después, mantén `⌥` derecho en cualquier app para dictarle a J7. Mientras dictas, la barra de J7 muestra una onda que sigue tu voz y J7 oculta el visor de Hex, que vuelve a su lugar al terminar. La primera vez, macOS pregunta si J7 puede usar el micrófono: solo mide el volumen para la onda; si no lo permites, la onda se anima igual.
 
 ## Cómo se usa
 

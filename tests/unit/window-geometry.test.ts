@@ -9,25 +9,8 @@ it('reserves the same maximum canvas for every card state and keeps saved anchor
  expect(canvasAnchor(bounds)).toEqual(anchor);
  for(const _state of ['compact','expanded','history','selector']) expect(canvasBounds(area,anchor)).toEqual(bounds);
 });
-it('clamps the entire canvas on all edges and other displays', () => {
- for(const anchor of [{x:0,y:0},{x:1440,y:1000}]) {
-  const b=canvasBounds(area,anchor);
-  expect(b.x).toBeGreaterThanOrEqual(0);expect(b.y).toBeGreaterThanOrEqual(0);
-  expect(b.x+b.width).toBeLessThanOrEqual(1440);expect(b.y+b.height).toBeLessThanOrEqual(1000);
- }
- expect(canvasBounds({x:-600,y:200,width:600,height:500},{x:-300,y:400})).toEqual({x:-600,y:200,width:600,height:500});
-});
 
 import { cardLayout } from '../../src/main/window-geometry.js';
-it('keeps the compact card within the shadow margin near the top and left and keeps its anchor on expansion', () => {
- const area={x:0,y:0,width:1440,height:900}, anchor={x:260,y:106};
- const compact=cardLayout(area,anchor,106);
- expect(compact.card).toEqual({x:24,y:24,width:520,height:106});
- expect(compact.offset.y).toBeLessThan(0);
- const expanded=cardLayout(area,anchor,680,true);
- expect(expanded.card).toEqual({x:24,y:24,width:780,height:680});
- expect(cardLayout(area,{x:800,y:800},680,true).card).toEqual({x:280,y:120,width:780,height:680});
-});
 it('fits a small display and supports a display with negative coordinates', () => {
  const small=cardLayout({x:0,y:0,width:500,height:600},{x:260,y:90},680,true);
  expect(small.card.width).toBe(452);
@@ -56,8 +39,35 @@ it('preserves the bottom and right edge across states away from screen edges', (
   expect(expanded.x+expanded.width).toBe(compact.x+compact.width);
  }
 });
-it('rejects invalid saved anchors and accepts negative display coordinates', () => {
- for(const saved of [{x:-1,y:500},{x:1441,y:500},{x:700,y:-1},{x:700,y:1001},{x:NaN,y:10},{x:Infinity,y:10}]) expect(validAnchor(area,saved)).toBeUndefined();
+
+it('lets the card leave the screen sideways and downwards, like a macOS window', () => {
+ const far={left:{x:-3000,y:500},right:{x:5000,y:500},down:{x:700,y:5000},up:{x:700,y:-500}};
+ for(const history of [false,true]) {
+  // The wide history card overhangs only as far as the compact card would.
+  expect(cardLayout(area,far.left,106,history).card.x).toBe(80-520);
+  expect(cardLayout(area,far.right,106,history).card.x).toBe(1440-80);
+  expect(cardLayout(area,far.down,106,history).card.y).toBe(1000-60);
+  // Never under the menu bar, even when the card grows upwards.
+  expect(cardLayout(area,far.up,680,history).card.y).toBe(0);
+  for(const anchor of Object.values(far)) {
+   const {card,canvas,offset}=cardLayout(area,anchor,680,history);
+   expect(offset).toEqual({x:0,y:0});
+   expect(card.x-canvas.x).toBeGreaterThanOrEqual(24);
+   expect(canvas.y+canvas.height-card.y-card.height).toBe(24);
+  }
+ }
+});
+it('keeps the remembered bottom-right edge on expansion and places the card on another display', () => {
+ const area={x:0,y:0,width:1440,height:900};
+ expect(cardLayout(area,{x:260,y:106},106).card).toEqual({x:0,y:0,width:520,height:106});
+ expect(cardLayout(area,{x:260,y:106},680,true).card).toEqual({x:0,y:0,width:780,height:680});
+ expect(cardLayout(area,{x:800,y:800},680,true).card).toEqual({x:280,y:120,width:780,height:680});
+ const other={x:1440,y:0,width:1920,height:1080};
+ expect(cardLayout(other,{x:1500,y:600},106).card).toEqual({x:1500-260+260-520+260,y:494,width:520,height:106});
+});
+it('accepts saved anchors partly off the display and rejects ones that left it', () => {
+ for(const saved of [{x:-261,y:500},{x:1701,y:500},{x:700,y:-1},{x:700,y:1107},{x:NaN,y:10},{x:Infinity,y:10}]) expect(validAnchor(area,saved)).toBeUndefined();
+ expect(validAnchor(area,{x:-200,y:1050})).toEqual({x:-200,y:1050});
  const other={x:-1920,y:200,width:1920,height:1080};
  expect(validAnchor(other,{x:-960,y:978})).toEqual({x:-960,y:978});
 });

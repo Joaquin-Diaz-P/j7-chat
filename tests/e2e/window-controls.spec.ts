@@ -68,3 +68,43 @@ test('compact drops fit the card, manual pin ends on collapse, and Dock stays vi
     await rm(data,{recursive:true,force:true});
   }
 });
+
+test('the card can be dragged past the screen edges but stays reachable and below the menu bar', async () => {
+  const data = await mkdtemp(join(tmpdir(), 'j7-window-edges-'));
+  await writeFile(join(data, 'settings.json'), JSON.stringify({firstRunDone:true,positionsVersion:2}));
+  const env: Record<string,string> = {...Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string,string] => typeof entry[1] === 'string')),J7_MOCK:'1',J7_TEST:'1',J7_DATA_DIR:data};
+  delete env.ELECTRON_RUN_AS_NODE;
+  const app = await electron.launch({args:['.'],env});
+  try {
+    await app.evaluate(() => (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show?.());
+    const page = await app.firstWindow();
+    await page.evaluate(() => window.j7.setPinned(true));
+    const card = async () => {
+      const bounds = await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0]!.getBounds());
+      const box = await page.locator('.card-surface').boundingBox();
+      return {left:bounds.x+box!.x,top:bounds.y+box!.y,right:bounds.x+box!.x+box!.width,bottom:bounds.y+box!.y+box!.height};
+    };
+    // The display under the card's middle owns it, so measure against wherever the card ends up.
+    const area = async () => { const c = await card(); return app.evaluate(({screen}, point) => screen.getDisplayNearestPoint(point).workArea, {x:Math.round((c.left+c.right)/2), y:Math.round((c.top+c.bottom)/2)}); };
+    const drag = async (dx: number, dy: number) => { await page.evaluate(([x, y]) => window.j7.moveCard(x!, y!), [dx, dy]); await page.waitForTimeout(150); };
+    await drag(-4000, 0);
+    await expect.poll(async () => (await card()).right - (await area()).x).toBe(80);
+    await drag(0, 4000);
+    await expect.poll(async () => { const a = await area(); return (await card()).top - (a.y + a.height); }).toBe(-60);
+    await drag(0, -8000);
+    await expect.poll(async () => (await card()).top - (await area()).y).toBe(0);
+    // With a second monitor, dragging the card's middle onto it hands the card over.
+    const displays = await app.evaluate(({screen}) => screen.getAllDisplays().map(d => d.workArea));
+    if (displays.length > 1) {
+      const start = await area();
+      const target = displays.find(d => d.x !== start.x || d.y !== start.y)!;
+      const c = await card();
+      await drag(Math.round(target.x + target.width / 2 - (c.left + c.right) / 2), Math.round(target.y + target.height / 2 - (c.top + c.bottom) / 2));
+      await expect.poll(async () => { const a = await area(); return [a.x, a.y]; }).toEqual([target.x, target.y]);
+      await expect.poll(async () => { const now = await card(); return now.left >= target.x && now.right <= target.x + target.width; }).toBe(true);
+    }
+  } finally {
+    await app.close();
+    await rm(data, {recursive:true, force:true});
+  }
+});

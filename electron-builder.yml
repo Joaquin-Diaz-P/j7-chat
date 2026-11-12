@@ -9,7 +9,6 @@ files:
   - package.json
   # J7 uses the Claude Code the person already has installed, so the SDK's bundled binary (~300 MB) stays out.
   - "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
-afterPack: scripts/after-pack.cjs
 afterSign: scripts/signing/after-sign.cjs
 asar: true
 electronLanguages:
@@ -28,6 +27,7 @@ mac:
   extendInfo:
     LSUIElement: false
     NSScreenCaptureUsageDescription: J7 Chat captura la zona elegida de la pantalla para adjuntarla a tu pregunta.
+    NSMicrophoneUsageDescription: J7 Chat mide el volumen de tu voz mientras dictas con Hex para animar la onda. No graba ni guarda audio; Hex transcribe.
 dmg:
   sign: false
   format: ULFO
