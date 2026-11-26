@@ -194,3 +194,18 @@ Implementada por GPT‑6.1 Sol (high) y revisada por Claude Opus 5.5. `npm test`
 | P8 | ✅ | iframe `sandbox="allow-scripts"` con origen `null`: sin `window.j7`, sin `parent.document`, sin `fetch` ni navegar J7. Una sola carga por bloque durante el streaming. El revisor corrigió que un script podía abrir enlaces sin clic y la altura en ⤢ |
 | P8 | ✅ | Endurecimiento: el artifact se sirve por `j7-artifact://` desde un registro en memoria (claves aleatorias, 8 MiB, 64 entradas) con su propia CSP. La ventana principal vuelve a su CSP, más `img-src https:` y `frame-src j7-artifact:` |
 | P9 | ✅ | Instrucciones de imágenes y artifacts; la herramienta de imágenes solo se menciona a GPT. Claude Haiku y GPT‑6‑Luna dibujaron el efecto Bohr |
+
+## Etapa 8c · Fluidez y recursos (26 de noviembre de 2026)
+
+Implementada por GPT‑6.1 Sol (high) y revisada por Claude Opus 5.5. Medidas en [stage8c-medidas.md](evidence/stage8c-medidas.md). `npm test` 353/353, typecheck y e2e en verde (se omite `real-drag`, necesita ratón físico).
+
+| Código | Estado | Notas |
+|---|---|---|
+| R1 | ✅ | El vidrio sigue la geometría y la opacidad de la tarjeta por rAF solo durante las transiciones (0 cuadros/s en reposo). Frame p95 33,4 → 16,9 ms. El revisor corrigió un bucle que podía quedar corriendo a 61 fps |
+| R1 | 🔍 | Prueba del usuario: el vidrio va pegado a la tarjeta en cada transición. Queda un cuadro perdido al abrir o cerrar el historial |
+| R2 | ✅ | Sin sondeo de 50 ms. Cambios de contexto del proceso principal: visible 105 → 28/s, oculto 45 → 2,4/s |
+| R3 | ✅ | Solo el proveedor elegido queda precargado; los demás se cierran tras 10 min sin uso. El revisor corrigió que cada aparición relanzaba `codex` y `agy` para descubrir modelos |
+| R3 | ⬜ | Al arrancar aún se lanzan los otros CLI unos 2 s para listar modelos. Guardar el catálogo en disco con su fecha |
+| R4 | ✅ | Dependencias del main empaquetadas, Markdown y Mermaid diferidos. `app.asar` 24,8 → 22,0 MiB, DMG 128 → 115,8 MiB |
+| R5 | ✅ | Tokens agrupados por cuadro sin pérdidas ni desorden; Markdown memoizado |
+| R6 | ✅ | `npm run dist` y firma correctos |

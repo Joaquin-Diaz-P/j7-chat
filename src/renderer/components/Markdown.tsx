@@ -50,7 +50,7 @@ const components: Components = {
 const Block = memo(function Block({ source }: { source: string }) {
   return <Markdown remarkRehypeOptions={{ footnoteLabel: s.footnotes }} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: "ignore" }]]} components={components}>{normalizeMath(source)}</Markdown>;
 });
-export function ResponseMarkdown({ text }: { text: string }) {
+export const ResponseMarkdown = memo(function ResponseMarkdown({ text }: { text: string }) {
   const parts = useMemo(() => extractArtifacts(text), [text]);
   return <div className="markdown">{parts.map((part, index) => part.kind ? <Suspense key={index} fallback={<Code text={part.source} language={part.kind}/>}><Artifact source={part.source} kind={part.kind}/></Suspense> : splitBlocks(part.source).map((block, blockIndex) => <Block key={`${index}-${blockIndex}`} source={block.source}/>))}</div>;
-}
+});

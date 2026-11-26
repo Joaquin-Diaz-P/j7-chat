@@ -1,0 +1,32 @@
+Processes: 582 total, 3 running, 579 sleeping, 4758 threads 
+2026/11/26 15:51:25
+Load Avg: 5.88, 3.59, 2.77 
+CPU usage: 18.69% user, 24.53% sys, 56.77% idle 
+SharedLibs: 364M resident, 77M data, 89M linkedit.
+MemRegions: 562778 total, 1496M resident, 159M private, 1072M shared.
+PhysMem: 7398M used (1575M wired, 2208M compressor), 237M unused.
+VM: 309T vsize, 57G framework vsize, 6526009(0) swapins, 7400378(0) swapouts.
+Networks: packets: 27198253/25G in, 14340382/9039M out.
+Disks: 159260698/3634G read, 68028877/1248G written.
+
+PID    COMMAND          %CPU IDLEW POWER
+55115  J7 Chat Helper ( 0.0  0     0.0  
+55113  J7 Chat Helper   0.0  0     0.0  
+55112  J7 Chat Helper   0.0  0     0.0  
+55017  J7 Chat          0.0  0     0.0  
+Processes: 583 total, 3 running, 580 sleeping, 4745 threads 
+2026/11/26 15:51:27
+Load Avg: 5.57, 3.56, 2.77 
+CPU usage: 21.71% user, 12.35% sys, 65.92% idle 
+SharedLibs: 364M resident, 77M data, 89M linkedit.
+MemRegions: 15 total, 16K resident, 159M private, 1072M shared.
+PhysMem: 7397M used (1559M wired, 2168M compressor), 238M unused.
+VM: 309T vsize, 57G framework vsize, 6526029(20) swapins, 7400378(0) swapouts.
+Networks: packets: 27198381/25G in, 14340477/9039M out.
+Disks: 159263244/3634G read, 68029416/1248G written.
+
+PID    COMMAND          %CPU IDLEW POWER
+55112  J7 Chat Helper   0.3  0     0.3  
+55115  J7 Chat Helper ( 0.0  0     0.0  
+55017  J7 Chat          0.0  0     0.0  
+55113  J7 Chat Helper   0.0  0     0.0  

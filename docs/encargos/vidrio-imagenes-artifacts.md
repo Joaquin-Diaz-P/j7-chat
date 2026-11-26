@@ -99,3 +99,43 @@ Principio del usuario: **que funcione igual que en ChatGPT, Claude o Codex**. Lo
 - Agrega a `BASE_CHAT_INSTRUCTIONS` un párrafo breve: cuando un gráfico, diagrama o visualización interactiva ayude a explicar, puede responder con un bloque ` ```html artifact ` autocontenido (librerías solo de jsdelivr, cdnjs o unpkg), ` ```svg ` o ` ```mermaid `. Que sean pequeños y explicativos, y que no los use cuando bastan texto o una tabla.
 - Revisa que la línea «No eres un agente de programación…» no contradiga esto.
 - **Se comprueba:** en la app real, con un modelo de Claude y uno de GPT: «explícame con un gráfico interactivo la curva de disociación de la hemoglobina y el efecto Bohr». Ambos responden con un artifact que se dibuja.
+
+---
+
+## Etapa 8c · Fluidez y recursos (R1–R6)
+
+Pedido del usuario el 2026-11-26, después de probar 0.3.0: «las animaciones no se ven tan smooth»; que la app sea más fluida, pese menos y gaste menos, con la misma calidad o más.
+
+**Medición inicial (0.3.0 instalada, ventana en reposo):**
+- J7: main 81 MB, renderer 87 MB, GPU 41 MB, ayudante 5 MB. Procesos de proveedores lanzados por J7: `claude` 45 MB, `codex app-server` 27 MB, `agy acp` 11 MB. Total ≈ 300 MB.
+- CPU en reposo ≈ 0,1 %, pero `top` marcó unos 980 *idle wakeups* en 9 s en el proceso principal.
+- App 274 MB: Electron 244 MB (fijo), `app.asar` 25 MB (`zod` 7,3 MB, `claude-agent-sdk` 4,1 MB y `@agentclientprotocol/sdk` 3,4 MB sin empaquetar; chunk `Artifact` 5,6 MB por Mermaid entero; chunk principal del renderer 1,8 MB). Los idiomas de Electron ya están recortados.
+
+Regla: mide antes y después de cada cambio con los mismos comandos y deja la tabla en `docs/evidence/stage8c-medidas.md`. Ningún cambio puede empeorar algo que el usuario ve.
+
+**R1 · Vidrio sincronizado con las animaciones (lo más importante)**
+- Causa: `Panel.layout()` y `setRegions()` (`src/main/window.ts`) llaman a `updateGlass` con el rectángulo final de inmediato, mientras la tarjeta se anima en CSS (`--card-top`, `--card-left`, `translate`, fundidos `canvas-appear` / `canvas-hide`, ~150 ms, `--ease`). El `NSVisualEffectView` salta y no se funde: va desfasado de la tarjeta.
+- Haz que el vidrio y la tarjeta se muevan juntos en: aparecer, ocultar, compacto ↔ chat, abrir/cerrar historial, llenar/restaurar, redimensionar con los bordes y arrastrar. Opciones: animar el frame y `alphaValue` del `NSVisualEffectView` con `NSAnimationContext` / Core Animation con la misma duración y curva que el CSS, o que el renderer mande el rectángulo por cuadro (rAF) mientras dura la transición. Elige la que se vea perfecta; el fundido del vidrio debe acompañar al de la tarjeta.
+- Revisa también que nada provoque *layout* caro por cuadro durante las transiciones (animar `width`/`height` o variables que recalculan todo); prefiere `transform` y `opacity`.
+- **Se comprueba:** grabación de pantalla o capturas en serie cada 16 ms (`screencapture` o ScreenCaptureKit) de cada transición, sin vidrio fuera de la tarjeta ni tarjeta sin vidrio en ningún cuadro. Traza de rendimiento de Chromium (CDP `Tracing`) sin cuadros perdidos durante las transiciones.
+
+**R2 · Menos despertares en reposo**
+- `captureTimer` consulta cada 50 ms mientras la ventana está visible (`window.ts`), y hay otros `setInterval` (`connections.ts`, `chat/service.ts` 400 ms al guardar). Que nada corra por temporizador cuando J7 está oculto o quieto: pásalo a eventos, o como mínimo solo mientras haga falta.
+- **Se comprueba:** `top -stats pid,command,cpu,idlew,power` del proceso principal, del renderer y del GPU, oculto y visible quieto, antes y después.
+
+**R3 · Proveedores bajo demanda**
+- Mantén listo solo el proveedor del modelo elegido (la primera respuesta debe seguir igual de rápida, ver commit 256224e). Los demás arrancan al usarlos, y un proveedor que no se usó en 10 minutos se cierra (y vuelve a arrancar solo al usarlo).
+- **Se comprueba:** procesos y memoria total tras arrancar, tras usar dos proveedores y 10 minutos después (usa un reloj inyectable en los tests). La primera respuesta del modelo elegido no tarda más.
+
+**R4 · Menos peso en el paquete y en el arranque**
+- Empaqueta con Vite las dependencias del proceso principal para que solo vaya el código usado, si las SDK lo permiten (si alguna necesita sus archivos tal cual, déjala y explica por qué).
+- Separa Mermaid en su propio chunk, cargado solo con un bloque `mermaid`; el artifact HTML y el SVG no lo cargan.
+- Carga diferida de lo que no hace falta para mostrar la caja vacía (KaTeX, Shiki, react-markdown si se puede) sin parpadeo visible en la primera respuesta.
+- **Se comprueba:** tamaño de `app.asar`, de la app y del DMG; tiempo desde el atajo hasta la caja visible y desde el arranque hasta la ventana lista, antes y después.
+
+**R5 · Fluidez con chats largos**
+- Con un chat de 200 mensajes con código y fórmulas, y un historial de 1 000 chats: escribir, hacer scroll, recibir una respuesta en streaming y buscar en el historial se mantienen a 60 fps. Si no, agrupa los tokens del streaming por cuadro, virtualiza la lista del historial o lo que la medición indique.
+- **Se comprueba:** traza de CDP con esos datos (genéralos con el mock en una carpeta de datos temporal).
+
+**R6 · Sin regresiones**
+- `npm run typecheck`, `npm test` y todas las e2e en verde. Compila con `npm run dist` y comprueba la app firmada.

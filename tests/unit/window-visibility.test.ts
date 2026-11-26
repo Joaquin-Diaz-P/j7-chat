@@ -28,6 +28,7 @@ function fixture() {
   panel.settings = { value: { pinned: false } };
   panel.clock = { hide: vi.fn() };
   panel.ready = true;
+  panel.regions = [];
   panel.updateCapture = vi.fn();
   panel.notify = vi.fn();
   const activate = vi.fn(async () => true);

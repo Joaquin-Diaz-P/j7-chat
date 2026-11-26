@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { ChatSnapshot, ChatEnvelope } from "../shared/ipc.js";
+import { DeltaBatcher } from "./delta-batcher.js";
+let deltas: DeltaBatcher;
 interface State extends ChatSnapshot {
   setSnapshot: (snapshot: ChatSnapshot) => void;
   event: (event: ChatEnvelope) => void;
@@ -8,9 +10,11 @@ export const useChat = create<State>((set) => ({
   chatId: null,
   messages: [],
   active: false,
-  setSnapshot: (snapshot) => set(snapshot),
-  event: ({ chatId, messageId, event }) =>
-    set((state) => {
+  setSnapshot: (snapshot) => { deltas.flush(); set(snapshot); },
+  event: (event) => deltas.push(event),
+}));
+deltas = new DeltaBatcher(({ chatId, messageId, event }) =>
+    useChat.setState((state) => {
       if (chatId !== state.chatId) return {};
       return {
         messages: state.messages.map((message) =>
@@ -29,5 +33,4 @@ export const useChat = create<State>((set) => ({
               },
         ),
       };
-    }),
-}));
+    }));

@@ -3,8 +3,8 @@ import { Code } from './Markdown.js';
 import { Overlay } from './MessageImage.js';
 import { type ArtifactKind } from '../artifacts.js';
 import { strings as s } from '../strings.js';
-import mermaidSource from 'mermaid/dist/mermaid.min.js?raw';
-function documentSource(source: string, kind: ArtifactKind, dark: boolean) {
+
+function documentSource(source: string, kind: ArtifactKind, dark: boolean, mermaidSource: string) {
   const doc = new DOMParser().parseFromString(kind === 'html' ? source : '', 'text/html');
   for (const meta of doc.querySelectorAll('meta[http-equiv],base')) meta.remove();
   if (kind === 'svg') doc.body.innerHTML = source;
@@ -23,9 +23,12 @@ function Frame({ source, kind, close }: { source: string; kind: ArtifactKind; cl
   const frame = useRef<HTMLIFrameElement>(null), [height, setHeight] = useState(240);
   const [dark, setDark] = useState(document.documentElement.classList.contains('dark'));
   useEffect(() => { const observer = new MutationObserver(() => setDark(document.documentElement.classList.contains('dark'))); observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] }); return () => observer.disconnect(); }, []);
-  const html = useMemo(() => documentSource(source, kind, dark), [source, kind, dark]);
+  const [mermaid, setMermaid] = useState("");
+  useEffect(() => { if (kind === "mermaid") void import("mermaid/dist/mermaid.min.js?raw").then(m => setMermaid(m.default)); }, [kind]);
+  const html = useMemo(() => documentSource(source, kind, dark, mermaid), [source, kind, dark, mermaid]);
   const [url, setUrl] = useState<string>();
   useEffect(() => {
+    if (kind === "mermaid" && !mermaid) return;
     let disposed = false, registered: string | undefined;
     setUrl(undefined);
     void window.j7.registerArtifact(html).then(value => {
@@ -34,7 +37,7 @@ function Frame({ source, kind, close }: { source: string; kind: ArtifactKind; cl
       else setUrl(value);
     }).catch(() => {});
     return () => { disposed = true; if (registered) void window.j7.releaseArtifact(registered); };
-  }, [html]);
+  }, [html, kind, mermaid]);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || !event.data) return;

@@ -24,7 +24,7 @@ export class Panel {
   private offset = { x: 0, y: 0 };
   private cardHeight = 106;
   private compactHeight = 106;
-  private captureTimer: ReturnType<typeof setInterval> | undefined;
+  private glassOpacity = 0;
   private captured: boolean | undefined;
   /** Where the card was when the current drag began; set only while dragging. */
   private dragStart: Position | undefined;
@@ -89,13 +89,12 @@ export class Panel {
       });
     });
     this.window.on("closed", () => {
-      clearInterval(this.captureTimer);
       clearTimeout(this.spaceFocusTimer);
     });
     nativeTheme.themeSource = settings.value.theme;
     const themeUpdated = () => {
       if (this.window.isDestroyed()) return;
-      if(this.regions[0]) updateGlass(this.window,this.regions[0],nativeTheme.shouldUseDarkColors);
+      if(this.regions[0]) updateGlass(this.window,this.regions[0],nativeTheme.shouldUseDarkColors,this.glassOpacity);
       this.notify(true);
     };
     nativeTheme.on("updated", themeUpdated);
@@ -193,10 +192,9 @@ export class Panel {
     }
     this.layout(this.settings.value.historyOpen || this.chat.snapshot().messages.length ? 680 : (resume ? this.compactHeight : 106), this.settings.value.historyOpen);
     this.updateCapture();
+    if (this.regions[0]) updateGlass(this.window, this.regions[0], nativeTheme.shouldUseDarkColors, 0);
     this.window.show();
     this.updateCapture();
-    clearInterval(this.captureTimer);
-    this.captureTimer = setInterval(() => this.updateCapture(), 50);
     this.window.focus();
     this.notify(resume, true);
   }
@@ -249,7 +247,6 @@ export class Panel {
     this.hideTimer = setTimeout(() => {
       this.hideTimer = undefined;
       this.clock.hide();
-      clearInterval(this.captureTimer);
       // Read focus before hiding: once the bar hides, macOS may hand focus to Settings on its own.
       // Settings opened from the bar already took focus; handing it back to the previous app would cover it.
       const focused = BrowserWindow.getFocusedWindow();
@@ -319,13 +316,15 @@ export class Panel {
     this.place(layout.canvas);
     const {card, canvas} = layout;
     this.regions = [{left:card.x-canvas.x, top:card.y-canvas.y, right:card.x-canvas.x+card.width, bottom:card.y-canvas.y+card.height}];
-    updateGlass(this.window,this.regions[0]!,nativeTheme.shouldUseDarkColors);
+    // The renderer reports the presented rect, including transitions. Never jump the glass to the target.
     this.updateCapture();
     this.notify(true);
   }
-  setRegions(regions: HitRect[]) {
+  pointerMoved() { if (this.window.isVisible()) this.updateCapture(); }
+  setRegions(regions: HitRect[], opacity = 1) {
+    this.glassOpacity = opacity;
     this.regions = regions;
-    if (regions[0]) updateGlass(this.window,regions[0],nativeTheme.shouldUseDarkColors);
+    if (regions[0]) updateGlass(this.window,regions[0],nativeTheme.shouldUseDarkColors,opacity);
     this.updateCapture();
   }
   beginResize(edge:string) {

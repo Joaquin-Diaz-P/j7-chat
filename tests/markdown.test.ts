@@ -30,6 +30,11 @@ it("copies exact code, preserving whitespace and intentional final newlines", ()
   expect(codeText("x\n\n")).toBe("x\n");
 });
 it("keeps reasoning separate through the service and renderer store", async () => {
+  const callbacks: FrameRequestCallback[] = [];
+  const { vi } = await import("vitest");
+  vi.stubGlobal("requestAnimationFrame", (cb:FrameRequestCallback) => { callbacks.push(cb); return 1; });
+  vi.stubGlobal("cancelAnimationFrame", () => {});
+
   const { ChatService } = await import("../src/main/chat/service.js");
   const { useChat } = await import("../src/renderer/store.js");
   const provider = {
@@ -51,6 +56,8 @@ it("keeps reasoning separate through the service and renderer store", async () =
   await service.dispose();
   useChat.getState().setSnapshot({ chatId: "chat", active: true, messages: [{ id: "reply", role: "assistant", text: "", status: "streaming" }] });
   for (const event of [{ type: "thinking-delta" as const, text: "reason" }, { type: "text-delta" as const, text: "answer" }]) useChat.getState().event({ chatId: "chat", messageId: "reply", event });
+  callbacks.forEach(cb => cb(0));
+  vi.unstubAllGlobals();
   expect(useChat.getState().messages[0]).toMatchObject({ text: "answer", thinking: "reason" });
 });
 it("renders single-line dollar and bracket formulas as katex display blocks", async () => {

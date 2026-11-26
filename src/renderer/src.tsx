@@ -8,8 +8,9 @@ import { History } from "./components/History.js";
 import { Mic, LoaderCircle, ArrowUp, Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed, Maximize2, Minimize2 } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { MessageImage } from "./components/MessageImage.js";
-import { ResponseMarkdown } from "./components/Markdown.js";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+const markdownModule = () => import("./components/Markdown.js");
+const ResponseMarkdown = lazy(() => markdownModule().then(m => ({default:m.ResponseMarkdown})));
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useChat } from "./store.js";
 import { strings as s } from "./strings.js";
@@ -154,7 +155,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (!appeared || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    document.querySelector(".shell")?.animate([{ opacity: 0, transform: "scale(.98)" }, { opacity: 1, transform: "scale(1)" }], { duration: 150, easing: "cubic-bezier(.32,.72,0,1)" });
+    document.querySelector(".shell")?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: "cubic-bezier(.32,.72,0,1)" });
   }, [appeared]);
   useLayoutEffect(() => {
     const el = input.current;
@@ -200,14 +201,20 @@ function App() {
   useEffect(() => {
     if (!appeared) return;
     const timer = setTimeout(() => void window.j7.refreshModels(), 300);
-    const idle = requestIdleCallback(() => setPrewarm(true));
+    const idle = requestIdleCallback(() => { setPrewarm(true); void markdownModule(); });
     return () => { clearTimeout(timer); cancelIdleCallback(idle); };
   }, [appeared]);
+  useEffect(() => {
+    const moved = () => window.j7.pointerMoved();
+    window.addEventListener("mousemove", moved);
+    window.addEventListener("mouseleave", moved);
+    return () => { window.removeEventListener("mousemove", moved); window.removeEventListener("mouseleave", moved); };
+  }, []);
   const lastRegions = useRef("");
   useEffect(() => {
-    if (hiding) return;
+    // A new appearance must restore glass even when reduced motion leaves the rect unchanged.
+    lastRegions.current = "";
     let frame = 0;
-    let moving = 0;
     const update = () => {
       const surface = document.querySelector(".card-surface");
       if (!surface) return;
@@ -216,30 +223,29 @@ function App() {
         const r = el.getBoundingClientRect();
         return {left:r.left, top:r.top, right:r.right, bottom:r.bottom};
       });
-      const serialized = JSON.stringify(regions);
+      const opacity = Number(getComputedStyle(document.querySelector(".shell")!).opacity);
+      const serialized = JSON.stringify([regions, opacity]);
       if (serialized !== lastRegions.current) {
         lastRegions.current = serialized;
-        window.j7.setRegions(regions);
+        window.j7.setRegions(regions, opacity);
       }
-      if (moving) frame = requestAnimationFrame(update);
+      // Follow only animations on the moving elements themselves. A counter of bubbling transition events
+      // leaks when a descendant is removed mid-transition (no transitionend), leaving rAF running forever.
+      if ([shell, ...shell.querySelectorAll('.card-clip'), ...elements].some(el => el.getAnimations().some(a => a.playState === "running"))) frame = requestAnimationFrame(update);
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
-    const start = () => { moving++; schedule(); };
-    const end = () => { moving = Math.max(0, moving - 1); schedule(); };
     const shell = document.querySelector('.shell')!;
     const observer = new ResizeObserver(schedule);
     for (const el of shell.querySelectorAll('.card-surface,.attachment-menu,.model-selector')) observer.observe(el);
-    shell.addEventListener('transitionrun', start);
-    shell.addEventListener('transitionend', end);
-    shell.addEventListener('transitioncancel', end);
+    shell.addEventListener('animationstart', schedule);
+    shell.addEventListener('transitionrun', schedule);
     const mutations = new MutationObserver(schedule); mutations.observe(document.body, { childList: true, subtree: true });
     schedule();
     return () => {
       mutations.disconnect();
       observer.disconnect(); cancelAnimationFrame(frame);
-      shell.removeEventListener('transitionrun', start);
-      shell.removeEventListener('transitionend', end);
-      shell.removeEventListener('transitioncancel', end);
+      shell.removeEventListener('animationstart', schedule);
+      shell.removeEventListener('transitionrun', schedule);
     };
   }, [attachmentMenu, shownAttachmentMenu, expanded, compactHeight, historyOpen, offset, appeared, hiding]);
   useLayoutEffect(() => {
@@ -338,7 +344,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
                   }}/>
                   <button title={s.send} aria-label={s.send} disabled={!editDraft.trim()} onClick={() => { void window.j7.edit(editDraft); setEditing(null); }}>{s.send}</button>
                   <button title={s.cancel} aria-label={s.cancel} onClick={() => setEditing(null)}>{s.cancel}</button>
-                </div> : message.role === "assistant" ? <ResponseMarkdown text={message.text}/> : <div className="user-text">{message.text}</div>}
+                </div> : message.role === "assistant" ? <Suspense fallback={<div className="markdown">{message.text}</div>}><ResponseMarkdown text={message.text}/></Suspense> : <div className="user-text">{message.text}</div>}
                 {message.status === "queued" && <p role="status">{s.queued}</p>}
                 {message.status === "streaming" && !message.text && <p role="status">{s.thinking}</p>}
                 {message.status === "interrupted" && <small>{s.interrupted}</small>}

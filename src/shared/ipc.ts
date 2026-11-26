@@ -77,7 +77,8 @@ export interface J7Api {
   edit(text: string): Promise<void>;
   askOther(model: string, effort?: string): Promise<void>;
   onHiding(callback: () => void): () => void;
-  setRegions(regions: import("./hit-test.js").HitRect[]): void;
+  setRegions(regions: import("./hit-test.js").HitRect[], opacity?: number): void;
+  pointerMoved(): void;
   beginResize(edge:string):void;
   resize(dx:number,dy:number):void;
   endResize():void;

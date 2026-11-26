@@ -50,7 +50,7 @@ export class ChatService {
       for(const row of rows) if((!row.title.trim() && row.titleSource!=="manual") || row.title.includes("\uFFFD")) { const question=this.store.listMessages(row.id).find(m=>m.role==="user"); if(question)void this.titleGenerator(question.text).then(title=>{history.rename?.(row.id,title,false);this.notify();}).catch(()=>{}); }
     }
     void this.catalog.refresh().catch(() => {}).finally(() => this.notify());
-    this.warmup = setTimeout(() => { void this.catalog.prewarm().catch(() => {}).finally(() => this.prewarm()); }, 5_000);
+    this.warmup = setTimeout(() => { const model = this.selectedModel(); void this.catalog.prewarm(model?.provider).catch(() => {}).finally(() => this.prewarm()); }, 5_000);
     this.warmup.unref();
   }
   private models() { const models = this.catalog.snapshot().models; return models.length ? models : this.legacyModel ? [this.legacyModel] : []; }
@@ -83,6 +83,7 @@ export class ChatService {
     const empty = () => { const chat = this.currentChat(); return !chat || !this.store.listMessages(chat.id).length; };
     if (this.disposed || !empty()) return;
     const chat = this.currentChat(), model = this.selectedModel(chat);
+    if (model) this.catalog.select(model.provider);
     const provider = model && this.catalog.providers.get(model.provider);
     if (!model || !provider?.prepare || this.catalog.snapshot().statuses[model.provider]?.state !== "ready") return;
     const hint = { model: model.id, effort: resolveEffort(model, chat?.effort ?? initialEffort(model, this.settings?.value.effortByModel)), webSearch: true, instructions: buildChatInstructions(this.settings?.value.personalInstructions) };
@@ -139,6 +140,7 @@ export class ChatService {
     const turn: ActiveTurn = { controller: new AbortController(), message, queued: true };
     this.active.set(chat.id, turn);
     this.notify();
+    this.catalog.select(model.provider);
     const task = this.catalog.exclusive(model.provider, async () => {
       if (turn.controller.signal.aborted) return;
       if (message.effort !== (chat.effort === "normal" ? "low" : chat.effort)) this.log("effort-adjusted");
@@ -184,7 +186,8 @@ export class ChatService {
     const history = this.store.listMessages(chat.id);
     const beforeQuestion = history.slice(0, history.findIndex(m => m.id === question.id));
     const persist = () => this.store.updateMessage(chat.id, message.id, message);
-    const timer = setInterval(persist, 400);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedulePersist = () => { if (!timer) timer = setTimeout(() => { timer = undefined; persist(); }, 400); };
     try {
       while (!controller.signal.aborted) {
         const recap = buildRecap(beforeQuestion, lastSeen, model.supportsImages);
@@ -205,6 +208,7 @@ export class ChatService {
             if (event.type === "text-delta") message.text += event.text;
             if (event.type === "thinking-delta") message.thinking = (message.thinking ?? "") + event.text;
             if (event.type === "web-search") message.sources = [...new Set([...(message.sources ?? []), ...event.urls.filter(url => { try { return ["http:", "https:"].includes(new URL(url).protocol); } catch { return false; } })])];
+            schedulePersist();
             this.emit({ chatId: chat.id, messageId: message.id, event });
           }
         } catch (error) { failure = classifyError(error); }
@@ -230,7 +234,7 @@ export class ChatService {
         break;
       }
     } finally {
-      clearInterval(timer);
+      clearTimeout(timer);
       if (message.images) message.images = message.images.map(image => image.status === "generating" ? { ...image, status: "failed" } : image);
       if (controller.signal.aborted || message.status === "error") {
         this.store.upsertProviderSession({ chatId: chat.id, provider: model.provider, nativeSessionId: "", lastMessageId: "", instructionsHash: hash });

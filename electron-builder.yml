@@ -9,6 +9,10 @@ files:
   - package.json
   # J7 uses the Claude Code the person already has installed, so the SDK's bundled binary (~300 MB) stays out.
   - "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
+  # These packages are bundled into main by Vite. Claude SDK stays external (relative runtime modules).
+  - "!node_modules/@agentclientprotocol/sdk/**"
+  - "!node_modules/sax/**"
+  - "!node_modules/yauzl/**"
 afterSign: scripts/signing/after-sign.cjs
 asar: true
 electronLanguages:

@@ -105,3 +105,29 @@ it("prefers the last model, then the first available favorite, then the catalog"
  expect(chooseInitialModel(models,"missing",["missing","codex:codex"])).toBe(models[1]);
  expect(chooseInitialModel(models,null,["missing"])).toBe(models[0]);
 });
+it('keeps only the selected provider warm and releases another ten minutes after its last task', async () => {
+ vi.useFakeTimers();
+ const a=provider('claude'),b=provider('codex');
+ const catalog=new ModelCatalog(undefined,[a,b]);catalog.select('claude');
+ await catalog.refresh();expect(b.dispose).toHaveBeenCalledOnce();expect(a.dispose).not.toHaveBeenCalled();
+ vi.mocked(b.dispose).mockClear();
+ await catalog.prewarm('claude');expect(b.getStatus).toHaveBeenCalledTimes(1);
+ await catalog.exclusive('codex',async()=>{});
+ await vi.advanceTimersByTimeAsync(MODEL_CACHE_MS-1);expect(b.dispose).not.toHaveBeenCalled();
+ await catalog.exclusive('codex',async()=>{});
+ await vi.advanceTimersByTimeAsync(MODEL_CACHE_MS-1);expect(b.dispose).not.toHaveBeenCalled();
+ await vi.advanceTimersByTimeAsync(1);expect(b.dispose).toHaveBeenCalledOnce();expect(a.dispose).not.toHaveBeenCalled();
+ await catalog.exclusive('codex',async()=>b.getStatus());expect(b.getStatus).toHaveBeenCalledTimes(2);
+ await catalog.dispose();
+});
+it('discovery never closes a provider that is busy or answered in the last ten minutes', async () => {
+ vi.useFakeTimers();
+ const a=provider('claude'),b=provider('codex');
+ const catalog=new ModelCatalog(undefined,[a,b]);catalog.select('claude');
+ await catalog.refresh();vi.mocked(b.dispose).mockClear();
+ let finish!:()=>void;const turn=catalog.exclusive('codex',()=>new Promise<void>(r=>{finish=r;}));
+ await vi.advanceTimersByTimeAsync(0);const during=catalog.refresh(true);finish();await turn;await during;expect(b.dispose).not.toHaveBeenCalled();
+ await vi.advanceTimersByTimeAsync(60_000);await catalog.refresh(true);expect(b.dispose).not.toHaveBeenCalled();
+ await vi.advanceTimersByTimeAsync(MODEL_CACHE_MS-60_000);expect(b.dispose).toHaveBeenCalledOnce();
+ await catalog.dispose();
+});

@@ -323,11 +323,11 @@ article [role=status],article details { color:var(--text-muted); }
 
 @property --card-top { syntax:'<length>'; inherits:true; initial-value:0px; }
 @property --card-left { syntax:'<length>'; inherits:true; initial-value:260px; }
-.shell { --card-top:0px; --card-left:260px; translate:var(--offset-x,0px) var(--offset-y,0px); transition:translate var(--motion) var(--ease),--card-top var(--motion) var(--ease),--card-left var(--motion) var(--ease); }
+.shell { --card-top:0px; --card-left:260px; translate:var(--offset-x,0px) var(--offset-y,0px); transition:translate var(--motion) var(--ease); }
 .shell.compact { --card-top:calc(100vh - 48px - var(--compact-height)); }
 .shell.history-open { --card-left:0px; }
-.card-clip {position:absolute;inset:0;clip-path:inset(var(--card-top) 0 0 var(--card-left) round 12px);}
-.card-surface {position:absolute;top:var(--card-top);left:var(--card-left);right:0;bottom:0;background:var(--surface);border-radius:12px;box-shadow:0 0 8px var(--shadow-color);}
+.card-clip {position:absolute;inset:0;clip-path:inset(var(--card-top) 0 0 var(--card-left) round 12px);transition:clip-path var(--motion) var(--ease);}
+.card-surface {position:absolute;top:var(--card-top);left:var(--card-left);right:0;bottom:0;background:var(--surface);border-radius:12px;box-shadow:0 0 8px var(--shadow-color);transition:top var(--motion) var(--ease),left var(--motion) var(--ease);}
 .panel,.dark .panel,.compact .panel,.dark .compact .panel {position:absolute;right:0;bottom:0;width:min(520px,100%);height:100%;padding:36px 0 0;background:transparent;border:0;box-shadow:none;overflow:visible;}
 .composer,.compact .composer { margin:auto 11px 11px; }
 .compact .panel {display:flex;}
@@ -351,7 +351,7 @@ article [role=status],article details { color:var(--text-muted); }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after {animation:none !important;transition:none !important;} }
 
 .window-bar,.panel,.composer { -webkit-app-region:no-drag; }
-.shell:active {transition-duration:0ms;}
+.shell:active,.shell:active .card-surface,.shell:active .card-clip {transition-duration:0ms;}
 
 .compact .conversation {position:absolute;inset:36px 0 auto;}
 

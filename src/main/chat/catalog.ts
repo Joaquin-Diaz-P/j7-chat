@@ -21,23 +21,51 @@ export class ModelCatalog {
   private pending = new Map<ProviderId, Promise<void>>();
   private tails = new Map<ProviderId, Promise<unknown>>();
   private disposed = false;
+  private idle = new Map<ProviderId, ReturnType<typeof setTimeout>>();
+  private selected: ProviderId | undefined;
+  private lastUsed = new Map<ProviderId, number>();
+  private armIdle(id: ProviderId) {
+    clearTimeout(this.idle.get(id));
+    if (id === this.selected || this.disposed || this.busy(id)) return;
+    const timer = setTimeout(() => {
+      this.idle.delete(id);
+      if (this.busy(id)) return;
+      const provider = this.providers.get(id);
+      if (!provider) return;
+      // Queue a new turn behind shutdown if it arrives while the process is exiting.
+      const release = provider.dispose(); this.tails.set(id, release);
+      void release.finally(() => { if (this.tails.get(id) === release) this.tails.delete(id); }).catch(() => {});
+    }, Math.max(0, MODEL_CACHE_MS - (this.now() - (this.lastUsed.get(id) ?? this.now()))));
+    timer.unref(); this.idle.set(id, timer);
+  }
+  select(id: ProviderId) {
+    const previous = this.selected; this.selected = id;
+    clearTimeout(this.idle.get(id)); this.idle.delete(id);
+    if (previous && previous !== id) this.armIdle(previous);
+  }
   constructor(private settings?: SettingsStore, providers?: ChatProvider[], private changed: () => void = () => {}, private now = Date.now) {
+    this.selected = settings?.value.lastModel?.split(":")[0] as ProviderId | undefined;
     this.providers = new Map((providers ?? (process.env.J7_MOCK === "1" ? [createProvider("mock-a"), createProvider("mock-b")] : REGISTERED_PROVIDERS.map(id => createProvider(id)))).map(p => [p.id, p]));
   }
   snapshot(): CatalogSnapshot {
     return structuredClone({ effortByModel: this.settings?.value.effortByModel ?? {}, models: [...this.providers.keys()].filter(id => !this.settings?.value.disabledProviders.includes(id)).flatMap(id => this.models.get(id) ?? []), statuses: this.statuses, favorites: this.settings?.value.favorites ?? [], lastModel: this.settings?.value.lastModel ?? null });
   }
-  exclusive<T>(id: ProviderId, task: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  /** `discovery` tasks (status/catalog/release) do not count as use for the ten-minute idle close. */
+  exclusive<T>(id: ProviderId, task: () => Promise<T>, signal?: AbortSignal, discovery = false): Promise<T> {
     let started = false;
     const previous = this.tails.get(id) ?? Promise.resolve();
     const next = previous.catch(() => {}).then(() => {
       if (this.disposed) throw new Error("Catalog disposed");
       signal?.throwIfAborted();
+      clearTimeout(this.idle.get(id));
       started = true;
       return task();
     });
     this.tails.set(id, next);
-    void next.finally(() => { if (this.tails.get(id) === next) this.tails.delete(id); }).catch(() => {});
+    void next.finally(() => {
+      if (!discovery) this.lastUsed.set(id, this.now());
+      if (this.tails.get(id) === next) { this.tails.delete(id); this.armIdle(id); }
+    }).catch(() => {});
     if (!signal) return next;
     return new Promise<T>((resolve, reject) => {
       const abort = () => { if (!started) reject(signal.reason); };
@@ -67,11 +95,24 @@ export class ModelCatalog {
           this.expires.set(id, this.now() + MODEL_CACHE_MS);
           if (!this.disposed && before !== JSON.stringify([this.statuses[id], this.models.get(id)])) this.changed();
         }
-      });
+      }, undefined, true);
       this.pending.set(id, task);
       void task.finally(() => this.pending.delete(id)).catch(() => {});
       return task;
-    })).then(() => {});
+    })).then(async () => {
+      if (this.disposed) return;
+      const chosen = chooseInitialModel(this.snapshot().models, this.settings?.value.lastModel ?? null, this.settings?.value.favorites);
+      if (!this.selected || !this.snapshot().models.some(m => m.provider === this.selected)) {
+        if (chosen) this.select(chosen.provider);
+      }
+      // Close what discovery started. A provider with a turn queued or used in the last ten minutes keeps
+      // its process; its idle timer closes it later.
+      const recent = (id: ProviderId) => this.now() - (this.lastUsed.get(id) ?? -Infinity) < MODEL_CACHE_MS;
+      await Promise.all([...this.providers].filter(([id]) => id !== this.selected && !this.busy(id) && !recent(id)).map(async ([id, provider]) => {
+        await this.exclusive(id, () => provider.dispose(), undefined, true);
+        if (this.selected !== id && !recent(id)) { clearTimeout(this.idle.get(id)); this.idle.delete(id); }
+      }));
+    });
   }
   favorite(key: string) {
     if (!this.snapshot().models.some(m => modelKey(m) === key)) return;
@@ -79,14 +120,16 @@ export class ModelCatalog {
     this.settings?.update({ favorites: favorites.includes(key) ? favorites.filter(k => k !== key) : [...favorites, key] });
     this.changed();
   }
-  async prewarm() {
-    await Promise.allSettled([...this.providers].map(([id, provider]) => this.exclusive(id, async () => {
-      try { await bounded(provider.getStatus()); }
-      catch { this.statuses[id] = { state: "error" }; this.models.set(id, []); this.changed(); }
-    })));
+  async prewarm(id = this.selected) {
+    if (!id) return;
+    this.select(id);
+    const provider = this.providers.get(id);
+    if (provider) await this.exclusive(id, async () => { await bounded(provider.getStatus()); });
   }
   async dispose() {
     this.disposed = true;
+    for (const timer of this.idle.values()) clearTimeout(timer);
+    this.idle.clear();
     await Promise.allSettled([...this.providers.values()].map(p => p.shutdown ? p.shutdown() : p.dispose()));
   }
 }

@@ -3,8 +3,8 @@
 #include <node_api.h>
 // Electron's handle is an NSView*. Keep the effect behind Chromium, never above it.
 static napi_value update(napi_env env, napi_callback_info info) {
-  size_t count = 7; napi_value args[7]; napi_get_cb_info(env, info, &count, args, nullptr, nullptr);
-  if(count != 7) { napi_throw_type_error(env,nullptr,"Expected handle, x, y, width, height, dark, radius"); return nullptr; }
+  size_t count = 8; napi_value args[8]; napi_get_cb_info(env, info, &count, args, nullptr, nullptr);
+  if(count != 8) { napi_throw_type_error(env,nullptr,"Expected handle, x, y, width, height, dark, radius, opacity"); return nullptr; }
   void *bytes; size_t length;
   if(napi_get_buffer_info(env,args[0],&bytes,&length)!=napi_ok || length!=sizeof(void*)) { napi_throw_type_error(env,nullptr,"Invalid native handle"); return nullptr; }
   NSView *view = (__bridge NSView *)*(void **)bytes;
@@ -26,8 +26,13 @@ static napi_value update(napi_env env, napi_callback_info info) {
   }
   glass.appearance = [NSAppearance appearanceNamed:dark ? NSAppearanceNameVibrantDark : NSAppearanceNameVibrantLight];
   NSRect rect = NSMakeRect(values[0], view.isFlipped ? values[1] : view.bounds.size.height-values[1]-values[3], values[2], values[3]);
+  double opacity = 1; napi_get_value_double(env,args[7],&opacity);
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  glass.alphaValue = opacity;
   glass.frame = [view convertRect:rect toView:host];
   glass.layer.cornerRadius = values[4];
+  [CATransaction commit];
   napi_value result; napi_get_undefined(env,&result); return result;
 }
 NAPI_MODULE_INIT() {
