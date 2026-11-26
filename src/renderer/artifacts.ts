@@ -25,5 +25,3 @@ export function extractArtifacts(text: string): ArtifactPart[] {
   if (start < text.length) result.push({ source: text.slice(start) });
   return result;
 }
-export const ARTIFACT_CDNS = 'https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com';
-export const ARTIFACT_CSP = `default-src 'none'; script-src 'unsafe-inline' ${ARTIFACT_CDNS}; style-src 'unsafe-inline' ${ARTIFACT_CDNS} https://fonts.googleapis.com; img-src data: https:; font-src ${ARTIFACT_CDNS} https://fonts.gstatic.com; connect-src 'none'; form-action 'none'; base-uri 'none'`;

@@ -1,3 +1,4 @@
+import { registerArtifactProtocol, registerArtifacts } from './artifacts.js';
 import { setupSection } from "./setup.js";
 import { allowPermission } from "./ipc-trust.js";
 import { openSettings, setupSettings } from "./settings-window.js";
@@ -21,7 +22,7 @@ import { registerIpc } from "./ipc.js";
 import { registerShortcut } from "./shortcuts.js";
 import { shortcutLabel } from "../shared/shortcut.js";
 import { createTray } from "./tray.js";
-protocol.registerSchemesAsPrivileged([{ scheme: "j7-file", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: "j7-artifact", privileges: { standard: true, secure: true } },{ scheme: "j7-file", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 app.setName("J7 Chat");
 if (process.env.J7_DATA_DIR) {
   const data = getPaths().data;
@@ -88,6 +89,7 @@ else {
       const attachments = new AttachmentStore(join(paths.data, "attachments"),store)
       await attachments.cleanup();
       registerAttachmentProtocol(attachments);
+      registerArtifactProtocol();
       panel = new Panel(settings, chat);
       // Automated tests never open a real microphone.
       session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
@@ -96,6 +98,7 @@ else {
       });
       if(process.env.J7_TEST === "1") (globalThis as typeof globalThis & {j7Show?:()=>void}).j7Show = ()=>panel?.show();
       registerAttachments(panel, attachments);
+      registerArtifacts(panel);
       capture = setupCapture(panel, attachments, settings, helper);
       registerIpc(panel, chat, attachments);
       tray = createTray(panel, settings);

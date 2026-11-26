@@ -61,6 +61,8 @@ export interface J7Api {
   snapshot(): Promise<ChatSnapshot>;
   attachments(action: "files" | "data" | "paste" | "dialog" | "capture" | "preview", value?: unknown, count?: number): Promise<Attachment[]>;
   imageAction(action: "copy" | "save", url: string): Promise<void>;
+  registerArtifact(html: string): Promise<string>;
+  releaseArtifact(url: string): Promise<void>;
   openArtifactLink(url: string): Promise<void>;
   filePath(file: File): string;
   send(text: string, ids?: string[]): Promise<void>;

@@ -14,6 +14,7 @@ vi.mock('electron', () => ({
   protocol: { registerSchemesAsPrivileged: vi.fn() }, globalShortcut: {},
   session: { defaultSession: { setPermissionRequestHandler: vi.fn() } },
 }));
+vi.mock('../../src/main/artifacts.js', () => ({ registerArtifacts: vi.fn(), registerArtifactProtocol: vi.fn() }));
 vi.mock('../../src/main/setup.js', () => ({ setupSection: vi.fn() }));
 vi.mock('../../src/main/settings-window.js', () => ({
   openSettings: vi.fn(), setupSettings: () => ({ permissions: async () => ({}), activatePreviousApp: mocks.activatePreviousApp }),

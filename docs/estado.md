@@ -192,5 +192,5 @@ Implementada por GPT‑6.1 Sol (high) y revisada por Claude Opus 5.5. `npm test`
 | P6 | 🔍 | Prueba del usuario: diálogo «Guardar como…» real y visor sobre el vidrio |
 | P7 | ✅ | Probado con `gpt-6-luna`: estado de carga, imagen tras reiniciar, borrada con el chat. Codex escribe en `<datos J7>/providers/codex/generated_images/` y J7 borra la imagen y la carpeta tras copiarla; cancelar no deja archivos. El revisor corrigió la carpeta vacía que quedaba |
 | P8 | ✅ | iframe `sandbox="allow-scripts"` con origen `null`: sin `window.j7`, sin `parent.document`, sin `fetch` ni navegar J7. Una sola carga por bloque durante el streaming. El revisor corrigió que un script podía abrir enlaces sin clic y la altura en ⤢ |
-| P8 | ⬜ | Endurecimiento: la CSP de la ventana principal se abrió a los CDNs porque `srcdoc` la hereda. Pasar el artifact a un protocolo propio con su propia CSP |
+| P8 | ✅ | Endurecimiento: el artifact se sirve por `j7-artifact://` desde un registro en memoria (claves aleatorias, 8 MiB, 64 entradas) con su propia CSP. La ventana principal vuelve a su CSP, más `img-src https:` y `frame-src j7-artifact:` |
 | P9 | ✅ | Instrucciones de imágenes y artifacts; la herramienta de imágenes solo se menciona a GPT. Claude Haiku y GPT‑6‑Luna dibujaron el efecto Bohr |

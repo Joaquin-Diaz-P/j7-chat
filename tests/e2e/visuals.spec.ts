@@ -24,7 +24,12 @@ test('inline images, sandboxed HTML, SVG and offline Mermaid survive restart', a
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
     expect(await page.locator('img[src^="http:"]').count()).toBe(0);
     expect(await page.locator('img[src^="file:"]').count()).toBe(0);
+    const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    expect(csp).not.toMatch(/jsdelivr|cdnjs|unpkg|nonce-/);
+    expect(csp).toContain('frame-src j7-artifact:');
+    await expect(page.frameLocator('iframe').nth(1).locator('svg')).toBeVisible();
     const html = page.frameLocator('iframe').first();
+    expect(await html.locator('body').evaluate(() => typeof window.j7)).toBe('undefined');
     await expect(html.locator('#security')).toHaveText('parent bloqueado; fetch bloqueado');
     expect(await html.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL().length)).toBeGreaterThan(1000);
     const mermaid = page.frameLocator('iframe').nth(2);

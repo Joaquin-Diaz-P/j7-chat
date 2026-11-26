@@ -1,6 +1,8 @@
+import { artifactCsp } from '../src/main/artifact-registry.js';
 import { describe, expect, it } from 'vitest';
-import { ARTIFACT_CSP, extractArtifacts } from '../src/renderer/artifacts.js';
+import { extractArtifacts } from '../src/renderer/artifacts.js';
 import { translateCodexEvent, CODEX_SAFE_CONFIG } from '../src/main/providers/codex.js';
+const ARTIFACT_CSP = artifactCsp('file:');
 describe('inline artifacts', () => {
   it('extracts only closed, explicitly marked HTML and SVG/Mermaid fences', () => {
     const text = 'Antes\n\n```html\n<p>código</p>\n```\n\n```html artifact\n<title>Gráfico</title>\n```\n```svg\n<svg/>\n```\n~~~mermaid\ngraph LR\n A-->B\n~~~~\n```html artifact\nincompleto';
@@ -14,7 +16,7 @@ describe('inline artifacts', () => {
     expect(extractArtifacts('```html artifact\nx\n``` trailing').some(p => p.kind)).toBe(false);
   });
   it('disables connections and forms and restricts library origins', () => {
-    expect(ARTIFACT_CSP).toContain("connect-src 'none'");
+    expect(ARTIFACT_CSP).toContain("default-src 'none'");
     expect(ARTIFACT_CSP).toContain("form-action 'none'");
     expect(ARTIFACT_CSP).toContain('https://cdn.jsdelivr.net');
     expect(ARTIFACT_CSP).not.toContain('allow-same-origin');

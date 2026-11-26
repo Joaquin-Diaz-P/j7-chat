@@ -103,7 +103,10 @@ export class Panel {
     this.window.webContents.on("will-navigate", (event) =>
       event.preventDefault(),
     );
-    this.window.webContents.on("will-frame-navigate", event => event.preventDefault());
+    this.window.webContents.on("will-frame-navigate", event => {
+      if (!event.isMainFrame && event.initiator === this.window.webContents.mainFrame && /^j7-artifact:\/\/document\/[a-f0-9]{48}$/.test(event.url)) return;
+      event.preventDefault();
+    });
     this.window.webContents.setWindowOpenHandler(({ url }) => {
       void this.openExternal(url);
       return { action: "deny" };

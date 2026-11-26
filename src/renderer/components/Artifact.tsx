@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Code } from './Markdown.js';
 import { Overlay } from './MessageImage.js';
-import { ARTIFACT_CSP, type ArtifactKind } from '../artifacts.js';
+import { type ArtifactKind } from '../artifacts.js';
 import { strings as s } from '../strings.js';
 import mermaidSource from 'mermaid/dist/mermaid.min.js?raw';
 function documentSource(source: string, kind: ArtifactKind, dark: boolean) {
@@ -17,8 +17,6 @@ function documentSource(source: string, kind: ArtifactKind, dark: boolean) {
   const style = doc.createElement('style'); style.textContent = `:root{color-scheme:${dark ? 'dark' : 'light'};--text:${dark ? '#eee' : '#222'};--background:transparent;--border:${dark ? '#ffffff30' : '#00000030'}}html,body{background:transparent!important;color:var(--text);font:14px system-ui;margin:0;padding:0}body{padding:12px;box-sizing:border-box}svg,canvas,img{max-width:100%}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#8886;border-radius:8px}`; doc.head.prepend(style);
   const bridge = doc.createElement('script'); bridge.textContent = `document.addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();if(e.isTrusted)parent.postMessage({j7:'link',url:a.href?.baseVal||a.href},'*')}});document.addEventListener('keydown',e=>{if(e.key==='Escape')parent.postMessage({j7:'escape'},'*')});new ResizeObserver(()=>parent.postMessage({j7:'height',height:Math.ceil(document.body.getBoundingClientRect().height)},'*')).observe(document.body);`;
   doc.body.append(bridge);
-  for (const script of doc.scripts) script.setAttribute('nonce', 'j7-artifact');
-  const meta = doc.createElement('meta'); meta.httpEquiv = 'Content-Security-Policy'; meta.content = ARTIFACT_CSP; doc.head.prepend(meta);
   return '<!doctype html>' + doc.documentElement.outerHTML;
 }
 function Frame({ source, kind, close }: { source: string; kind: ArtifactKind; close?: () => void }) {
@@ -26,6 +24,17 @@ function Frame({ source, kind, close }: { source: string; kind: ArtifactKind; cl
   const [dark, setDark] = useState(document.documentElement.classList.contains('dark'));
   useEffect(() => { const observer = new MutationObserver(() => setDark(document.documentElement.classList.contains('dark'))); observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] }); return () => observer.disconnect(); }, []);
   const html = useMemo(() => documentSource(source, kind, dark), [source, kind, dark]);
+  const [url, setUrl] = useState<string>();
+  useEffect(() => {
+    let disposed = false, registered: string | undefined;
+    setUrl(undefined);
+    void window.j7.registerArtifact(html).then(value => {
+      registered = value;
+      if (disposed) void window.j7.releaseArtifact(value);
+      else setUrl(value);
+    }).catch(() => {});
+    return () => { disposed = true; if (registered) void window.j7.releaseArtifact(registered); };
+  }, [html]);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || !event.data) return;
@@ -37,7 +46,7 @@ function Frame({ source, kind, close }: { source: string; kind: ArtifactKind; cl
     };
     window.addEventListener('message', receive); return () => window.removeEventListener('message', receive);
   }, [close]);
-  return <iframe ref={frame} title={kind} sandbox="allow-scripts" srcDoc={html} style={{ height }} referrerPolicy="no-referrer"/>;
+  return <iframe ref={frame} title={kind} sandbox="allow-scripts" src={url} style={{ height }} referrerPolicy="no-referrer"/>;
 }
 export function Artifact({ source, kind }: { source: string; kind: ArtifactKind }) {
   const [code, setCode] = useState(false), [open, setOpen] = useState(false);
