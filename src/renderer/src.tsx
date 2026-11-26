@@ -1,4 +1,3 @@
-import { useOverlayScrollbars } from "./overlay-scrollbars.js";
 import { ProviderIcon } from "./components/ProviderIcon.js";
 import { VoiceWave } from "./components/VoiceWave.js";
 import { levels } from "../shared/effort.js";
@@ -47,7 +46,6 @@ function useLeaving<T>(value: T, delay: number): T {
   return value || shown;
 }
 function App() {
-  useOverlayScrollbars();
   const chat = useChat();
   const [cardWidth,setCardWidth] = useState(520);
   const [filled,setFilled] = useState(false);

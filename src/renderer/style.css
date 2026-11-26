@@ -286,7 +286,7 @@ textarea::placeholder { color:var(--text-muted);opacity:1; }
 @keyframes voice-shimmer { 50% { opacity:.45; } }
 @media (prefers-reduced-motion: reduce) { .voice-inline { animation:none; } }
 .composer:focus-within { border-color:color-mix(in srgb,var(--text-muted) 40%,transparent); }
-.conversation { padding:0 20px; scrollbar-width:thin; }
+.conversation { padding:0 20px; }
 .user-message { position:relative; width:fit-content; max-width:80%; margin:12px 0 12px auto; padding:0; }
 .user-text,.inline-edit { background:var(--surface-message); border-radius:16px; padding:8px 12px; }
 .inline-edit textarea { border:0; }
@@ -431,22 +431,16 @@ button[aria-pressed=true] { background:var(--row-active); }
 .history-open .hide-dot { transform:none; }
 .history-reveal { left:var(--card-left); }
 .history { background:transparent; }
-.shell { --surface:rgb(245 245 248 / 12%); --surface-raised:rgb(255 255 255 / 30%); --surface-message:rgb(255 255 255 / 25%); --background:var(--surface); --muted:rgb(255 255 255 / 18%); --border:rgb(40 40 45 / 15%); }
-.dark .shell { --surface:rgb(70 70 75 / 18%); --surface-raised:rgb(170 170 180 / 13%); --surface-message:rgb(200 200 210 / 12%); --muted:rgb(180 180 190 / 10%); --border:rgb(255 255 255 / 12%); }
+.shell { --surface:rgb(246 246 248 / 62%); --surface-raised:rgb(255 255 255 / 55%); --surface-message:rgb(0 0 0 / 6%); --background:var(--surface); --muted:rgb(0 0 0 / 5%); --border:rgb(40 40 45 / 14%); --text:#1c1c1e; --text-muted:rgb(60 60 67 / 62%); --foreground:var(--text); --secondary-label:var(--text-muted); }
+.dark .shell { --surface:rgb(22 22 24 / 72%); --surface-raised:rgb(255 255 255 / 7%); --surface-message:rgb(255 255 255 / 9%); --muted:rgb(255 255 255 / 7%); --border:rgb(255 255 255 / 10%); --text:#f5f5f7; --text-muted:rgb(235 235 245 / 55%); --foreground:var(--text); --secondary-label:var(--text-muted); }
 .markdown,.markdown :is(p,li,div) { line-height:1.6; }
 .markdown li + li { margin-top:.35rem; }
 .markdown li > :is(ul,ol) { margin-top:.45rem; }
 .markdown :is(h1,h2,h3,h4,h5,h6) { margin:1.1rem 0 .5rem; }
 .markdown hr { margin:1rem 0; border:0; border-top:1px solid var(--border); }
-/* Overlay thumbs are separate from the native scrollport. */
+/* No visible scrollbars: content scrolls with the trackpad, like Foco. */
 body:has(.shell) * { scrollbar-width:none !important; }
 body:has(.shell) ::-webkit-scrollbar { display:none; }
-.overlay-scroll-rail { position:fixed;z-index:65;pointer-events:none; }
-.overlay-scroll-rail[hidden] { display:none; }
-.overlay-scroll-thumb { position:absolute;right:2px;width:6px;min-height:24px;border-radius:8px;background:color-mix(in srgb,var(--text-muted) 50%,transparent);pointer-events:auto;cursor:default; }
-.overlay-scroll-thumb:hover { width:8px;right:1px; }
-.overlay-scroll-rail[data-axis=x] .overlay-scroll-thumb { left:0;right:auto;bottom:2px;height:6px;min-height:0; }
-.overlay-scroll-rail[data-axis=x] .overlay-scroll-thumb:hover { height:8px;bottom:1px; }
 .resize-frame { position:absolute; top:var(--card-top);left:var(--card-left);right:0;bottom:0;z-index:60;pointer-events:none; }
 .resize-edge { position:absolute;pointer-events:auto; }
 .resize-n,.resize-s { height:6px;left:8px;right:8px;cursor:ns-resize; }

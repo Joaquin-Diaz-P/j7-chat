@@ -48,6 +48,8 @@ describe('history persistence',()=>{
  });
  it('uses generated and fallback titles without replacing manual titles',async()=>{
   expect(await generateTitle('uno dos tres cuatro cinco seis siete',async()=> 'Título local')).toBe('Título local');
+  expect(await generateTitle('¿Qué produce la supresión de la ovulación?',async()=> 'Supresiòn de la ovulaciòn')).toBe('Supresión de la ovulación');
+  expect(await generateTitle('Perché il caffè fa male?',async()=> 'Perché il caffè')).toBe('Perché il caffè');
   expect(await generateTitle('uno dos tres cuatro cinco seis siete',async()=>{throw Error();})).toBe('uno dos tres cuatro cinco seis');
   expect(await generateTitle('alternativa',()=>new Promise(()=>{}),1)).toBe('alternativa');
   const s=new SqliteChatStore(':memory:');s.createChat(chat);s.rename('a','Manual');s.rename('a','Auto',false);expect(s.getChat('a')?.title).toBe('Manual');
