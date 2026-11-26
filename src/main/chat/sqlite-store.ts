@@ -22,16 +22,19 @@ export class SqliteChatStore implements ChatStore {
  listMessages(id: string): Message[] { return this.db.prepare('SELECT meta FROM messages WHERE chat_id=? ORDER BY rowid').all(id).map(r=>JSON.parse(String(r.meta)) as Message); }
  appendMessage(id: string,m: Message) {
   this.db.prepare('INSERT INTO messages(id,chat_id,role,content,model,provider,status,created_at,meta) VALUES(?,?,?,?,?,?,?,?,?)').run(m.id,id,m.role,m.text,m.model??null,m.provider??null,m.status,this.now(),JSON.stringify(m));
-  for(const a of m.attachments??[]) this.saveAttachment(a,m.id);
+  for(const a of [...(m.attachments??[]), ...(m.images??[]).flatMap(i=>i.attachment?[i.attachment]:[])]) this.saveAttachment(a,m.id);
   this.db.prepare('UPDATE chats SET updated_at=? WHERE id=?').run(this.now(),id);
  }
  updateMessage(chatId: string,id: string,changes: Partial<Omit<Message,'id'>>) {
   const r=this.db.prepare('SELECT meta FROM messages WHERE id=? AND chat_id=?').get(id,chatId); if(!r) throw new Error('Unknown message');
   const m={...JSON.parse(String(r.meta)),...changes};
   this.db.prepare('UPDATE messages SET content=?,status=?,meta=? WHERE id=?').run(m.text,m.status,JSON.stringify(m),id);
+  for(const image of (m as Message).images??[]) if(image.attachment) this.saveAttachment(image.attachment,id);
  }
  deleteMessagesFrom(chatId: string,id: string) {
   const row=this.db.prepare('SELECT rowid FROM messages WHERE id=? AND chat_id=?').get(id,chatId); if(!row)return;
+  const generated=this.db.prepare("SELECT a.path FROM attachments a JOIN messages m ON m.id=a.message_id WHERE m.chat_id=? AND m.rowid>=? AND m.role='assistant'").all(chatId,row.rowid!);
+  this.removeFiles(generated);
   this.db.prepare('DELETE FROM messages WHERE chat_id=? AND rowid>=?').run(chatId,row.rowid!);
   this.db.prepare('DELETE FROM provider_sessions WHERE chat_id=?').run(chatId);
  }
@@ -57,9 +60,12 @@ export class SqliteChatStore implements ChatStore {
  }
  rename(id:string,title:string,manual=true) { this.db.prepare("UPDATE chats SET title=?,title_source=? WHERE id=? AND (title_source!='manual' OR ?=1 OR instr(title,char(65533))>0)").run(title.slice(0,300),manual?'manual':'auto',id,+manual); }
  pin(id:string,value:boolean) {this.db.prepare('UPDATE chats SET pinned=? WHERE id=?').run(+value,id);}
+ private removeFiles(files: {path?: unknown}[]) {
+  for(const f of files) if(this.directory && dirname(resolve(String(f.path)))===resolve(this.directory)) { try {unlinkSync(String(f.path));} catch(e) {if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;} rmSync(`${String(f.path)}.media`,{recursive:true,force:true}); }
+ }
  deleteChat(id:string) {
   const files=this.db.prepare('SELECT path FROM attachments WHERE message_id IN (SELECT id FROM messages WHERE chat_id=?)').all(id);
-  for(const f of files) if(this.directory && dirname(resolve(String(f.path)))===resolve(this.directory)) { try {unlinkSync(String(f.path));} catch(e) {if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;} rmSync(`${String(f.path)}.media`,{recursive:true,force:true}); }
+  this.removeFiles(files);
   this.db.prepare('DELETE FROM chats WHERE id=?').run(id);
  }
 }

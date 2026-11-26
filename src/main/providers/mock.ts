@@ -56,7 +56,7 @@ export class MockProvider implements ChatProvider {
         query: s.mockSearch,
       };
     const thinking = !command.includes("/echo-context") && (command.includes("/think") || input.effort === "high");
-    const text = command.includes("/echo-context") ? await textWithAttachments(input, false)
+    const text = command.includes("/visuals") ? MOCK_VISUALS : command.includes("/echo-context") ? await textWithAttachments(input, false)
       : command.includes("/md")
       ? s.mockMarkdown
       : thinking
@@ -97,3 +97,24 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
     signal.addEventListener("abort", abort, { once: true });
   });
 }
+
+const MOCK_VISUALS = `![Internet](https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png)
+
+![HTTP](http://example.com/image.png)
+![File](file:///etc/passwd)
+
+\`\`\`html artifact
+<title>Gráfico de prueba</title><canvas id="chart"></canvas><p id="security"></p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>new Chart(document.getElementById('chart'),{type:'bar',data:{labels:['A','B'],datasets:[{data:[2,5]}]}});try{parent.document.body;document.getElementById('security').textContent='UNSAFE'}catch{document.getElementById('security').textContent='parent bloqueado'}fetch('https://example.com').catch(()=>document.getElementById('security').textContent+='; fetch bloqueado');</script>
+\`\`\`
+
+\`\`\`svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80"><circle cx="40" cy="40" r="30" fill="steelblue"/><text x="80" y="45" fill="gray">SVG de prueba</text></svg>
+\`\`\`
+
+\`\`\`mermaid
+graph LR
+ A[Inicio] --> B[Fin]
+\`\`\`
+`;

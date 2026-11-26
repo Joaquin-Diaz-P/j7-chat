@@ -47,6 +47,7 @@
     "electron-vite": "^6.0.0",
     "katex": "^0.19.1",
     "lucide-react": "^1.68.0",
+    "mermaid": "^12.3.0",
     "node-api-headers": "^1.9.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

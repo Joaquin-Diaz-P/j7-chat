@@ -1,5 +1,6 @@
 import { describe,it,expect } from 'vitest';
 import { realpathSync,mkdtempSync,writeFileSync,existsSync,rmSync } from 'node:fs';
+import { mkdtemp, writeFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -86,4 +87,23 @@ it('repairs damaged manual titles while protecting valid manual renames',()=>{
  expect(store.getChat('a')!.title).toBe('Supresión');
  store.rename('a','Título elegido');store.rename('a','Respuesta tardía',false);
  expect(store.getChat('a')!.title).toBe('Título elegido');store.db.close();
+});
+
+it('persists a generated assistant image through reopen and deletes its attachment with the chat', async () => {
+ const dir = await mkdtemp(join(tmpdir(),'j7-generated-'));
+ try {
+  const path = join(dir,'chat.db'), file = join(dir,'image.png');
+  await writeFile(file,Buffer.from('image-test'));
+  let store = new SqliteChatStore(path,dir); store.createChat(chat);
+  store.appendMessage('a',{id:'generated',role:'assistant',text:'',status:'streaming'});
+  store.updateMessage('a','generated',{status:'complete',images:[{id:'generation',status:'complete',attachment:{id:'b529c510-16a3-410f-81eb-99f7575b6177',path:file,name:'Imagen.png',mime:'image/png',kind:'image'}}]});
+  store.db.close(); store = new SqliteChatStore(path,dir);
+  const image = store.listMessages('a')[0]!.images![0]!;
+  const attachments = new AttachmentStore(dir,store);
+  expect(await attachments.resolveUrl(`j7-file://attachment/${image.attachment!.id}`)).toBe(await realpath(file));
+  const second=join(dir,'second.png'); await writeFile(second,'second-image');
+  store.appendMessage('a',{id:'second',role:'assistant',text:'',status:'complete',images:[{id:'second-image',status:'complete',attachment:{...image.attachment!,id:'second-file',path:second}}]});
+  store.deleteMessagesFrom('a','second'); expect(existsSync(second)).toBe(false);
+  store.deleteChat('a'); expect(existsSync(file)).toBe(false); expect(store.attachments()).toEqual([]); store.db.close();
+ } finally {await rm(dir,{recursive:true,force:true});}
 });

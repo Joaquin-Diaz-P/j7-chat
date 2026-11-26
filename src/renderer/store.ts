@@ -18,6 +18,7 @@ export const useChat = create<State>((set) => ({
             ? message
             : {
                 ...message,
+                images: event.type === "image-generation" ? [...(message.images ?? []).filter(i => i.id !== event.image.id), event.image] : (message.images ?? []),
                 thinking: event.type === "thinking-delta" ? (message.thinking ?? "") + event.text : (message.thinking ?? ""),
                 text:
                   event.type === "text-delta"

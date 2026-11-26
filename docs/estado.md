@@ -181,3 +181,16 @@ Encargo: [vidrio-imagenes-artifacts.md](encargos/vidrio-imagenes-artifacts.md). 
 | P4 | ✅ | Ocho bordes, mínimo, límite del área de trabajo, tamaño recordado por pantalla, ⤢/⤡ y `⌃⌘F`. El revisor corrigió que llenar se guardaba como tamaño recordado |
 | P4 | 🔍 | Prueba del usuario: fluidez al arrastrar y redimensionar, y cruce entre pantallas |
 | P5 | ✅ | Causa: Apple Intelligence a veces devuelve cada byte de una letra acentuada como `U+FFFD`. El ayudante reintenta hasta 3 veces y responde `invalid`; `titles.ts` filtra y al arrancar se regeneran los títulos dañados |
+
+## Etapa 8b · Imágenes y artifacts (26 de noviembre de 2026)
+
+Implementada por GPT‑6.1 Sol (high) y revisada por Claude Opus 5.5. `npm test` 348/348, typecheck y e2e `visuals` en verde.
+
+| Código | Estado | Notas |
+|---|---|---|
+| P6 | ✅ | Imágenes `https` en el mensaje, visor con `Esc`, copiar PNG y guardar solo por diálogo. `http:` y `file:` quedan como enlace |
+| P6 | 🔍 | Prueba del usuario: diálogo «Guardar como…» real y visor sobre el vidrio |
+| P7 | ✅ | Probado con `gpt-6-luna`: estado de carga, imagen tras reiniciar, borrada con el chat. Codex escribe en `<datos J7>/providers/codex/generated_images/` y J7 borra la imagen y la carpeta tras copiarla; cancelar no deja archivos. El revisor corrigió la carpeta vacía que quedaba |
+| P8 | ✅ | iframe `sandbox="allow-scripts"` con origen `null`: sin `window.j7`, sin `parent.document`, sin `fetch` ni navegar J7. Una sola carga por bloque durante el streaming. El revisor corrigió que un script podía abrir enlaces sin clic y la altura en ⤢ |
+| P8 | ⬜ | Endurecimiento: la CSP de la ventana principal se abrió a los CDNs porque `srcdoc` la hereda. Pasar el artifact a un protocolo propio con su propia CSP |
+| P9 | ✅ | Instrucciones de imágenes y artifacts; la herramienta de imágenes solo se menciona a GPT. Claude Haiku y GPT‑6‑Luna dibujaron el efecto Bohr |

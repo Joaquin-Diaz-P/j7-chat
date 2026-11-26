@@ -103,6 +103,7 @@ export class Panel {
     this.window.webContents.on("will-navigate", (event) =>
       event.preventDefault(),
     );
+    this.window.webContents.on("will-frame-navigate", event => event.preventDefault());
     this.window.webContents.setWindowOpenHandler(({ url }) => {
       void this.openExternal(url);
       return { action: "deny" };

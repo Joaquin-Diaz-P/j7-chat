@@ -1,5 +1,5 @@
 import { strings as s } from "../../renderer/strings.js";
-import { clipboard, dialog, ipcMain, net, protocol, nativeImage } from 'electron';
+import { clipboard, dialog, ipcMain, net, protocol, nativeImage, shell, ClipboardItem } from 'electron';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { mkdtemp, writeFile, rm, access } from 'node:fs/promises';
@@ -19,6 +19,34 @@ export function registerAttachmentProtocol(store: AttachmentStore) {
   });
 }
 export function registerAttachments(panel: Panel, store: AttachmentStore) {
+  ipcMain.handle('artifact:link', async (event, value: unknown) => {
+    if (!fromMainFrame(panel.window, event) || typeof value !== 'string') return;
+    let url: URL; try { url = new URL(value); } catch { return; }
+    if (['https:', 'http:'].includes(url.protocol)) await shell.openExternal(url.href);
+  });
+  ipcMain.handle('image:action', async (event, action: unknown, value: unknown) => {
+    if (!fromMainFrame(panel.window, event) || !['copy','save'].includes(String(action)) || typeof value !== 'string') return;
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'j7-file:') throw new Error('Imagen no permitida');
+    let response: Response;
+    if (url.protocol === 'j7-file:') response = await net.fetch(pathToFileURL(await store.resolveUrl(value)).href);
+    else {
+      response = await net.fetch(value, { redirect: 'error', signal: AbortSignal.timeout(30000) });
+      if (!response.ok) throw new Error('Imagen no disponible');
+    }
+    const reader = response.body?.getReader(); if (!reader) throw new Error('Imagen vacía');
+    const chunks: Uint8Array[] = []; let size = 0;
+    try { for (;;) { const chunk = await reader.read(); if (chunk.done) break; size += chunk.value.length; if (size > 20*1024*1024) throw new Error('Imagen demasiado grande'); chunks.push(chunk.value); } }
+    finally { await reader.cancel(); }
+    const image = nativeImage.createFromBuffer(Buffer.concat(chunks));
+    if (image.isEmpty()) throw new Error('Imagen inválida');
+    if (action === 'copy') { await clipboard.write([new ClipboardItem({ "image/png": new Blob([new Uint8Array(image.toPNG())]) })]); return; }
+    panel.suppressHide = true;
+    try {
+      const result = await dialog.showSaveDialog(panel.window, { defaultPath: 'Imagen.png', filters: [{ name: 'PNG', extensions: ['png'] }] });
+      if (!result.canceled && result.filePath) await writeFile(result.filePath, image.toPNG());
+    } finally { panel.suppressHide = false; }
+  });
   let busy = false;
   ipcMain.handle('attachments:action', async (event, action: unknown, value: unknown, count: unknown) => {
     if (!fromMainFrame(panel.window, event) || busy) return [];

@@ -1,4 +1,5 @@
 export const strings = {
+  close: "Cerrar", preview: "Vista ampliada", copyImage: "Copiar imagen", saveImage: "Guardar como…", imageActionFailed: "No se pudo copiar o guardar la imagen.", generatingImage: "Generando imagen…", imageFailed: "No se pudo generar la imagen.", artifactCode: "Código", artifactPreview: "Vista previa", expand: "Ampliar", artifactFailed: "No se pudo dibujar el diagrama.",
   officeTextOnly: "De Word y PowerPoint se envían el texto, los datos de los gráficos y las imágenes (a los modelos que ven imágenes). No se conserva el diseño.",
   officeTextLabel: "Texto, imágenes y gráficos",
   officeTruncatedLabel: "Recortado",

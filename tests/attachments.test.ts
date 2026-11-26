@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, writeFile, rm, readFile, unlink, symlink, realpath } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, readFile, unlink, symlink, realpath, mkdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
@@ -73,3 +73,24 @@ it('recognizes a PDF without text as scanned', async () => {
   const [file] = await new AttachmentStore(join(dir, 'attachments')).ingest([path]);
   expect(file?.pages).toBe(1); expect(file?.hasText).toBe(false);
 });
+
+it('stores generated base64 and owned paths, removes provider copies, and rejects escaped paths', async () => {
+ const { storeGeneratedImage } = await import('../src/main/attachments/generated.js');
+ const dir = await directory(), outside = await directory();
+ const bytes = await readFile('tests/fixtures/attachments/j7-42.png');
+ const inline = await storeGeneratedImage({ result: bytes.toString('base64') },dir);
+ expect(await statFile(inline.path)).toBe(true);
+ await mkdir(join(dir,'workspace'));
+ const source = join(dir,'workspace','provider.png'); await writeFile(source,bytes);
+ const copied = await storeGeneratedImage({savedPath:source},dir);
+ expect(await statFile(copied.path)).toBe(true); expect(await statFile(source)).toBe(false);
+ const thread = join(dir,'providers','codex','generated_images','thread-1'); await mkdir(thread,{recursive:true});
+ const generated = join(thread,'ig_1.png'); await writeFile(generated,bytes);
+ await storeGeneratedImage({savedPath:generated},dir);
+ expect(await stat(thread).then(()=>true,()=>false)).toBe(false); expect(await stat(join(dir,'workspace')).then(()=>true,()=>false)).toBe(true);
+ const escaped = join(outside,'outside.png'); await writeFile(escaped,bytes);
+ const link = join(dir,'link.png'); await symlink(escaped,link);
+ await expect(storeGeneratedImage({savedPath:link},dir)).rejects.toThrow('fuera');
+ expect(await readFile(escaped)).toEqual(bytes);
+});
+async function statFile(path: string) {try {await readFile(path);return true;} catch{return false;}}

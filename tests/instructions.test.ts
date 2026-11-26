@@ -7,7 +7,7 @@ describe("chat instructions", () => {
   it("defines identity, boundaries, Markdown and language", () => {
     for (const text of [
       "J7 Chat",
-      "No eres un agente de programación",
+      "puede escribir código y visualizaciones dentro del mensaje",
       "No tienes acceso a archivos",
       "terminal",
       "Markdown",

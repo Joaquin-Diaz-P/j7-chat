@@ -4,6 +4,7 @@ export interface Message {
   role: "user" | "assistant" | "notice";
   text: string;
   thinking?: string;
+  images?: import("../main/providers/types.js").GeneratedImage[];
   effort?: string;
   status: "interrupted" | "queued" | "streaming" | "complete" | "stopped" | "error";
   model?: string;
@@ -59,6 +60,8 @@ export interface J7Api {
   onCapture(callback: (event: import('./capture.js').CaptureEvent) => void): () => void;
   snapshot(): Promise<ChatSnapshot>;
   attachments(action: "files" | "data" | "paste" | "dialog" | "capture" | "preview", value?: unknown, count?: number): Promise<Attachment[]>;
+  imageAction(action: "copy" | "save", url: string): Promise<void>;
+  openArtifactLink(url: string): Promise<void>;
   filePath(file: File): string;
   send(text: string, ids?: string[]): Promise<void>;
   stop(): Promise<void>;

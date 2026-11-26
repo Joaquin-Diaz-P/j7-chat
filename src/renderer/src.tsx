@@ -8,6 +8,7 @@ import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
 import { Mic, LoaderCircle, ArrowUp, Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed, Maximize2, Minimize2 } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
+import { MessageImage } from "./components/MessageImage.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -212,7 +213,7 @@ function App() {
     const update = () => {
       const surface = document.querySelector(".card-surface");
       if (!surface) return;
-      const elements = [surface, ...(attachmentMenu ? document.querySelectorAll('.attachment-menu') : [])];
+      const elements = [surface, ...document.querySelectorAll('.media-overlay'), ...(attachmentMenu ? document.querySelectorAll('.attachment-menu') : [])];
       const regions = elements.map(el => {
         const r = el.getBoundingClientRect();
         return {left:r.left, top:r.top, right:r.right, bottom:r.bottom};
@@ -233,8 +234,10 @@ function App() {
     shell.addEventListener('transitionrun', start);
     shell.addEventListener('transitionend', end);
     shell.addEventListener('transitioncancel', end);
+    const mutations = new MutationObserver(schedule); mutations.observe(document.body, { childList: true, subtree: true });
     schedule();
     return () => {
+      mutations.disconnect();
       observer.disconnect(); cancelAnimationFrame(frame);
       shell.removeEventListener('transitionrun', start);
       shell.removeEventListener('transitionend', end);
@@ -327,6 +330,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
               <article key={message.id} className={`${message.role}-message ${message.id === lastAnswer ? "last-answer" : ""} ${message.status === "error" ? "response-error" : ""}`}>
                 {message.status === "error" && <AlertTriangle size={14} aria-label={s.error}/>}
                 {message.attachments && <AttachmentChips files={message.attachments}/>}
+                {message.images?.map(image => image.attachment ? <MessageImage key={image.id} src={`j7-file://attachment/${image.attachment.id}`} alt={image.attachment.name}/> : <div key={image.id} className={image.status === "generating" && chat.active ? "image-generating" : "image-failed"} role="status">{image.status === "generating" && chat.active ? s.generatingImage : s.imageFailed}</div>)}
                 {message.thinking && <details><summary>{s.reasoning}</summary><ResponseMarkdown text={message.thinking}/></details>}
                 {editing === message.id ? <div className="inline-edit" onKeyDown={e => {
                   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setEditing(null); }

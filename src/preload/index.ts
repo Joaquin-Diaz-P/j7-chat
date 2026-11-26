@@ -37,6 +37,8 @@ const api: J7Api = {
   snapshot: () => ipcRenderer.invoke("chat:snapshot"),
   send: (text, ids) => ipcRenderer.invoke("chat:send", text, ids),
   filePath: file => webUtils.getPathForFile(file),
+  imageAction: (action, url) => ipcRenderer.invoke("image:action", action, url),
+  openArtifactLink: url => ipcRenderer.invoke("artifact:link", url),
   attachments: (action, value, count = 0) => ipcRenderer.invoke("attachments:action", action, value, count),
   stop: () => ipcRenderer.invoke("chat:stop"),
   newChat: () => ipcRenderer.invoke("chat:new"),

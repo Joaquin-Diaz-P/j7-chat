@@ -195,6 +195,10 @@ export class ChatService {
         try {
           for await (const event of provider.runTurn({ model: model.id, ...(session ? { nativeSessionId: session } : {}), effort: message.effort!, webSearch: true, instructions, attachments: [...recap.attachments, ...await expandOfficeAttachments(prepareAttachments(question.attachments ?? [], model), model)], text: recap.text + question.text, signal: controller.signal })) {
             if (controller.signal.aborted) break;
+            if (event.type === "image-generation") {
+              message.images = [...(message.images ?? []).filter(i => i.id !== event.image.id), event.image];
+              persist();
+            }
             if (event.type === "session") nativeId = event.nativeSessionId;
             if (event.type === "error") { failure = event; break; }
             if (event.type === "done") completed = true;
@@ -227,6 +231,7 @@ export class ChatService {
       }
     } finally {
       clearInterval(timer);
+      if (message.images) message.images = message.images.map(image => image.status === "generating" ? { ...image, status: "failed" } : image);
       if (controller.signal.aborted || message.status === "error") {
         this.store.upsertProviderSession({ chatId: chat.id, provider: model.provider, nativeSessionId: "", lastMessageId: "", instructionsHash: hash });
       }

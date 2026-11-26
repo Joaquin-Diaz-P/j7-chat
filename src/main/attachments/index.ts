@@ -1,4 +1,4 @@
-import { copyFile, mkdir, stat, realpath, unlink, readdir, rm } from 'node:fs/promises';
+import { writeFile, copyFile, mkdir, stat, realpath, unlink, readdir, rm } from 'node:fs/promises';
 import { basename, extname, join, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Attachment } from '../providers/types.js';
@@ -60,6 +60,17 @@ export class AttachmentStore {
         file.mime = extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
       } else if (kind === 'text') file.extractedText = await readUtf8(path);
       if (kind === 'pdf') { const pdf = await extractPdfText(path, 400_000); file.extractedText = pdf.text; file.pages = pdf.pages; file.sentPages = pdf.sentPages; file.hasText = pdf.hasText; file.truncated = pdf.truncated; }
+      this.files.set(id, file); return file;
+    } catch (error) { await unlink(path).catch(() => {}); throw error; }
+  }
+  async addGenerated(bytes: Uint8Array): Promise<Attachment> {
+    if (!bytes.length || bytes.length > 20 * 1024 * 1024) throw new Error('Imagen inválida');
+    await mkdir(this.directory, { recursive: true, mode: 0o700 });
+    const id = randomUUID(), path = join(this.directory, `${id}-Imagen.png`);
+    await writeFile(path, bytes, { mode: 0o600 });
+    try {
+      await normalizeImage(path, false);
+      const file: Attachment = { id, path, name: 'Imagen.png', kind: 'image', mime: 'image/png' };
       this.files.set(id, file); return file;
     } catch (error) { await unlink(path).catch(() => {}); throw error; }
   }

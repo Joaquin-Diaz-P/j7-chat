@@ -42,7 +42,10 @@ export interface TurnInput {
   signal: AbortSignal;
 }
 
+export interface GeneratedImage { id: string; status: "generating" | "complete" | "failed"; attachment?: Attachment }
+
 export type ChatEvent =
+  | { type: "image-generation"; image: GeneratedImage }
   | { type: "session"; nativeSessionId: string }
   | { type: "text-delta"; text: string }
   | { type: "thinking-delta"; text: string }

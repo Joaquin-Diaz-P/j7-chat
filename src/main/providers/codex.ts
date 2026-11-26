@@ -1,4 +1,5 @@
 import { strings as s } from "../../renderer/strings.js";
+import { storeGeneratedImage } from "../attachments/generated.js";
 import { join } from "node:path";
 import type { ThreadStartParams } from "./generated/codex/v2/ThreadStartParams.js";
 import type { ThreadResumeParams } from "./generated/codex/v2/ThreadResumeParams.js";
@@ -39,7 +40,7 @@ export const CODEX_SAFE_CONFIG = {
   "features.browser_use_external": false,
   "features.computer_use": false,
   "features.in_app_browser": false,
-  "features.image_generation": false,
+  "features.image_generation": true,
   "features.sleep_tool": false,
   "features.goals": false,
   "features.artifact": false,
@@ -76,6 +77,7 @@ export function translateCodexEvent(raw: unknown): ChatEvent[] {
     message.method === "item/started"
   ) {
     const item = object(params.item);
+    if (item.type === "imageGeneration" && typeof item.id === "string") return [{ type: "image-generation", image: { id: item.id, status: message.method === "item/started" ? "generating" : "failed" } }];
     if (item.type === "webSearch") {
       const query = object(item.action).query;
       return [
@@ -110,6 +112,7 @@ export class CodexProvider extends BaseProvider {
   private events: AsyncQueue<ChatEvent> | undefined;
   private activeThread: string | undefined;
   private activeTurn: string | undefined;
+  private imageResults = new Map<string, Record<string, unknown>>();
   private async connect() {
     if (this.rpc) return this.rpc;
     const start = performance.now(),
@@ -159,6 +162,10 @@ export class CodexProvider extends BaseProvider {
         params.threadId !== this.activeThread
       )
         return;
+      if (message.method === "item/completed" && object(params.item).type === "imageGeneration") {
+        const item = object(params.item);
+        this.imageResults.set(String(item.id), item);
+      }
       for (const event of translateCodexEvent(message)) {
         this.events?.push(event);
         if (event.type === "done" || event.type === "error") this.events?.end();
@@ -329,7 +336,16 @@ export class CodexProvider extends BaseProvider {
         params,
       );
       this.activeTurn = response.turn.id;
-      yield* queue;
+      for await (const event of queue) {
+        if (event.type !== "image-generation" || event.image.status === "generating") { yield event; continue; }
+        const item = this.imageResults.get(event.image.id);
+        this.imageResults.delete(event.image.id);
+        if (!item || item.failure || item.status === "failed") { yield event; continue; }
+        try {
+          const attachment = await storeGeneratedImage(item, paths.data);
+          yield { type: "image-generation", image: { id: event.image.id, status: "complete", attachment } };
+        } catch { yield event; }
+      }
     } finally {
       input.signal.removeEventListener("abort", abort);
       this.events = undefined;

@@ -1,0 +1,53 @@
+import { test, expect, _electron as electron } from '@playwright/test';
+import { mkdtemp, rm, writeFile, readdir, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+test('inline images, sandboxed HTML, SVG and offline Mermaid survive restart', async () => {
+  test.setTimeout(90000);
+  const data = await mkdtemp(join(tmpdir(), 'j7-visuals-'));
+  await writeFile(join(data,'settings.json'),JSON.stringify({firstRunDone:true}));
+  const env: Record<string,string> = { ...Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string,string] => typeof entry[1] === 'string')), J7_MOCK: '1', J7_TEST: '1', J7_DATA_DIR: data };
+  delete env.ELECTRON_RUN_AS_NODE;
+  let app = await electron.launch({ args: ['.', '--remote-debugging-port=9333'], env });
+  try {
+    await app.evaluate(() => { (globalThis as typeof globalThis & { j7Show?: () => void }).j7Show?.(); });
+    let page = await app.firstWindow();
+    await page.evaluate(() => window.j7.setPinned(true));
+    await expect.poll(() => page.evaluate(async () => (await window.j7.snapshot()).catalog?.models.length)).toBeGreaterThan(0);
+    await page.locator('textarea').first().fill('/visuals');
+    await page.locator('textarea').first().press('Enter');
+    await expect.poll(() => page.evaluate(async () => (await window.j7.snapshot()).active), { timeout: 20000 }).toBe(false);
+    await expect(page.locator('.artifact iframe')).toHaveCount(3);
+    const image = page.locator('.message-image > img');
+    await expect(image).toHaveCount(1);
+    await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    expect(await page.locator('img[src^="http:"]').count()).toBe(0);
+    expect(await page.locator('img[src^="file:"]').count()).toBe(0);
+    const html = page.frameLocator('iframe').first();
+    await expect(html.locator('#security')).toHaveText('parent bloqueado; fetch bloqueado');
+    expect(await html.locator('canvas').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL().length)).toBeGreaterThan(1000);
+    const mermaid = page.frameLocator('iframe').nth(2);
+    await expect(mermaid.locator('svg')).toBeVisible();
+    for (const frame of await page.locator('iframe').all()) expect(await frame.getAttribute('sandbox')).toBe('allow-scripts');
+    await page.getByRole('button', { name: 'Copiar imagen', exact: true }).click();
+    await expect.poll(() => app.evaluate(async ({ clipboard }) => (await clipboard.read()).some(item => item.types.includes('image/png')))).toBe(true);
+    const saved = join(data, 'saved.png');
+    await app.evaluate(({ dialog }, filePath) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath }); }, saved);
+    await page.getByRole('button', { name: 'Guardar como…', exact: true }).click();
+    await expect.poll(async () => stat(saved).then(file => file.size).catch(() => 0)).toBeGreaterThan(0);
+    expect(await readdir(join(data,'attachments'))).toEqual([]);
+    await image.click(); await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.locator('.artifact').first().getByRole('button', { name: 'Código', exact: true }).click();
+    await expect(page.locator('.artifact').first().locator('.code-block')).toBeVisible();
+    const chatId = await page.evaluate(async () => (await window.j7.snapshot()).chatId);
+    await app.close();
+    app = await electron.launch({ args: ['.'], env });
+    await app.evaluate(() => { (globalThis as typeof globalThis & { j7Show?: () => void }).j7Show?.(); });
+    page = await app.firstWindow();
+    await page.evaluate(id => window.j7.selectChat(id!), chatId);
+    await expect(page.locator('.artifact iframe')).toHaveCount(3);
+    await expect(page.frameLocator('iframe').nth(2).locator('svg')).toBeVisible();
+  } finally { await app.close(); await rm(data, { recursive: true, force: true }); }
+});
