@@ -13,6 +13,7 @@ module.exports=async context=>{
   const sign=(path,id,deep=false)=>run(['--force',...(deep?['--deep']:[]),'--timestamp=none','--sign',identity,'--identifier',id,path]);
   sign(app,'cl.j7.chat',true);
   sign(join(app,'Contents/Resources/j7-helper'),'cl.j7.chat.helper');
+  sign(join(app,'Contents/Resources/j7-glass.node'),'cl.j7.chat.glass');
   sign(app,'cl.j7.chat');
   run(['--verify','--deep','--strict',app]);
 };

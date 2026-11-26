@@ -20,6 +20,7 @@ export interface Settings {
   theme: "system" | "light" | "dark";
   positionsVersion: 2;
   positions: Record<string, Position>;
+  sizes: Record<string, { width: number; height: number }>;
   favorites: string[];
   effortByModel: Record<string, string>;
   lastModel: string | null;
@@ -56,6 +57,7 @@ export function validateSettings(value: unknown): Settings {
     theme: v.theme === "light" || v.theme === "dark" ? v.theme : "system",
     positionsVersion: 2,
     positions,
+    sizes: Object.fromEntries(Object.entries(v.sizes && typeof v.sizes === "object" ? v.sizes : {}).filter(([, s]) => s && typeof s === "object" && Number.isFinite(s.width) && Number.isFinite(s.height) && s.width >= 520 && s.height >= 680).map(([id,s]) => [id,{width:Math.round(s.width),height:Math.round(s.height)}])),
     favorites: Array.isArray(v.favorites) ? [...new Set(v.favorites.filter((id): id is string => typeof id === "string"))] : [],
     lastModel: typeof v.lastModel === "string" ? canonicalModelKey(v.lastModel) : !("lastModel" in v) && typeof v.defaultModel === "string" ? canonicalModelKey(v.defaultModel) : null,
     personalInstructions: typeof v.personalInstructions === "string" ? v.personalInstructions.slice(0,4000) : "",

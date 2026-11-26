@@ -11,13 +11,15 @@ import {ChatService} from '../../src/main/chat/service.js';
 import {MemoryChatStore} from '../../src/main/chat/memory-store.js';
 import {MockProvider} from '../../src/main/providers/mock.js';
 it('recovers missing titles at startup without overwriting manual titles',async()=>{
- const store=Object.assign(new MemoryChatStore(),{list:(_q:string,offset:number)=>offset?[]:[{id:'a',title:'',titleSource:'auto'},{id:'manual',title:'',titleSource:'manual'}],rename:(id:string,title:string)=>{renamed.push([id,title]);}});
+ const store=Object.assign(new MemoryChatStore(),{list:(_q:string,offset:number)=>offset?[]:[{id:'a',title:'',titleSource:'auto'},{id:'manual',title:'',titleSource:'manual'},{id:'broken',title:'Supresi��n',titleSource:'manual'}],rename:(id:string,title:string)=>{renamed.push([id,title]);}});
  const renamed:string[][]=[];
  store.createChat({id:'a',model:'mock:mock-a',provider:'mock',webSearch:false,effort:'normal'});
  store.appendMessage('a',{id:'q',role:'user',text:'Why is the sky blue?',status:'complete'});
+ store.createChat({id:'broken',model:'mock:mock-a',provider:'mock',webSearch:false,effort:'normal'});
+ store.appendMessage('broken',{id:'qb',role:'user',text:'Why is the sky blue?',status:'complete'});
  const chat=new ChatService(new MockProvider(),()=>{},undefined,undefined,undefined,undefined,store);
  chat.titleGenerator=async text=>{expect(text).toBe('Why is the sky blue?');return 'Why the sky is blue';};
- chat.start();await Promise.resolve();expect(renamed).toEqual([['a','Why the sky is blue']]);await chat.dispose();
+ chat.start();await Promise.resolve();expect(renamed).toEqual([['a','Why the sky is blue'],['broken','Why the sky is blue']]);await chat.dispose();
 });
 
 it('exchanges shortcut bindings and restores originals after a partial collision',()=>{
@@ -43,3 +45,5 @@ it('swaps both settings when the recorder chooses the other J7 binding',()=>{
 
 import {settingsStrings} from '../../src/renderer/strings.js';
 it('mantiene Conexiones en el índice que abre Primeros pasos',()=>{expect(settingsStrings.sections[4]).toBe('Conexiones');expect(validateSettings({disabledProviders:['claude','invalid','claude']}).disabledProviders).toEqual(['claude']);});
+
+it('rejects replacement characters from a title generator before persistence',async()=>{expect(await generateTitle('Supresión de la ovulación',async()=> 'Supresi��n de la ovulaci��n')).toBe('Supresión de la ovulación');});

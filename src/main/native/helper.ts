@@ -14,6 +14,8 @@ export class NativeHelper extends EventEmitter {
     if (this.closed || this.child) return;
     const child = spawn(this.binary, [], { stdio: 'pipe' }); this.child = child;
     child.stderr.resume();
+    // Decode at the stream boundary, never each Buffer (a pipe can split ó's two bytes).
+    child.stdout.setEncoding('utf8');
     createInterface({ input: child.stdout }).on('line', line => {
       try {
         const value = JSON.parse(line);

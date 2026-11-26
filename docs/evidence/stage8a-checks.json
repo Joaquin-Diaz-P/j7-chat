@@ -1,0 +1,93 @@
+{
+  "P1": {
+    "files": [
+      "native/glass/glass.mm",
+      "src/main/native/glass.ts",
+      "src/main/window.ts",
+      "src/renderer/style.css",
+      "scripts/build-glass.mjs",
+      "package.json",
+      "package-lock.json",
+      "electron-builder.yml",
+      "scripts/signing/after-sign.cjs",
+      ".github/workflows/ci.yml"
+    ],
+    "verified": [
+      "NSVisualEffectView HUDWindow, behindWindow, active, clipped to card; actual desktop blur in dark and light",
+      "CDP shell/panel/history backgrounds rgba(0,0,0,0)",
+      "npm run dev, npm run dist; locally signed packaged app launched and loaded native module"
+    ],
+    "pending": [
+      "Foco opened and captured, but its current document view did not expose the reference glass controls; exact visual match is not certified"
+    ]
+  },
+  "P2": {
+    "files": [
+      "src/renderer/overlay-scrollbars.ts",
+      "src/renderer/src.tsx",
+      "src/renderer/style.css",
+      "tests/e2e/glass-resize.spec.ts"
+    ],
+    "verified": [
+      "CDP history clientWidth: short=239, overflow=239",
+      "Separate overlay thumbs: 6px, hover 8px; native scrolling preserved"
+    ],
+    "pending": []
+  },
+  "P3": {
+    "files": [
+      "src/renderer/style.css"
+    ],
+    "verified": [
+      "Rendered heading, hr, nested bold list in real React Markdown using temporary renderer snapshot",
+      "CDP line-height=22.4px at font-size=14px (1.6); hr margins=14px (1rem)",
+      "stage8a-markdown.png and stage8a-glass-desktop.png"
+    ],
+    "pending": []
+  },
+  "P4": {
+    "files": [
+      "src/main/window.ts",
+      "src/main/window-geometry.ts",
+      "src/main/settings.ts",
+      "src/main/ipc.ts",
+      "src/shared/ipc.ts",
+      "src/preload/index.ts",
+      "src/renderer/src.tsx",
+      "src/renderer/style.css",
+      "tests/unit/window-geometry.test.ts",
+      "tests/stage-1a.test.ts",
+      "tests/e2e/glass-resize.spec.ts"
+    ],
+    "verified": [
+      "Eight edge/corner handles, resize clamps, per-display sizes, fill/restore button and Ctrl+Cmd+F",
+      "Physical drag.swift resize: card 780x680 -> 980x850; canvas 828x728 -> 1028x898, windows.swift confirmed",
+      "Physical shrink restored card minimum 780x680",
+      "Fill card 1920x1080 on primary work area; restore 980x850",
+      "Physical expanded drag from second monitor (window x1961,y306) to primary (x471,y140)",
+      "e2e persisted chosen width 880 after hide/show; original window-controls and real-drag tests pass"
+    ],
+    "pending": [
+      "Subjective fluidity was not instrumented with frame timing"
+    ]
+  },
+  "P5": {
+    "files": [
+      "src/main/native/helper.ts",
+      "src/main/titles.ts",
+      "src/main/chat/service.ts",
+      "src/main/chat/sqlite-store.ts",
+      "tests/helper.test.ts",
+      "tests/unit/stage6.test.ts",
+      "tests/unit/sqlite.test.ts"
+    ],
+    "verified": [
+      "Explicit utf8 stream decoder before readline; test emits entire title one byte at a time and recovers accented characters",
+      "Reject corrupt generator output before persistence and fall back to original question",
+      "Startup regenerates empty auto titles and any damaged title, including damaged manual titles; valid concurrent manual renames stay protected"
+    ],
+    "pending": [
+      "Historical corruption source not conclusively identified: current readline and Swift JSON paths already preserve UTF-8. Real user database was not modified during temporary-data tests"
+    ]
+  }
+}

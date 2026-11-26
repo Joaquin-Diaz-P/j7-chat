@@ -77,3 +77,30 @@ it('accepts saved anchors partly off the display and rejects ones that left it',
  const other={x:-1920,y:200,width:1920,height:1080};
  expect(validAnchor(other,{x:-960,y:978})).toEqual({x:-960,y:978});
 });
+
+import { resizeCard } from '../../src/main/window-geometry.js';
+it('grows its canvas beyond the old limit while retaining the card anchor',()=>{
+ const anchor={x:1000,y:900};
+ const {card,canvas}=cardLayout(area,anchor,680,true,{width:1100,height:850});
+ expect(card.width).toBe(1100);expect(card.height).toBe(850);
+ expect(canvas.width).toBe(1148);expect(canvas.height).toBe(898);
+ expect(card.x+card.width).toBe(anchor.x+260);expect(card.y+card.height).toBe(anchor.y);
+});
+it('resizes all eight edges against their opposite edge and clamps to the work area and minima',()=>{
+ const start={x:100,y:100,width:900,height:750};
+ for(const edge of ['n','s','e','w','ne','nw','se','sw']) {
+  const card=resizeCard(start,area,edge,30,20,false);
+  expect(card.x).toBe(edge.includes('w')?130:100);
+  expect(card.y).toBe(edge.includes('n')?120:100);
+  expect(card.x+card.width).toBe(edge.includes('e')?1030:1000);
+  expect(card.y+card.height).toBe(edge.includes('s')?870:850);
+ }
+ expect(resizeCard(start,area,'se',-900,-900,false)).toEqual({...start,width:520,height:680});
+ expect(resizeCard(start,area,'se',900,900,true)).toEqual({...start,width:1340,height:900});
+});
+
+it('resizing a partly offscreen card keeps its minimum size and brings it into the work area',()=>{
+ const result=resizeCard({x:1400,y:950,width:780,height:680},area,'s',0,20,true);
+ expect(result.width).toBeGreaterThanOrEqual(780);expect(result.height).toBeGreaterThanOrEqual(680);
+ expect(result.x+result.width).toBeLessThanOrEqual(1440);expect(result.y+result.height).toBeLessThanOrEqual(1000);
+});

@@ -47,7 +47,7 @@ export class ChatService {
     const history = this.store as ChatStore & {list?: (query:string, offset:number)=>{id:string;titleSource:string;title:string}[];rename?: (id:string,title:string,manual:boolean)=>void};
     if(this.titleGenerator && history.list) for(let offset=0;;offset+=200) {
       const rows=history.list("",offset); if(!rows.length)break;
-      for(const row of rows) if(!row.title.trim() && row.titleSource!=="manual") { const question=this.store.listMessages(row.id).find(m=>m.role==="user"); if(question)void this.titleGenerator(question.text).then(title=>history.rename?.(row.id,title,false)).catch(()=>{}); }
+      for(const row of rows) if((!row.title.trim() && row.titleSource!=="manual") || row.title.includes("\uFFFD")) { const question=this.store.listMessages(row.id).find(m=>m.role==="user"); if(question)void this.titleGenerator(question.text).then(title=>{history.rename?.(row.id,title,false);this.notify();}).catch(()=>{}); }
     }
     void this.catalog.refresh().catch(() => {}).finally(() => this.notify());
     this.warmup = setTimeout(() => { void this.catalog.prewarm().catch(() => {}).finally(() => this.prewarm()); }, 5_000);

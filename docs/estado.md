@@ -32,13 +32,13 @@ Registro histórico de las etapas y verificación actual. Actualizado por la ses
 | 2 | E4 (detalle) | ❌ | Un error `auth` de Zen mostraría el comando de inicio de sesión del mock. Se corrige en la etapa 3 |
 | 3 | G1 G2 G3 G5 G6 G7 G8 G9 · E12 · E8 F7 E4 (correcciones) | ✅ | Con el mock y la app real. PDF real comprobado con Claude Haiku (nativo) y GPT‑6‑Luna (texto). El revisor corrigió G2 (pegar desde Finder) y el test intermitente |
 | 3 | G4 | 🔍 | Prueba física del usuario: selección de zona real con ✂︎ |
-| 3 | Pendientes menores | ⬜ | Avisar al modelo del recorte y quitar `.env` (etapa 4); adjuntos en SQLite y limpieza de copias huérfanas (etapa 5) |
+| 3 | Pendientes menores | ⬜ | Avisar al modelo del recorte y quitar `.env` (etapa 4); adjuntos en SQLite y limpieza de copias huérfanas (etapa 5). Resueltos después; ver [revisión actual](#revisión-actual-de-los-tres-pendientes-históricos) |
 | 4 | H3 H5 · G5 G7 (correcciones) | ✅ | Ayudante Swift comprobado (`--self-test`, reinicio tras `kill -9`, solo escucha). Formatos de Hex confirmados |
 | 4 | H1 H2 H4 H6 H7 | 🔍 | El código está revisado y tiene tests. Falta la prueba física del usuario (docs/prueba-fisica-voz.md), después de la etapa 5. El revisor corrigió dos huecos en setup.ts |
-| 4 | Riesgos del flujo de voz | ⬜ | Cuelgue al salir mientras transcribe, Hex grabando tras cancelar, recuperación con --oldest-first, aviso falso de Hex no instalado, regla de 5 min y mensaje engañoso. Se corrigen en la etapa 5 |
+| 4 | Riesgos del flujo de voz | ⬜ | Cuelgue al salir mientras transcribe, Hex grabando tras cancelar, recuperación con --oldest-first, aviso falso de Hex no instalado, regla de 5 min y mensaje engañoso. Corregidos después en código; H.1 físico sigue en pausa. Ver [revisión actual](#revisión-actual-de-los-tres-pendientes-históricos) |
 | 5 | I1 I2 I3 I4 I5 I6 I7 I8 I9 · B8 · B10 (`⌘ B`, `⌘ F`) | ✅ | Con el mock, cuatro reinicios y un `kill -9`. B8 medido con CoreGraphics. El revisor corrigió I3: Apple Intelligence respondía la pregunta en vez de dar un título |
 | 5 | Adjuntos en SQLite y copias huérfanas · siete correcciones de voz | ✅ | Comprobados en la app y en el código |
-| 5 | Pendientes menores | ⬜ | Título en el idioma de la pregunta y sin comillas, títulos de chats interrumpidos, error ERR_FILE_NOT_FOUND sin capturar y `stop` al salir durante `start`. Se corrigen en la etapa 6 |
+| 5 | Pendientes menores | ⬜ | Título en el idioma de la pregunta y sin comillas, títulos de chats interrumpidos, error ERR_FILE_NOT_FOUND sin capturar y `stop` al salir durante `start`. Resueltos después; ver [revisión actual](#revisión-actual-de-los-tres-pendientes-históricos) |
 | 6 | A5 · B10 (`⌘ ,`) · J1 J2 J4 J5 J6 J7 · K1 K2 K3 · M4 · correcciones de la etapa 5 | ✅ | Con la app empaquetada y en desarrollo. El revisor corrigió el idioma de los títulos, el registro de ítems de inicio en desarrollo y siete detalles más |
 | 6 | A4 · J3 (el atajo viejo deja de funcionar) | 🔍 | Prueba física del usuario: docs/prueba-final.md, pasos 4 y 8 |
 | 4 | H1 H2 H4 H6 H7 | 🔍 | Prueba física del usuario con la app instalada: docs/prueba-final.md, paso 5 |
@@ -46,6 +46,18 @@ Registro histórico de las etapas y verificación actual. Actualizado por la ses
 | 8 | J6 J7 J8 | ✅ | Comprobados con la app real (CDP): sin programas abre en Conexiones con "Descargar" y comandos; con programas listos y sin Grabación de pantalla abre en Permisos; permisos de Hex leídos de `hex status`. El revisor corrigió la sección inicial y que un fallo del chequeo cerrara J7. Pendiente a mano: conceder un permiso y ver que cambia solo al volver |
 
 Al revisar cada etapa, su fila se divide en una línea por código, con su resultado.
+
+## Revisión actual de los tres pendientes históricos
+
+Revisados el 11 de noviembre de 2026 sobre el código de 0.2.7 (`d1d5092`). Los ⬜ de esas tres filas describen el cierre de cada etapa; no son tareas de código todavía abiertas.
+
+| Grupo | Resultado actual y evidencia |
+|---|---|
+| Etapa 3: recorte, `.env` y adjuntos | Implementados: aviso de PDF recortado en `attachments/policy.ts`, rechazo de `.env` y variantes en `attachments/index.ts`, metadatos en SQLite y resolución después de reiniciar. La limpieza corre al arrancar y elimina copias sin referencia con más de 24 horas; no elimina inmediatamente al pulsar ✕. Cubierto por `tests/capture.test.ts` y `tests/unit/sqlite.test.ts`. |
+| Etapa 4: voz | Corregidos en `capture/flows.ts`, `voice/hex.ts` y el flujo de ventanas: cierre acotado, nuevo `stop` tras cancelar un inicio pendiente, recuperación con `--oldest-first`, instalación según existencia del binario, regla de cinco minutos y aviso específico si el modelo no ve imágenes. Cubierto por `tests/capture.test.ts` y `tests/unit/voice-window.test.ts`. La prueba física H.1 sigue en pausa; los tests no la sustituyen. |
+| Etapa 5: títulos, archivos ausentes e inicio de voz | Implementados: idioma detectado en el ayudante Swift, limpieza de comillas y punto final, recuperación de títulos vacíos al arrancar y cierre durante un inicio pendiente. Las cargas de ambas ventanas capturan rechazos; el protocolo de adjuntos devuelve 404 y la vista rápida muestra un aviso si falta el archivo. Pruebas de títulos y recuperación en `tests/unit/stage6.test.ts`; inicio/cierre en `tests/capture.test.ts`. La detección de idioma usa español cuando una pregunta breve resulta ambigua; no se probó de nuevo Apple Intelligence en esta revisión. |
+
+Verificación de esta revisión: `npm test` aprobado (336 pruebas, 42 archivos) y `npm run typecheck` aprobado. Revisión de código y pruebas automáticas; no se repitieron pruebas físicas ni recorridos Electron.
 
 ## Prueba física con la app firmada (5 de noviembre)
 
@@ -155,3 +167,17 @@ Reúne Gemini por Antigravity, Word y PowerPoint con imágenes y gráficos, Comp
 - Al aparecer, J7 suponía que la tarjeta compacta medía 106 px aunque se dibujaba con 92, y la interfaz no lo corregía porque su medida no cambiaba. Había 14 px de diferencia: la tarjeta no tocaba el borde superior y una franja transparente sobre ella atrapaba clics. Ahora la interfaz vuelve a informar su altura cada vez que aparece la barra.
 - La prueba de bordes ahora corre con la barra visible; antes la movía oculta y por eso no vio la pared. Con el mouse real (`J7_REAL_INPUT=1`) se probaron los cuatro bordes, el paso al otro monitor y el regreso. Tras volver de un borde la tarjeta queda bajo el cursor, y moverse sin apretar no la mueve.
 - Verificación: `npm test` (336) y `npx playwright test` (5 recorridos, seis veces seguidas sin fallos) aprobados.
+
+## Etapa 8a · Vidrio y tamaño libre (26 de noviembre de 2026)
+
+Encargo: [vidrio-imagenes-artifacts.md](encargos/vidrio-imagenes-artifacts.md). Implementada por GPT‑6.1 Sol (high) y revisada por Claude Opus 5.5. `npm test` 342/342, typecheck y e2e `glass-resize` y `window-controls` en verde.
+
+| Código | Estado | Notas |
+|---|---|---|
+| P1 | ✅ | `NSVisualEffectView` nativo (addon `native/glass`) limitado a la tarjeta en compacto, chat, historial y llenar. Firmado en la app empaquetada. Si el addon no carga, queda el tinte (corregido por el revisor) |
+| P1 | 🔍 | Prueba del usuario: parecido con Foco y legibilidad sobre un escritorio claro |
+| P2 | ✅ | Pulgar superpuesto de 6 px (8 px al pasar), sin carril ni pérdida de ancho |
+| P3 | ✅ | Interlineado 1.6, separación de listas, títulos y `hr`. Captura `evidence/stage8a-markdown.png` |
+| P4 | ✅ | Ocho bordes, mínimo, límite del área de trabajo, tamaño recordado por pantalla, ⤢/⤡ y `⌃⌘F`. El revisor corrigió que llenar se guardaba como tamaño recordado |
+| P4 | 🔍 | Prueba del usuario: fluidez al arrastrar y redimensionar, y cruce entre pantallas |
+| P5 | ✅ | Causa: Apple Intelligence a veces devuelve cada byte de una letra acentuada como `U+FFFD`. El ayudante reintenta hasta 3 veces y responde `invalid`; `titles.ts` filtra y al arrancar se regeneran los títulos dañados |

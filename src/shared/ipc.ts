@@ -33,7 +33,7 @@ export interface ChatSnapshot {
   catalog?: CatalogSnapshot;
 }
 export interface ChatEnvelope { chatId: string; messageId: string; event: ChatEvent }
-export interface PanelState { offset?: {x:number;y:number}; historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
+export interface PanelState { cardWidth?: number; filled?: boolean; offset?: {x:number;y:number}; historyOpen?: boolean; appeared?: boolean; resume: boolean; pinned: boolean; dark: boolean }
 export type SettingsSection = 'programs' | 'permissions';
 export type PermissionKind = 'screen' | 'input' | 'microphone' | 'accessibility';
 export interface J7Api {
@@ -73,6 +73,10 @@ export interface J7Api {
   askOther(model: string, effort?: string): Promise<void>;
   onHiding(callback: () => void): () => void;
   setRegions(regions: import("./hit-test.js").HitRect[]): void;
+  beginResize(edge:string):void;
+  resize(dx:number,dy:number):void;
+  endResize():void;
+  toggleFill():void;
   beginMoveCard():void;
   /** dx and dy are measured from where the drag began, not from the previous move. */
   moveCard(dx:number,dy:number):void;

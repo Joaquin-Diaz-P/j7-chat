@@ -16,8 +16,8 @@ export const VISIBLE_X = 80, VISIBLE_Y = 60;
 // Reserve the largest card from the outset, including its CSS shadow. The canvas follows the anchor
 // past the screen's sides and bottom, but macOS keeps a visible window's top below the menu bar,
 // so there it stops and the card rises inside it instead.
-export function canvasBounds(area: Area, anchor: Position): Area {
-  const width = Math.min(828, area.width), height = Math.min(728, area.height);
+export function canvasBounds(area: Area, anchor: Position, size?: {width:number;height:number}): Area {
+  const width = Math.max(Math.min(828, area.width), (size ? size.width + 48 : 0)), height = Math.max(Math.min(728, area.height), (size ? size.height + 48 : 0));
   return { width, height, x: Math.round(anchor.x + 260 + CANVAS_MARGIN - width), y: Math.round(Math.max(area.y, anchor.y + CANVAS_MARGIN - height)) };
 }
 export function canvasAnchor(bounds: Area): Position {
@@ -25,17 +25,31 @@ export function canvasAnchor(bounds: Area): Position {
 }
 
 // Keep the remembered chat center/bottom, limited to where the card stays reachable on `area`.
-export function cardLayout(area: Area, anchor: Position, height: number, history = false) {
-  const width = Math.min(history ? 780 : 520, Math.max(1, Math.min(828, area.width) - 2 * CANVAS_MARGIN));
-  height = Math.min(Math.max(90, Math.ceil(height)), Math.max(1, Math.min(728, area.height) - 2 * CANVAS_MARGIN));
+export function cardLayout(area: Area, anchor: Position, height: number, history = false, size?: {width:number;height:number}) {
+  const width = size ? Math.min(Math.max(history ? 780 : 520, size.width), area.width) : Math.min(history ? 780 : 520, Math.max(1, Math.min(828, area.width) - 2 * CANVAS_MARGIN));
+  height = size ? Math.min(Math.max(680,size.height),area.height) : Math.min(Math.max(90, Math.ceil(height)), Math.max(1, Math.min(728, area.height) - 2 * CANVAS_MARGIN));
   let right = Math.round(Math.min(Math.max(anchor.x + 260, area.x + VISIBLE_X), area.x + area.width - VISIBLE_X + width));
   // Growing into the history view never pushes the card further off screen than the compact card already was.
   right = Math.max(right, Math.min(area.x, right - Math.min(width, 520)) + width);
   const bottom = Math.round(Math.min(Math.max(anchor.y, area.y + height), area.y + area.height - VISIBLE_Y + height));
-  const canvas = canvasBounds(area, { x: right - 260, y: bottom });
+  const canvas = canvasBounds(area, { x: right - 260, y: bottom }, size ? {width,height} : undefined);
   const card = { width, height, x: right - width, y: bottom - height };
   return { canvas, card, offset: {
     x: card.x + card.width - (canvas.x + canvas.width - CANVAS_MARGIN),
     y: card.y + card.height - (canvas.y + canvas.height - CANVAS_MARGIN),
   } };
+}
+
+// Resize against the opposite edge, keeping the card inside the display's work area.
+export function resizeCard(start: Area, area: Area, edge: string, dx: number, dy: number, history: boolean): Area {
+  const minW = Math.min(history ? 780 : 520, area.width), minH = Math.min(680,area.height);
+  const width = Math.min(area.width,Math.max(minW,start.width)), height = Math.min(area.height,Math.max(minH,start.height));
+  start = {x:Math.min(Math.max(area.x,start.x),area.x+area.width-width),y:Math.min(Math.max(area.y,start.y),area.y+area.height-height),width,height};
+  let left = start.x, top = start.y;
+  let right = start.x+start.width, bottom = start.y+start.height;
+  if(edge.includes('w')) left = Math.max(area.x,Math.min(right-minW,start.x+dx));
+  if(edge.includes('e')) right = Math.min(area.x+area.width,Math.max(left+minW,start.x+start.width+dx));
+  if(edge.includes('n')) top = Math.max(area.y,Math.min(bottom-minH,start.y+dy));
+  if(edge.includes('s')) bottom = Math.min(area.y+area.height,Math.max(top+minH,start.y+start.height+dy));
+  return {x:left,y:top,width:right-left,height:bottom-top};
 }

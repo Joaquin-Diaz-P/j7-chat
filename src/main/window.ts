@@ -1,5 +1,6 @@
+import { updateGlass } from "./native/glass.js";
 import { capturesScreenPoint, type HitRect } from "../shared/hit-test.js";
-import { defaultAnchor, canvasAnchor, validAnchor, cardLayout } from "./window-geometry.js";
+import { defaultAnchor, canvasAnchor, validAnchor, cardLayout, resizeCard } from "./window-geometry.js";
 import { app, BrowserWindow, screen, nativeTheme } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +29,10 @@ export class Panel {
   /** Where the card was when the current drag began; set only while dragging. */
   private dragStart: Position | undefined;
   private bounds: Area = { x: 0, y: 0, width: 828, height: 728 };
+  private expanded = false;
+  private cardWidth = 520;
+  private resizeStart: {card:Area;area:Area;edge:string} | undefined;
+  private restore: {anchor:Position;size:{width:number;height:number}} | undefined;
   private ready = false;
   private pendingShow = false;
   private shortcutDownAt: number | undefined;
@@ -88,7 +93,13 @@ export class Panel {
       clearTimeout(this.spaceFocusTimer);
     });
     nativeTheme.themeSource = settings.value.theme;
-    nativeTheme.on("updated", () => this.notify(true));
+    const themeUpdated = () => {
+      if (this.window.isDestroyed()) return;
+      if(this.regions[0]) updateGlass(this.window,this.regions[0],nativeTheme.shouldUseDarkColors);
+      this.notify(true);
+    };
+    nativeTheme.on("updated", themeUpdated);
+    this.window.once("closed",()=>nativeTheme.removeListener("updated",themeUpdated));
     this.window.webContents.on("will-navigate", (event) =>
       event.preventDefault(),
     );
@@ -134,6 +145,8 @@ export class Panel {
     if (this.ready)
       this.window.webContents.send("window:state", {
         offset: this.offset,
+        cardWidth: this.cardWidth,
+        filled: !!this.restore,
         resume,
         appeared,
         historyOpen: this.settings.value.historyOpen,
@@ -164,6 +177,8 @@ export class Panel {
     this.displayId = String(display.id);
     const resume = this.clock.shouldResume(!!this.chat.snapshot().chatId);
     if (!resume) this.chat.newChat();
+    // Filling lasts until the panel hides; it reopens at the size chosen by hand.
+    this.restore = undefined;
     const saved = this.settings.value.positions[this.displayId];
     const area = display.workArea;
     this.anchor = validAnchor(area, saved) ?? defaultAnchor(area);
@@ -251,6 +266,9 @@ export class Panel {
   beginMoveCard() {
     const base = canvasAnchor(this.window.getBounds());
     this.dragStart = {x:base.x+this.offset.x,y:base.y+this.offset.y};
+    // Dragging a filled card turns it into an ordinary card of that size.
+    if (this.restore && this.displayId) this.settings.value.sizes[this.displayId] = {width:this.cardWidth,height:this.cardHeight};
+    this.restore = undefined;
     this.updateCapture();
   }
   moveCard(dx: number, dy: number) {
@@ -259,7 +277,7 @@ export class Panel {
     if (!this.dragStart) return;
     const target = {x:this.dragStart.x+dx,y:this.dragStart.y+dy};
     const display = this.displayFor(target);
-    const {card, canvas, offset} = cardLayout(display.workArea, target, this.cardHeight, this.settings.value.historyOpen);
+    const {card, canvas, offset} = cardLayout(display.workArea, target, this.cardHeight, this.settings.value.historyOpen, this.expanded ? {width:this.cardWidth,height:this.cardHeight} : undefined);
     this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
     this.displayId = String(display.id);
     // While the card keeps its place in the canvas only the window moves; the renderer needs no update.
@@ -269,7 +287,7 @@ export class Panel {
   }
   /** The display under the card's middle owns it, so dragging across monitors hands the card over. */
   private displayFor(anchor: Position) {
-    const width = this.settings.value.historyOpen ? 780 : 520;
+    const width = this.cardWidth;
     return screen.getDisplayNearestPoint({x:Math.round(anchor.x+260-width/2),y:Math.round(anchor.y-this.cardHeight/2)});
   }
   endMoveCard() {
@@ -278,26 +296,79 @@ export class Panel {
     if(this.displayId && this.anchor) this.settings.update({positions:{...this.settings.value.positions,[this.displayId]:this.anchor}});
   }
   layout(height: number, history: boolean) {
+    this.expanded = height >= 680 || history;
+    if (!this.expanded && this.restore) this.restore = undefined;
     this.cardHeight = height;
-    if (height < 680 && !history) {
+    if (!this.expanded) {
       this.compactHeight = height;
       // Manual pinning belongs to the expanded view, where its button is visible.
       if (this.settings.value.pinned) this.settings.update({ pinned: false });
     }
     if (!this.anchor) return;
-    const layout = cardLayout(this.displayFor(this.anchor).workArea, this.anchor, height, history);
+    const area = this.displayFor(this.anchor).workArea;
+    // Filling is a temporary state: the remembered size stays the one the user chose by hand.
+    const size = !this.expanded ? undefined : this.restore ? {width:area.width,height:area.height} : this.settings.value.sizes[this.displayId ?? ''] ?? {width:history?780:520,height:680};
+    const layout = cardLayout(area, this.anchor, height, history, size);
+    this.cardWidth = layout.card.width;
+    this.cardHeight = layout.card.height;
     this.offset = layout.offset;
     this.place(layout.canvas);
     const {card, canvas} = layout;
     this.regions = [{left:card.x-canvas.x, top:card.y-canvas.y, right:card.x-canvas.x+card.width, bottom:card.y-canvas.y+card.height}];
+    updateGlass(this.window,this.regions[0]!,nativeTheme.shouldUseDarkColors);
     this.updateCapture();
     this.notify(true);
   }
-  setRegions(regions: HitRect[]) { this.regions = regions; this.updateCapture(); }
+  setRegions(regions: HitRect[]) {
+    this.regions = regions;
+    if (regions[0]) updateGlass(this.window,regions[0],nativeTheme.shouldUseDarkColors);
+    this.updateCapture();
+  }
+  beginResize(edge:string) {
+    if (!this.expanded || !this.anchor) return;
+    this.restore = undefined;
+    const area = this.displayFor(this.anchor).workArea;
+    const {card} = cardLayout(area,this.anchor,this.cardHeight,this.settings.value.historyOpen,{width:this.cardWidth,height:this.cardHeight});
+    this.resizeStart = {card,area,edge};
+    this.updateCapture();
+  }
+  resize(dx:number,dy:number) {
+    if (!this.resizeStart) return;
+    const {card,area,edge} = this.resizeStart;
+    this.applyCard(resizeCard(card,area,edge,dx,dy,this.settings.value.historyOpen));
+  }
+  endResize() {
+    this.resizeStart = undefined;
+    this.saveSize();
+    this.updateCapture();
+  }
+  private saveSize() {
+    if(this.displayId) this.settings.update({sizes:{...this.settings.value.sizes,[this.displayId]:{width:this.cardWidth,height:this.cardHeight}},positions:{...this.settings.value.positions,[this.displayId]:this.anchor!}});
+  }
+  private applyCard(card:Area) {
+    this.anchor = {x:card.x+card.width-260,y:card.y+card.height};
+    // Avoid disk writes during the gesture. layout reads the in-memory choice.
+    if(this.displayId) this.settings.value.sizes[this.displayId] = {width:card.width,height:card.height};
+    this.layout(680,this.settings.value.historyOpen);
+  }
+  toggleFill() {
+    if(!this.expanded || !this.anchor) return;
+    if(this.restore) {
+      const previous=this.restore; this.restore=undefined;
+      this.applyCard({x:previous.anchor.x+260-previous.size.width,y:previous.anchor.y-previous.size.height,...previous.size});
+      this.saveSize();
+    } else {
+      const area = this.displayFor(this.anchor).workArea;
+      this.restore={anchor:{...this.anchor},size:{width:this.cardWidth,height:this.cardHeight}};
+      this.anchor={x:area.x+area.width-260,y:area.y+area.height};
+      this.layout(680,this.settings.value.historyOpen);
+    }
+    this.notify(true);
+  }
   private updateCapture() {
     // While dragging, the window keeps every mouse event: the pointer can outrun a card stopped at an
     // edge, and a release passed through to the app behind would leave the drag stuck.
-    const capture = !!this.dragStart || capturesScreenPoint(screen.getCursorScreenPoint(), this.bounds, this.regions);
+    const capture = !!this.resizeStart || !!this.dragStart || capturesScreenPoint(screen.getCursorScreenPoint(), this.bounds, this.regions);
     if (capture !== this.captured) {
       this.captured = capture;
       this.window.setIgnoreMouseEvents(!capture, { forward: true });

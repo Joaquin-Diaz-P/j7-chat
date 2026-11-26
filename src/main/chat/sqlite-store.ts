@@ -55,7 +55,7 @@ export class SqliteChatStore implements ChatStore {
    ORDER BY c.pinned DESC,c.updated_at DESC LIMIT 200 OFFSET ?`).all(term,term,term,term,offset);
   return [...new Map(rows.map(r=>[String(r.id),{...this.getChat(String(r.id))!,snippet:String(r.fragment)}])).values()];
  }
- rename(id:string,title:string,manual=true) { this.db.prepare("UPDATE chats SET title=?,title_source=? WHERE id=? AND (title_source!='manual' OR ?=1)").run(title.slice(0,300),manual?'manual':'auto',id,+manual); }
+ rename(id:string,title:string,manual=true) { this.db.prepare("UPDATE chats SET title=?,title_source=? WHERE id=? AND (title_source!='manual' OR ?=1 OR instr(title,char(65533))>0)").run(title.slice(0,300),manual?'manual':'auto',id,+manual); }
  pin(id:string,value:boolean) {this.db.prepare('UPDATE chats SET pinned=? WHERE id=?').run(+value,id);}
  deleteChat(id:string) {
   const files=this.db.prepare('SELECT path FROM attachments WHERE message_id IN (SELECT id FROM messages WHERE chat_id=?)').all(id);

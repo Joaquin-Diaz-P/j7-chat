@@ -79,3 +79,11 @@ it('does not persist empty chats when changing settings; restores saved options'
  expect(service.snapshot()).toMatchObject({webSearch:true,effort:'high'});
  await service.dispose();
 });
+
+it('repairs damaged manual titles while protecting valid manual renames',()=>{
+ const store=new SqliteChatStore(':memory:');store.createChat(chat);
+ store.rename('a','Supresi��n');store.rename('a','Supresión',false);
+ expect(store.getChat('a')!.title).toBe('Supresión');
+ store.rename('a','Título elegido');store.rename('a','Respuesta tardía',false);
+ expect(store.getChat('a')!.title).toBe('Título elegido');store.db.close();
+});

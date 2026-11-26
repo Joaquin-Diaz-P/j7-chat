@@ -7,6 +7,7 @@ import type { ChatService } from "./chat/service.js";
 import type { AttachmentStore } from "./attachments/index.js";
 export function registerIpc(panel: Panel, chat: ChatService, attachments: AttachmentStore) {
   panel.window.webContents.on("before-input-event", (event, input) => {
+    if(input.type === "keyDown" && input.meta && input.control && !input.alt && !input.shift && input.code === "KeyF") { event.preventDefault(); panel.toggleFill(); }
     if (input.type === "keyDown" && input.meta && !input.control && !input.alt && !input.shift && (input.code === "Comma" || input.key === ",")) {
       event.preventDefault();
       showSettingsNotice(panel);
@@ -83,6 +84,10 @@ export function registerIpc(panel: Panel, chat: ChatService, attachments: Attach
   ipcMain.on("window:regions", (event, regions) => {
     if (trusted(event) && Array.isArray(regions) && regions.length <= 20 && regions.every(r => r && ['left','top','right','bottom'].every(k => Number.isFinite(r[k])))) panel.setRegions(regions);
   });
+  ipcMain.on("window:beginResize", (event,edge) => {if(trusted(event) && typeof edge==='string' && /^(n|s|e|w|ne|nw|se|sw)$/.test(edge)) panel.beginResize(edge);});
+  ipcMain.on("window:resize", (event,dx,dy) => {if(trusted(event) && Number.isFinite(dx) && Number.isFinite(dy)) panel.resize(dx,dy);});
+  ipcMain.on("window:endResize", event => {if(trusted(event))panel.endResize();});
+  ipcMain.on("window:toggleFill", event => {if(trusted(event))panel.toggleFill();});
   ipcMain.on("window:beginMoveCard", event => { if (trusted(event)) panel.beginMoveCard(); });
   ipcMain.on("window:endMoveCard", event => { if (trusted(event)) panel.endMoveCard(); });
   ipcMain.on("window:moveCard", (event, dx, dy) => { if(trusted(event) && Number.isFinite(dx) && Number.isFinite(dy)) panel.moveCard(dx,dy); });

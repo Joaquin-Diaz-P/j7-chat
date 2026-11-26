@@ -15,3 +15,14 @@ it('JSON protocol, malformed lines, events and restart',async()=>{
     expect((await helper.request('permissions')).screen).toBe(true); expect(events).toBeGreaterThan(0);
   } finally {helper.dispose();await rm(dir,{recursive:true,force:true});}
 });
+it('preserves UTF-8 title characters split across stdout chunks',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'j7-title-utf8-'));const binary=join(dir,'helper');
+  await writeFile(binary, `#!/usr/bin/env node
+require('readline').createInterface({input:process.stdin}).on('line',line=>{
+ const m=JSON.parse(line), bytes=Buffer.from(JSON.stringify({id:m.id,ok:true,title:'Supresión de la ovulación y fecundación'})+'\\n');
+ let i=0; const emit=()=>{if(i<bytes.length){process.stdout.write(bytes.subarray(i,i+1));i++;setTimeout(emit,1);}};emit();
+});`);
+  await chmod(binary,0o700);const helper=new NativeHelper(binary);
+  try {expect((await helper.request('generateTitle')).title).toBe('Supresión de la ovulación y fecundación');}
+  finally {helper.dispose();await rm(dir,{recursive:true,force:true});}
+});

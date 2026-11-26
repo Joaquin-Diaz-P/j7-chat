@@ -4,7 +4,7 @@ export async function generateTitle(text: string, generator: (text:string)=>Prom
  try {
   const result=await Promise.race([generator(text),new Promise<string>(resolve=>{timer=setTimeout(()=>resolve(''),timeout);})]);
   const title=cleanTitle(result);
-  return title && title.split(/\s+/).length<=8 ? title : cleanTitle(text).split(/\s+/).slice(0,6).join(' ');
+  return title && !title.includes("\uFFFD") && title.split(/\s+/).length<=8 ? title : cleanTitle(text).split(/\s+/).slice(0,6).join(' ');
  } catch {return cleanTitle(text).split(/\s+/).slice(0,6).join(' ');}
  finally {clearTimeout(timer);}
 }

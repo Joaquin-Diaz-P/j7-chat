@@ -18,11 +18,12 @@
     "test": "vitest run",
     "spike": "tsx spikes/run.ts",
     "dev": "npm run build:helper && npm run icons && node scripts/dev.mjs",
-    "build": "npm run icons && electron-vite build",
+    "build": "npm run build:glass && npm run icons && electron-vite build",
     "icons": "node scripts/icons.mjs",
-    "build:helper": "mkdir -p build && swiftc -O -target arm64-apple-macosx14.0 native/j7-helper/main.swift -o build/j7-helper",
+    "build:helper": "mkdir -p build && swiftc -O -target arm64-apple-macosx14.0 native/j7-helper/main.swift -o build/j7-helper && npm run build:glass",
     "dist": "node scripts/dist.mjs",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "npm run build && playwright test",
+    "build:glass": "node scripts/build-glass.mjs"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "2.4.0",
@@ -46,6 +47,7 @@
     "electron-vite": "^6.0.0",
     "katex": "^0.19.1",
     "lucide-react": "^1.68.0",
+    "node-api-headers": "^1.9.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",

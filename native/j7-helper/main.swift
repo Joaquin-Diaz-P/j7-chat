@@ -196,9 +196,14 @@ func command(_ message: [String: Any]) async {
                 // Short questions are ambiguous; fall back to Spanish unless the guess is confident.
                 let code = recognizer.languageHypotheses(withMaximum: 1).first.map { $0.value >= 0.6 ? $0.key.rawValue : "es" } ?? "es"
                 let language = Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "Spanish"
-                let session = LanguageModelSession(instructions:"You write short titles for chat conversations. The title is 3 to 6 words, written in \(language), with no quotation marks and no trailing period.")
-                let result = try await session.respond(to:"Do not answer the question. Write only the \(language) title for this question:\n\n" + text)
-                emit(["id":id,"ok":true,"title":result.content])
+                // The on-device model sometimes decodes each byte of an accented letter on its own and
+                // returns "\u{FFFD}\u{FFFD}" instead (seen with "Supresión"). Ask again with a fresh session.
+                for _ in 0..<3 {
+                    let session = LanguageModelSession(instructions:"You write short titles for chat conversations. The title is 3 to 6 words, written in \(language), with no quotation marks and no trailing period.")
+                    let result = try await session.respond(to:"Do not answer the question. Write only the \(language) title for this question:\n\n" + text)
+                    if !result.content.contains("\u{FFFD}") { emit(["id":id,"ok":true,"title":result.content]); return }
+                }
+                emit(["id":id,"ok":false,"reason":"invalid"])
             } else { emit(["id":id,"ok":false,"reason":"unavailable"]) }
 #else
             emit(["id":id,"ok":false,"reason":"unavailable"])

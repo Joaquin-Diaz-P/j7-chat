@@ -1,3 +1,4 @@
+import { useOverlayScrollbars } from "./overlay-scrollbars.js";
 import { ProviderIcon } from "./components/ProviderIcon.js";
 import { VoiceWave } from "./components/VoiceWave.js";
 import { levels } from "../shared/effort.js";
@@ -5,7 +6,7 @@ import { isSettingsShortcut } from "../shared/shortcut.js";
 import { SettingsView } from "./settings-view.js";
 import { voiceDelivery } from "./voice-delivery.js";
 import { History } from "./components/History.js";
-import { Mic, LoaderCircle, ArrowUp, Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed } from "lucide-react";
+import { Mic, LoaderCircle, ArrowUp, Copy, Check, RotateCcw, ArrowLeftRight, Pencil, AlertTriangle, Menu, Paperclip, X, Square, Plus, Pin, ArrowDown, FileText, File, FileUp, SquareDashed, Maximize2, Minimize2 } from "lucide-react";
 import { effortLabel, ModelSelector } from "./components/ModelSelector.js";
 import { ResponseMarkdown } from "./components/Markdown.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -45,7 +46,10 @@ function useLeaving<T>(value: T, delay: number): T {
   return value || shown;
 }
 function App() {
+  useOverlayScrollbars();
   const chat = useChat();
+  const [cardWidth,setCardWidth] = useState(520);
+  const [filled,setFilled] = useState(false);
   const [offset, setOffset] = useState({x:0,y:0});
   const [prewarm, setPrewarm] = useState(false);
   const [compactHeight, setCompactHeight] = useState(106);
@@ -132,6 +136,8 @@ function App() {
       window.j7.onPanel((state) => {
         const wasHistoryOpen = historyRef.current;
         setPinned(state.pinned);
+        if(state.cardWidth) setCardWidth(state.cardWidth);
+        setFilled(!!state.filled);
         if(state.offset) setOffset(state.offset);
         if(state.historyOpen!==undefined){historyRef.current=state.historyOpen;setHistoryOpen(state.historyOpen);}
         if (state.appeared) { setHiding(false); setAppeared(n => n + 1); }
@@ -373,8 +379,20 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
       };
       const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(frame){cancelAnimationFrame(frame);flush();}if(moved)window.j7.endMoveCard();input.current?.focus();};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
-    }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${expanded ? "expanded" : "compact"}`}>
+    }} data-selector-closing={!selector} data-attachment-closing={!attachmentMenu} style={{ "--card-width": `${cardWidth}px`, "--compact-height": `${compactHeight}px`, "--offset-x": `${offset.x}px`, "--offset-y": `${offset.y}px` } as React.CSSProperties} className={`shell ${hiding ? "hiding" : ""} ${historyOpen ? "history-open" : ""} ${historyOpen ? "history-visible" : ""} ${expanded ? "expanded" : "compact"}`}>
       <div className="card-surface" aria-hidden="true"/>
+      {expanded && <div className="resize-frame">{['n','s','e','w','ne','nw','se','sw'].map(edge => <div key={edge} className={`resize-edge resize-${edge}`} onPointerDown={event => {
+        if(event.button!==0)return;
+        event.stopPropagation(); event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const x=event.screenX,y=event.screenY;
+        window.j7.beginResize(edge);
+        let frame=0,dx=0,dy=0;
+        const flush=()=>{frame=0;window.j7.resize(dx,dy);};
+        const move=(e:PointerEvent)=>{if(!(e.buttons&1)){end();return;}dx=e.screenX-x;dy=e.screenY-y;if(!frame)frame=requestAnimationFrame(flush);};
+        const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);if(frame){cancelAnimationFrame(frame);flush();}window.j7.endResize();};
+        window.addEventListener('pointermove',move);window.addEventListener('pointerup',end,{once:true});window.addEventListener('pointercancel',end,{once:true});
+      }}/> )}</div>}
           {shownAttachmentMenu && <div className="attachment-menu" role="menu" onKeyDown={e => {
             if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); closeAttachments(); }
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const buttons = [...e.currentTarget.querySelectorAll('button')]; buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length]?.focus(); }
@@ -399,6 +417,7 @@ message.role === "notice" ? <p className="model-notice" key={message.id}>{messag
           >
             <Plus size={16}/>
           </button>
+          <button title={filled ? 'Restaurar tamaño (⌃⌘F)' : 'Llenar área visible (⌃⌘F)'} aria-label={filled ? 'Restaurar tamaño' : 'Llenar área visible'} aria-pressed={filled} onClick={() => window.j7.toggleFill()}>{filled ? <Minimize2 size={15}/> : <Maximize2 size={15}/>}</button>
           <button title={s.pin} aria-label={s.pin} aria-pressed={pinned} onClick={() => window.j7.setPinned(!pinned)}><Pin size={16}/></button>
         </div>
       </header>

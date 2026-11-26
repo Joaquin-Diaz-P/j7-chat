@@ -16,6 +16,8 @@ electronLanguages:
   - es_419
   - en
 extraResources:
+  - from: build/j7-glass.node
+    to: j7-glass.node
   - from: build/j7-helper
     to: j7-helper
 mac:
